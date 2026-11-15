@@ -1,0 +1,73 @@
+/* Design tokens from DESIGN.md. The only place raw values are allowed. */
+:root {
+  --color-green-dark: #014131;
+  --color-green-dark-90: #1A5446;
+  --color-green-dark-80: #34675A;
+  --color-green-dark-70: #4D7A6F;
+  --color-green-dark-60: #678D83;
+  --color-green-dark-50: #80A098;
+  --color-green-dark-40: #99B3AD;
+  --color-green-dark-30: #B3C6C1;
+  --color-green-dark-20: #CCD9D6;
+  --color-green-dark-10: #E6ECEA;
+
+  --color-red: #FF2C00;
+  --color-red-90: #FF4119;
+  --color-red-80: #FF5633;
+  --color-red-70: #FF6B4D;
+  --color-red-60: #FF8066;
+  --color-red-50: #FF9680;
+  --color-red-40: #FFAB99;
+  --color-red-30: #FFC0B2;
+  --color-red-20: #FFD5CC;
+  --color-red-10: #FFEAE6;
+
+  --color-green-light: #87C38F;
+  --color-green-light-90: #93C99A;
+  --color-green-light-80: #9FCFA5;
+  --color-green-light-70: #ABD5B1;
+  --color-green-light-60: #B7DBBC;
+  --color-green-light-50: #C3E1C7;
+  --color-green-light-40: #CFE7D2;
+  --color-green-light-30: #DBEDDD;
+  --color-green-light-20: #E7F3E9;
+  --color-green-light-10: #F3F9F4;
+
+  --color-beige: #E7DED3;
+  --color-beige-90: #E9E1D7;
+  --color-beige-80: #ECE5DC;
+  --color-beige-70: #EEE8E0;
+  --color-beige-60: #F1EBE5;
+  --color-beige-50: #F3EEE9;
+  --color-beige-40: #F5F2ED;
+  --color-beige-30: #F8F5F2;
+  --color-beige-20: #FAF8F6;
+  --color-beige-10: #FDFCFB;
+
+  --font-display: "Red Hat Display Variable", sans-serif;
+  --font-body: "Figtree Variable", sans-serif;
+
+  --weight-regular: 400;
+  --weight-semibold: 600;
+  --weight-black: 900;
+
+  --space-1: 0.25rem;
+  --space-2: 0.5rem;
+  --space-3: 0.75rem;
+  --space-4: 1rem;
+  --space-6: 1.5rem;
+  --space-8: 2rem;
+  --space-12: 3rem;
+  --space-16: 4rem;
+
+  --text-xs: 0.75rem;
+  --text-sm: 0.875rem;
+  --text-md: 1rem;
+  --text-lg: 1.25rem;
+  --text-xl: 1.5rem;
+  --text-2xl: 2rem;
+  --text-3xl: 2.5rem;
+
+  --line-height-heading: 1.2;
+  --line-height-body: 1.5;
+}

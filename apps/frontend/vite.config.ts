@@ -1,0 +1,19 @@
+import react from "@vitejs/plugin-react";
+import { defineConfig } from "vitest/config";
+
+export default defineConfig({
+  plugins: [react()],
+  server: {
+    proxy: {
+      // Same-origin API calls in development, so the backend needs no CORS.
+      "/api": {
+        target: "http://127.0.0.1:3000",
+        rewrite: (path) => path.replace(/^\/api/, ""),
+      },
+    },
+  },
+  test: {
+    environment: "jsdom",
+    setupFiles: ["./src/setupTests.ts"],
+  },
+});
