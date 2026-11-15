@@ -1,6 +1,17 @@
 generator client {
-  provider = "prisma-client"
-  output   = "../src/generated/prisma"
+  provider        = "prisma-client"
+  output          = "../src/generated/prisma"
+  previewFeatures = ["partialIndexes"]
+}
+
+// Mirrors memberRole in @repo/shared.
+enum MemberRole {
+  child
+  member
+  trainer
+  admin
+
+  @@map("member_role")
 }
 
 datasource db {
@@ -38,6 +49,7 @@ model Member {
   name      String
   surname   String
   birthday  DateTime         @db.Date
+  role      MemberRole       @default(child)
   taxNumber String?          @unique
   email     String?
   phone     String?
@@ -45,9 +57,38 @@ model Member {
   updatedAt DateTime         @updatedAt @db.Timestamptz
   org       Org              @relation(fields: [orgId], references: [id], onDelete: Restrict)
   guardians MemberGuardian[]
+  login     Login?
+  sessions  Session[]
 
+  // People who can log in never share an email. The roles listed here must
+  // match LOGIN_ROLES in @repo/shared/auth. Written the way Postgres stores
+  // the condition, so Prisma does not see a difference and recreate it.
+  @@unique([email], map: "member_login_email_key", where: raw("role = ANY (ARRAY['trainer'::member_role, 'admin'::member_role])"))
   @@index([orgId])
   @@map("member")
+}
+
+// A member's password. Login uses the member's email; there is none here.
+model Login {
+  memberId     Int      @id
+  passwordHash String
+  createdAt    DateTime @default(now()) @db.Timestamptz
+  updatedAt    DateTime @updatedAt @db.Timestamptz
+  member       Member   @relation(fields: [memberId], references: [id], onDelete: Cascade)
+
+  @@map("login")
+}
+
+// id is the SHA-256 hash of the session token; the token itself is never stored.
+model Session {
+  id        String   @id
+  memberId  Int
+  expiresAt DateTime @db.Timestamptz
+  createdAt DateTime @default(now()) @db.Timestamptz
+  member    Member   @relation(fields: [memberId], references: [id], onDelete: Cascade)
+
+  @@index([memberId])
+  @@map("session")
 }
 
 model MemberGuardian {
