@@ -27,6 +27,16 @@ after every change to `packages/shared`.
 
 ## Run
 
+All at once: `pnpm dev` starts the database, then shared (build in watch
+mode), backend, frontend, and mobile in a 2x2 grid of panes.
+
+- In iTerm: a new tab in the current window, split into the four panes.
+  Stop a service with Ctrl+C in its pane.
+- Elsewhere: one tmux session (`brew install tmux`) with the four panes.
+  Running `pnpm dev` again reattaches; `pnpm dev:stop` stops every server.
+
+Or one at a time:
+
 ```sh
 pnpm --filter @repo/backend dev     # API on http://127.0.0.1:3000
 pnpm --filter @repo/frontend dev    # web app on http://localhost:5173
