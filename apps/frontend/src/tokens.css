@@ -70,4 +70,10 @@
 
   --line-height-heading: 1.2;
   --line-height-body: 1.5;
+
+  --border-width: 1px;
+  --color-backdrop: color-mix(in srgb, var(--color-green-dark) 50%, transparent);
+
+  --width-dialog: 40rem;
+  --width-page: 72rem;
 }

@@ -1,0 +1,80 @@
+.form {
+  display: grid;
+  gap: var(--space-6);
+}
+
+.section {
+  display: grid;
+  gap: var(--space-4);
+  min-width: 0;
+  margin: 0;
+  padding: 0;
+  border: none;
+}
+
+.sectionLegend {
+  margin-bottom: var(--space-2);
+  padding: 0;
+  font-family: var(--font-display);
+  font-size: var(--text-lg);
+  font-weight: var(--weight-black);
+}
+
+.grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(min(100%, 14rem), 1fr));
+  gap: var(--space-4);
+}
+
+.hint {
+  font-size: var(--text-sm);
+}
+
+.guardian {
+  display: grid;
+  gap: var(--space-4);
+  min-width: 0;
+  margin: 0;
+  padding: var(--space-4);
+  border: var(--border-width) solid var(--color-green-dark-30);
+  background-color: var(--color-beige-20);
+}
+
+.guardianLegend {
+  padding: 0 var(--space-2);
+  font-weight: var(--weight-semibold);
+}
+
+.kindRow {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--space-2) var(--space-6);
+}
+
+.kind {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--space-2);
+  min-height: var(--space-12);
+  cursor: pointer;
+}
+
+.kind input {
+  width: var(--space-4);
+  height: var(--space-4);
+  margin: 0;
+  accent-color: var(--color-green-dark);
+}
+
+.formError {
+  padding: var(--space-3) var(--space-4);
+  background-color: var(--color-red-10);
+  border-left: var(--space-1) solid var(--color-red);
+}
+
+.actions {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: flex-end;
+  gap: var(--space-3);
+}

@@ -1,0 +1,38 @@
+.field {
+  display: grid;
+  gap: var(--space-1);
+  align-content: start;
+}
+
+.label {
+  font-weight: var(--weight-semibold);
+}
+
+.optional {
+  font-weight: var(--weight-regular);
+  font-size: var(--text-sm);
+}
+
+.hint {
+  font-size: var(--text-sm);
+}
+
+.control {
+  width: 100%;
+  min-height: var(--space-12);
+  padding: var(--space-2) var(--space-3);
+  border: var(--border-width) solid var(--color-green-dark-60);
+  background-color: var(--color-beige-10);
+  color: var(--color-green-dark);
+  font: inherit;
+}
+
+.control[aria-invalid="true"] {
+  border-color: var(--color-red);
+}
+
+.error {
+  padding: var(--space-1) var(--space-2);
+  background-color: var(--color-red-10);
+  font-size: var(--text-sm);
+}
