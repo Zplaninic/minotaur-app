@@ -25,6 +25,8 @@ apps/
       services/             business logic, no Fastify imports
       db/                   the single PrismaClient instance
       plugins/              cross-cutting plugins (auth, db, error handler)
+      auth/                 passwords (scrypt) and sessions (hashed tokens)
+      cli/                  backend commands: login:create, login:set-password, member:set-role
   frontend/                 @repo/frontend: React + Vite, TanStack Query
     src/
       main.tsx              entry point, providers
@@ -49,6 +51,9 @@ packages/
       types/                imported as "@repo/shared", by all apps
         <resource>.ts       schemas and types for one resource
         common.ts           pagination, id, errorResponse
+      auth/                 imported as "@repo/shared/auth", by all apps
+        roles.ts            LOGIN_ROLES: which member roles may log in
+        abilities.ts        defineAbilityFor: CASL rules, what each role may do
       client/               imported as "@repo/shared/client", by frontend and mobile
         apiClient.ts        createApiClient: fetch, parse with zod, ApiError
         <resource>.ts       query keys, query options, requests for one resource
@@ -59,7 +64,8 @@ packages/
 ## Boundaries
 - Dependency direction: backend -> shared, frontend -> shared,
   mobile -> shared. The three apps never import from each other. Shared
-  imports only zod and must run in the browser, Node, and React Native.
+  imports only zod and @casl/ability, and must run in the browser, Node, and
+  React Native.
 - The backend imports only `@repo/shared`, never `@repo/shared/client`.
 - Code that frontend and mobile both need, and that does not touch the DOM,
   React Native, or React, goes in shared `client/` instead of being copied.
@@ -115,6 +121,9 @@ Always run per package, never for the whole repo.
   listUsersQuery. Types use PascalCase: CreateUserBody, UserResponse.
 - `types/`: no business logic and no side effects. Only schemas, types, and
   constants.
+- `auth/`: roles that may log in and the CASL abilities. Every permission
+  rule lives in `defineAbilityFor`; routes and screens only ask
+  `ability.can(action, subject)`, never check a role directly.
 - `client/`: pure functions for the client apps (API client, query keys and
   query options, request functions, form logic, formatting). No React or
   TanStack Query imports: export plain query option objects and let each app
@@ -133,6 +142,12 @@ Routes
 - Use `app.withTypeProvider<ZodTypeProvider>()`.
 - Handlers stay thin: parse, call a service, return. No business logic or
   direct database access in handlers.
+- Every route declares the ability it needs with
+  `onRequest: app.requireAbility(action, subject)`, or `app.requireSession`
+  for routes about the logged-in member. Only `POST /auth/login` is open.
+  `onRequest`, not `preHandler`: it runs before body validation, so logged-out
+  callers get 401, not validation details. Declare 401 and 403 in its
+  response schemas.
 - Register routes as plugins in server.ts with a URL prefix per resource.
 
 Services and database
@@ -151,6 +166,8 @@ Prisma
 - Never edit generated client files or an existing migration.
 - Model names singular PascalCase, fields camelCase. Every `DateTime` field
   uses `@db.Timestamptz`.
+- Table names lowercase (`@@map`), ids autoincrement integers.
+- Fixed value sets are Postgres enums, not text.
 - In production only `migrate deploy` is allowed.
 
 Errors
