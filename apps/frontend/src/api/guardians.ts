@@ -1,14 +1,5 @@
-import { listGuardiansResponse } from "@repo/shared";
+import { guardianQueries } from "@repo/shared/client";
 import { useQuery } from "@tanstack/react-query";
-import { apiFetch } from "./client";
+import { api } from "./client";
 
-export const guardianKeys = {
-  all: ["guardians"] as const,
-  list: () => [...guardianKeys.all, "list"] as const,
-};
-
-export const useGuardians = () =>
-  useQuery({
-    queryKey: guardianKeys.list(),
-    queryFn: () => apiFetch("/guardians", listGuardiansResponse),
-  });
+export const useGuardians = () => useQuery(guardianQueries.list(api));

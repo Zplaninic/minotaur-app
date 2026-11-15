@@ -1,6 +1,6 @@
 import { DEFAULT_PAGE_SIZE } from "@repo/shared";
+import { toErrorCode } from "@repo/shared/client";
 import { useState } from "react";
-import { toErrorCode } from "../../api/client";
 import { useMembers } from "../../api/members";
 import { Button } from "../../components/Button";
 import { formatCalendarDate, formatPersonName, formatSortedName } from "../../lib/format";

@@ -2,16 +2,14 @@ import type { MemberResponse } from "@repo/shared";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { fireEvent, render, screen, waitFor, within } from "@testing-library/react";
 import { beforeEach, describe, expect, it, vi } from "vitest";
-import { ApiError, apiFetch } from "../api/client";
+import { ApiError } from "@repo/shared/client";
+import { api } from "../api/client";
 import { t } from "../lib/messages";
 import { MembersPage } from "./MembersPage";
 
-vi.mock("../api/client", async (importOriginal) => ({
-  ...(await importOriginal<typeof import("../api/client")>()),
-  apiFetch: vi.fn(),
-}));
+vi.mock("../api/client", () => ({ api: { fetch: vi.fn() } }));
 
-const fetchMock = vi.mocked(apiFetch);
+const fetchMock = vi.mocked(api.fetch);
 
 const ana: MemberResponse = {
   id: "1",

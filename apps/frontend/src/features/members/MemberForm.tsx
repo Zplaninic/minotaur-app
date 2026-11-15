@@ -1,6 +1,14 @@
 import { ADULT_AGE } from "@repo/shared";
+import {
+  emptyMemberDraft,
+  newGuardianDraft,
+  toErrorCode,
+  validateMemberDraft,
+  type GuardianDraft,
+  type MemberDraft,
+  type MemberFieldError,
+} from "@repo/shared/client";
 import { useState, type FormEvent } from "react";
-import { toErrorCode } from "../../api/client";
 import { useGuardians } from "../../api/guardians";
 import { useCreateMember } from "../../api/members";
 import { useOrgs } from "../../api/orgs";
@@ -8,9 +16,8 @@ import { Button } from "../../components/Button";
 import { FieldMessage } from "../../components/FieldMessage";
 import { SelectField } from "../../components/SelectField";
 import { TextField } from "../../components/TextField";
-import { errorMessage, t, type MessageKey } from "../../lib/messages";
+import { errorMessage, memberFieldErrorKey, t } from "../../lib/messages";
 import { GuardianFieldset } from "./GuardianFieldset";
-import { emptyMemberDraft, newGuardianDraft, validateMemberDraft, type GuardianDraft, type MemberDraft } from "./memberDraft";
 import styles from "./MemberForm.module.css";
 
 type MemberFormProps = {
@@ -34,7 +41,8 @@ export const MemberForm = ({ onCancel, onSaved }: MemberFormProps) => {
   const errors = submitted && !validation.ok ? validation.errors : {};
   const serverCode = createMember.error ? toErrorCode(createMember.error) : undefined;
 
-  const message = (key: MessageKey | undefined) => (key ? t(key, { age: ADULT_AGE }) : undefined);
+  const message = (code: MemberFieldError | undefined) =>
+    code ? t(memberFieldErrorKey(code), { age: ADULT_AGE }) : undefined;
   const fieldError = (path: string) => message(errors[path]);
   const taxNumberError =
     fieldError("taxNumber") ?? (serverCode === "CONFLICT" ? t("memberForm.error.taxNumberTaken") : undefined);
@@ -171,7 +179,7 @@ export const MemberForm = ({ onCancel, onSaved }: MemberFormProps) => {
             guardian={guardian}
             onChange={(changed) => updateGuardian(index, changed)}
             onRemove={() => removeGuardian(index)}
-            errorFor={(field) => errors[`guardians.${index}.${field}`]}
+            errorFor={(field) => fieldError(`guardians.${index}.${field}`)}
             existingGuardians={guardians.data?.items}
             existingState={guardiansState}
           />

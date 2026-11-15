@@ -1,10 +1,10 @@
 import type { GuardianResponse } from "@repo/shared";
+import type { GuardianDraft } from "@repo/shared/client";
 import { Button } from "../../components/Button";
 import { SelectField } from "../../components/SelectField";
 import { TextField } from "../../components/TextField";
 import { formatSortedName } from "../../lib/format";
-import { t, type MessageKey } from "../../lib/messages";
-import type { GuardianDraft } from "./memberDraft";
+import { t } from "../../lib/messages";
 import styles from "./MemberForm.module.css";
 
 type GuardianFieldsetProps = {
@@ -12,7 +12,7 @@ type GuardianFieldsetProps = {
   guardian: GuardianDraft;
   onChange: (guardian: GuardianDraft) => void;
   onRemove: () => void;
-  errorFor: (field: string) => MessageKey | undefined;
+  errorFor: (field: string) => string | undefined;
   existingGuardians: readonly GuardianResponse[] | undefined;
   existingState: "loading" | "error" | "ready";
 };
@@ -27,10 +27,6 @@ export const GuardianFieldset = ({
   existingState,
 }: GuardianFieldsetProps) => {
   const number = index + 1;
-  const error = (field: string) => {
-    const key = errorFor(field);
-    return key ? t(key) : undefined;
-  };
   const update = (changes: Partial<GuardianDraft>) => onChange({ ...guardian, ...changes });
 
   return (
@@ -64,7 +60,7 @@ export const GuardianFieldset = ({
             value={guardian.guardianId}
             onChange={(guardianId) => update({ guardianId })}
             options={existingGuardians.map((existing) => ({ value: existing.id, label: formatSortedName(existing) }))}
-            error={error("guardianId")}
+            error={errorFor("guardianId")}
             required
           />
         )
@@ -74,7 +70,7 @@ export const GuardianFieldset = ({
             label={t("memberForm.name")}
             value={guardian.name}
             onChange={(name) => update({ name })}
-            error={error("name")}
+            error={errorFor("name")}
             autoComplete="off"
             required
           />
@@ -82,7 +78,7 @@ export const GuardianFieldset = ({
             label={t("memberForm.surname")}
             value={guardian.surname}
             onChange={(surname) => update({ surname })}
-            error={error("surname")}
+            error={errorFor("surname")}
             autoComplete="off"
             required
           />
@@ -91,7 +87,7 @@ export const GuardianFieldset = ({
             type="email"
             value={guardian.email}
             onChange={(email) => update({ email })}
-            error={error("email")}
+            error={errorFor("email")}
             autoComplete="off"
             optional
           />
@@ -101,7 +97,7 @@ export const GuardianFieldset = ({
             inputMode="tel"
             value={guardian.phone}
             onChange={(phone) => update({ phone })}
-            error={error("phone")}
+            error={errorFor("phone")}
             autoComplete="off"
             optional
           />

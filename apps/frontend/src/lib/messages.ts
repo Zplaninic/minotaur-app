@@ -1,4 +1,4 @@
-import type { ClientErrorCode } from "../api/client";
+import type { ClientErrorCode, MemberFieldError } from "@repo/shared/client";
 
 export const locale = "en";
 
@@ -89,3 +89,5 @@ export const t = (key: MessageKey, params: MessageParams = {}): string =>
   messages[key].replace(/\{(\w+)\}/g, (placeholder, name: string) => String(params[name] ?? placeholder));
 
 export const errorMessage = (code: ClientErrorCode): string => errorMessages[code];
+
+export const memberFieldErrorKey = (code: MemberFieldError): MessageKey => `memberForm.error.${code}` as const;
