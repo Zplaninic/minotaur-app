@@ -5,6 +5,7 @@ import { authPlugin } from "./plugins/auth.js";
 import { dbPlugin } from "./plugins/db.js";
 import { errorHandlerPlugin } from "./plugins/errorHandler.js";
 import { authRoutes } from "./routes/auth.js";
+import { groupRoutes } from "./routes/groups.js";
 import { guardianRoutes } from "./routes/guardians.js";
 import { memberRoutes } from "./routes/members.js";
 import { meRoutes } from "./routes/me.js";
@@ -34,6 +35,7 @@ export const buildServer = async (): Promise<FastifyInstance> => {
   await app.register(orgRoutes, { prefix: "/orgs" });
   await app.register(guardianRoutes, { prefix: "/guardians" });
   await app.register(memberRoutes, { prefix: "/members" });
+  await app.register(groupRoutes, { prefix: "/groups" });
 
   return app;
 };

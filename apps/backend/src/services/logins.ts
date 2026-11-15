@@ -1,4 +1,4 @@
-import { email as emailSchema, newPassword, personName, type MemberRole } from "@repo/shared";
+import { email as emailSchema, GROUP_OWNER_ROLE, newPassword, personName, type MemberRole } from "@repo/shared";
 import { isLoginRole, type LoginRole } from "@repo/shared/auth";
 import { hashPassword } from "../auth/password.js";
 import { deleteMemberSessions } from "../auth/sessions.js";
@@ -77,9 +77,15 @@ export const setLoginPassword = async (db: Db, memberId: number, password: strin
 };
 
 // Moving someone to a role that cannot log in also ends their sessions.
+// A group's owner must stay a trainer, so a trainer who owns groups keeps the role.
 export const setMemberRole = async (db: Db, memberId: number, role: MemberRole): Promise<void> => {
-  await db.member.update({ where: { id: memberId }, data: { role } });
-  if (!isLoginRole(role)) {
-    await deleteMemberSessions(db, memberId);
-  }
+  await db.$transaction(async (tx) => {
+    if (role !== GROUP_OWNER_ROLE && (await tx.group.count({ where: { ownerId: memberId } })) > 0) {
+      throw new AppError("CONFLICT", 409, "The member owns groups; give them to another trainer first");
+    }
+    await tx.member.update({ where: { id: memberId }, data: { role } });
+    if (!isLoginRole(role)) {
+      await deleteMemberSessions(tx, memberId);
+    }
+  });
 };

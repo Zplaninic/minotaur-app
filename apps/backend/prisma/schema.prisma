@@ -14,6 +14,19 @@ enum MemberRole {
   @@map("member_role")
 }
 
+// Mirrors weekday in @repo/shared.
+enum Weekday {
+  monday
+  tuesday
+  wednesday
+  thursday
+  friday
+  saturday
+  sunday
+
+  @@map("weekday")
+}
+
 datasource db {
   provider = "postgresql"
 }
@@ -59,6 +72,7 @@ model Member {
   guardians MemberGuardian[]
   login     Login?
   sessions  Session[]
+  groups    Group[]
 
   // People who can log in never share an email. The roles listed here must
   // match LOGIN_ROLES in @repo/shared/auth. Written the way Postgres stores
@@ -101,4 +115,21 @@ model MemberGuardian {
   @@id([memberId, guardianId])
   @@index([guardianId])
   @@map("member_guardian")
+}
+
+// A training group. The owner is a member with the trainer role; the service
+// checks that, the database only knows the member exists.
+model Group {
+  id        Int       @id @default(autoincrement())
+  ownerId   Int
+  days      Weekday[]
+  // Wall-clock times at the gym, without a date or a time zone.
+  from      DateTime  @db.Time(0)
+  to        DateTime  @db.Time(0)
+  createdAt DateTime  @default(now()) @db.Timestamptz
+  updatedAt DateTime  @updatedAt @db.Timestamptz
+  owner     Member    @relation(fields: [ownerId], references: [id], onDelete: Restrict)
+
+  @@index([ownerId])
+  @@map("group")
 }

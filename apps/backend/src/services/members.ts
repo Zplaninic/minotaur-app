@@ -62,9 +62,11 @@ const toMemberResponse = (member: MemberRow): MemberResponse => ({
 });
 
 export const listMembers = async (db: Db, query: ListMembersQuery): Promise<ListMembersResponse> => {
+  const where = query.role ? { role: query.role } : {};
   const [total, members] = await db.$transaction([
-    db.member.count(),
+    db.member.count({ where }),
     db.member.findMany({
+      where,
       select: memberSelect,
       orderBy: [{ surname: "asc" }, { name: "asc" }, { id: "asc" }],
       skip: (query.page - 1) * query.pageSize,
