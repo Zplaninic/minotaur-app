@@ -75,6 +75,17 @@ export const fontSizes = {
   xxxl: 40,
 } as const;
 
+export const borders = {
+  width: 1,
+} as const;
+
+export const opacity = {
+  disabled: 0.6,
+} as const;
+
+// Smallest size of anything tappable.
+export const minTouchSize = spacing[12];
+
 const LINE_HEIGHT_HEADING = 1.2;
 const LINE_HEIGHT_BODY = 1.5;
 

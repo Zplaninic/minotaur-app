@@ -1,19 +1,26 @@
 import type { ReactNode } from "react";
-import { ScrollView, StyleSheet } from "react-native";
-import { SafeAreaView } from "react-native-safe-area-context";
+import { KeyboardAvoidingView, Platform, ScrollView, StyleSheet } from "react-native";
+import { SafeAreaView, type Edge } from "react-native-safe-area-context";
 import { colors, spacing } from "../theme/tokens";
 
 type ScreenProps = {
   children: ReactNode;
+  // Below a navigation header the top inset is already taken care of.
+  belowHeader?: boolean;
 };
 
-// Safe areas plus scrolling, so content stays reachable on small phones and
-// with large system font sizes.
-export const Screen = ({ children }: ScreenProps) => (
-  <SafeAreaView style={styles.safeArea}>
-    <ScrollView contentContainerStyle={styles.content} keyboardShouldPersistTaps="handled">
-      {children}
-    </ScrollView>
+const allEdges: Edge[] = ["top", "right", "bottom", "left"];
+const edgesBelowHeader: Edge[] = ["right", "bottom", "left"];
+
+// Safe areas, keyboard avoidance and scrolling, so content stays reachable on
+// small phones, with the keyboard open, and with large system font sizes.
+export const Screen = ({ children, belowHeader = false }: ScreenProps) => (
+  <SafeAreaView style={styles.safeArea} edges={belowHeader ? edgesBelowHeader : allEdges}>
+    <KeyboardAvoidingView style={styles.fill} behavior={Platform.OS === "ios" ? "padding" : undefined}>
+      <ScrollView contentContainerStyle={styles.content} keyboardShouldPersistTaps="handled">
+        {children}
+      </ScrollView>
+    </KeyboardAvoidingView>
   </SafeAreaView>
 );
 
@@ -21,6 +28,9 @@ const styles = StyleSheet.create({
   safeArea: {
     flex: 1,
     backgroundColor: colors.beige10,
+  },
+  fill: {
+    flex: 1,
   },
   content: {
     flexGrow: 1,
