@@ -4,9 +4,10 @@ import {
   fetchMembersPage,
   keysToInvalidateAfterCreateMember,
   memberKeys,
+  memberQueries,
   nextMembersPage,
 } from "@repo/shared/client";
-import { useInfiniteQuery, useMutation, useQueryClient } from "@tanstack/react-query";
+import { useInfiniteQuery, useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { api } from "./client";
 
 // Pages are loaded one after another as the list scrolls.
@@ -17,6 +18,9 @@ export const useMemberPages = (pageSize: number) =>
     initialPageParam: 1,
     getNextPageParam: nextMembersPage,
   });
+
+// The members who can own a group.
+export const useTrainers = () => useQuery(memberQueries.trainers(api));
 
 export const useCreateMember = () => {
   const queryClient = useQueryClient();

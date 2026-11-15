@@ -35,11 +35,12 @@ beforeEach(() => {
 });
 
 describe("HomeScreen", () => {
-  it("shows the app name, who is logged in, and the members button for an admin", async () => {
+  it("shows the app name, who is logged in, and the members and groups buttons for an admin", async () => {
     await renderScreen();
     expect(screen.getByRole("header", { name: t("app.name") })).toBeOnTheScreen();
     expect(await screen.findByText(t("home.loggedInAs", { name: "Zvonimir Admin" }))).toBeOnTheScreen();
     expect(screen.getByRole("button", { name: t("home.members") })).toBeOnTheScreen();
+    expect(screen.getByRole("button", { name: t("home.groups") })).toBeOnTheScreen();
   });
 
   it("logs out and forgets the session token", async () => {

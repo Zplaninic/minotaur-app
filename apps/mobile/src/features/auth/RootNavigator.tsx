@@ -8,7 +8,7 @@ import { Screen } from "../../components/Screen";
 import { errorMessage, t } from "../../lib/messages";
 import { bodyLineHeight, colors, fonts, fontSizes, headingLineHeight, spacing } from "../../theme/tokens";
 
-// Native headers only on the members screens; other screens draw their own heading.
+// Native headers only on the list and form screens; other screens draw their own heading.
 const headerOptions = {
   headerShown: true,
   headerTintColor: colors.greenDark,
@@ -57,6 +57,11 @@ export const RootNavigator = () => {
         <Stack.Screen
           name="members/new"
           options={{ ...headerOptions, title: t("memberForm.title"), presentation: "modal" }}
+        />
+        <Stack.Screen name="groups/index" options={{ ...headerOptions, title: t("groups.title") }} />
+        <Stack.Screen
+          name="groups/new"
+          options={{ ...headerOptions, title: t("groupForm.title"), presentation: "modal" }}
         />
       </Stack.Protected>
       <Stack.Protected guard={!loggedIn}>

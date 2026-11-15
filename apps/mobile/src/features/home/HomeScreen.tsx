@@ -22,6 +22,9 @@ export const HomeScreen = () => {
       {ability.can("read", "Member") ? (
         <Button label={t("home.members")} onPress={() => router.push("/members")} />
       ) : null}
+      {ability.can("read", "Group") ? (
+        <Button label={t("home.groups")} onPress={() => router.push("/groups")} />
+      ) : null}
       <View style={styles.footer}>
         <Button
           label={t("home.logout")}
