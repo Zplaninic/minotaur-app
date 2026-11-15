@@ -1,0 +1,21 @@
+services:
+  postgres:
+    image: postgres:18.7
+    ports:
+      # 5433 on the host so it does not clash with a local PostgreSQL on 5432.
+      - "5433:5432"
+    environment:
+      POSTGRES_USER: minotaur
+      POSTGRES_PASSWORD: minotaur
+      POSTGRES_DB: minotaur_dev
+    volumes:
+      - postgres-data:/var/lib/postgresql
+      - ./docker/create-test-db.sql:/docker-entrypoint-initdb.d/create-test-db.sql:ro
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U minotaur -d minotaur_dev"]
+      interval: 2s
+      timeout: 2s
+      retries: 15
+
+volumes:
+  postgres-data:
