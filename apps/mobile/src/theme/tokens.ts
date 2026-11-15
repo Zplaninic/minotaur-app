@@ -86,6 +86,8 @@ export const opacity = {
 // Smallest size of anything tappable.
 export const minTouchSize = spacing[12];
 
+export const logoWidth = spacing[16] * 4;
+
 const LINE_HEIGHT_HEADING = 1.2;
 const LINE_HEIGHT_BODY = 1.5;
 

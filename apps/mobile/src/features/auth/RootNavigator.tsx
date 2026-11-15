@@ -3,6 +3,7 @@ import { Stack } from "expo-router";
 import { ActivityIndicator, StyleSheet, Text, View } from "react-native";
 import { useMe } from "../../api/auth";
 import { Button } from "../../components/Button";
+import { Logo } from "../../components/Logo";
 import { Screen } from "../../components/Screen";
 import { errorMessage, t } from "../../lib/messages";
 import { bodyLineHeight, colors, fonts, fontSizes, headingLineHeight, spacing } from "../../theme/tokens";
@@ -11,9 +12,10 @@ import { bodyLineHeight, colors, fonts, fontSizes, headingLineHeight, spacing } 
 const headerOptions = {
   headerShown: true,
   headerTintColor: colors.greenDark,
-  headerStyle: { backgroundColor: colors.beige10 },
+  headerStyle: { backgroundColor: colors.greenLight50 },
   headerTitleStyle: { fontFamily: fonts.displayBlack },
   headerBackButtonDisplayMode: "minimal",
+  headerRight: () => <Logo variant="app" label={t("app.name")} compact />,
 } as const;
 
 // Shows the login screen when logged out and the app screens when logged in.

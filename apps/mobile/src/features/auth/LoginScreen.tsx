@@ -5,6 +5,7 @@ import { Pressable, StyleSheet, Text, View } from "react-native";
 import { useLogin } from "../../api/auth";
 import { Button } from "../../components/Button";
 import { fieldStyles } from "../../components/fieldStyles";
+import { Logo } from "../../components/Logo";
 import { Screen } from "../../components/Screen";
 import { TextField } from "../../components/TextField";
 import { errorMessage, t, type MessageKey } from "../../lib/messages";
@@ -64,7 +65,7 @@ export const LoginScreen = () => {
   return (
     <Screen>
       <View style={styles.content}>
-        <Text style={styles.brand}>{t("app.name")}</Text>
+        <Logo variant="club" label={t("app.clubName")} />
         <Text accessibilityRole="header" style={styles.title}>
           {t("login.title")}
         </Text>
@@ -117,12 +118,6 @@ const styles = StyleSheet.create({
   content: {
     gap: spacing[4],
     paddingTop: spacing[8],
-  },
-  brand: {
-    color: colors.greenDark,
-    fontFamily: fonts.displayBlack,
-    fontSize: fontSizes.xl,
-    lineHeight: headingLineHeight(fontSizes.xl),
   },
   title: {
     color: colors.greenDark,
