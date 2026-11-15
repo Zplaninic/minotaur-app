@@ -6,6 +6,7 @@ export const locale = "en";
 // {name} placeholders are filled in by t().
 const messages = {
   "app.name": "Minotaur",
+  "app.clubName": "Minotaur sports climbing club",
   "nav.label": "Main",
   "nav.members": "Members",
   "nav.loggedInAs": "Logged in as {name}",

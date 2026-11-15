@@ -1,6 +1,6 @@
 .header {
-  background-color: var(--color-green-dark);
-  color: var(--color-beige-10);
+  background-color: var(--color-green-light-50);
+  color: var(--color-green-dark);
 }
 
 .nav {
@@ -13,18 +13,9 @@
   padding: var(--space-2) var(--space-4);
 }
 
-.nav :focus-visible {
-  outline-color: var(--color-beige-10);
-}
-
 .brand {
   display: inline-flex;
   align-items: center;
-  min-height: var(--space-12);
-  font-family: var(--font-display);
-  font-size: var(--text-xl);
-  font-weight: var(--weight-black);
-  text-decoration: none;
 }
 
 .link {
@@ -64,14 +55,14 @@
 .logout {
   min-height: var(--space-12);
   padding: 0 var(--space-4);
-  border: var(--border-width) solid var(--color-beige-10);
+  border: var(--border-width) solid var(--color-green-dark);
   background: none;
-  color: var(--color-beige-10);
+  color: var(--color-green-dark);
   font: inherit;
   font-weight: var(--weight-semibold);
   cursor: pointer;
 }
 
 .logout:hover:not(:disabled) {
-  background-color: var(--color-green-dark-90);
+  background-color: var(--color-green-light-70);
 }

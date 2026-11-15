@@ -1,0 +1,15 @@
+.logo {
+  display: block;
+  width: var(--width-logo);
+  max-width: 100%;
+  height: auto;
+}
+
+/* The artwork sits in the middle half of the file's height, so a centered
+   2:1 crop removes only empty space. */
+.compact {
+  display: block;
+  width: calc(var(--space-16) * 2);
+  height: var(--space-16);
+  object-fit: cover;
+}

@@ -2,6 +2,7 @@ import { toErrorCode } from "@repo/shared/client";
 import { Link, Navigate, Outlet, useLocation } from "@tanstack/react-router";
 import { useAbility, useLogout, useMe } from "../api/auth";
 import { Button } from "../components/Button";
+import { Logo } from "../components/Logo";
 import { errorMessage, t } from "../lib/messages";
 import styles from "./AppLayout.module.css";
 
@@ -42,7 +43,7 @@ export const AppLayout = () => {
       <header className={styles.header}>
         <nav className={styles.nav} aria-label={t("nav.label")}>
           <Link to="/" className={styles.brand}>
-            {t("app.name")}
+            <Logo variant="app" alt={t("app.name")} compact />
           </Link>
           {ability.can("read", "Member") ? (
             <Link to="/members" className={styles.link} activeProps={{ "aria-current": "page" }}>

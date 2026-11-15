@@ -76,4 +76,5 @@
 
   --width-dialog: 40rem;
   --width-page: 72rem;
+  --width-logo: calc(var(--space-16) * 4);
 }
