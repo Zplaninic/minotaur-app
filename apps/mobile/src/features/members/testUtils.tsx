@@ -1,4 +1,4 @@
-import type { GuardianResponse, MemberResponse } from "@repo/shared";
+import type { GuardianResponse, MeResponse, MemberResponse } from "@repo/shared";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import type { ReactNode } from "react";
 import { SafeAreaProvider } from "react-native-safe-area-context";
@@ -22,9 +22,18 @@ export const ana: MemberResponse = {
   name: "Ana",
   surname: "Horvat",
   birthday: "2014-03-12",
+  role: "child",
   taxNumber: null,
   email: null,
   phone: null,
   guardians: [iva],
   createdAt: "2026-11-15T17:00:00.000Z",
+};
+
+export const admin: MeResponse = {
+  memberId: "9",
+  name: "Zvonimir",
+  surname: "Admin",
+  email: "admin@example.com",
+  role: "admin",
 };

@@ -7,6 +7,7 @@ import { AddMemberScreen } from "./AddMemberScreen";
 import { iva, Providers } from "./testUtils";
 
 jest.mock("../../api/client", () => ({ api: { fetch: jest.fn() } }));
+jest.mock("../../lib/sessionToken", () => ({ clearSessionToken: jest.fn(), saveSessionToken: jest.fn() }));
 
 const mockBack = jest.fn();
 jest.mock("expo-router", () => ({ useRouter: () => ({ push: jest.fn(), back: mockBack }) }));

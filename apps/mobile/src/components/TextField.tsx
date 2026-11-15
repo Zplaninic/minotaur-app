@@ -4,7 +4,10 @@ import { FieldError } from "./FieldError";
 import { FieldLabel } from "./FieldLabel";
 import { fieldStyles } from "./fieldStyles";
 
-type TextFieldProps = Pick<TextInputProps, "keyboardType" | "autoCapitalize" | "maxLength" | "inputMode"> & {
+type TextFieldProps = Pick<
+  TextInputProps,
+  "keyboardType" | "autoCapitalize" | "maxLength" | "inputMode" | "autoComplete" | "textContentType" | "secureTextEntry"
+> & {
   label: string;
   value: string;
   onChangeText: (value: string) => void;
@@ -12,7 +15,8 @@ type TextFieldProps = Pick<TextInputProps, "keyboardType" | "autoCapitalize" | "
   optional?: boolean;
 };
 
-// Autofill is off: the form is filled in for other people, not for the person holding the phone.
+// Autofill is off by default: most forms are filled in for other people. The
+// login form turns it back on with autoComplete and textContentType.
 export const TextField = ({ label, value, onChangeText, error, optional = false, ...inputProps }: TextFieldProps) => (
   <View style={fieldStyles.field}>
     <FieldLabel label={label} optional={optional} />
@@ -23,7 +27,7 @@ export const TextField = ({ label, value, onChangeText, error, optional = false,
       accessibilityHint={error}
       autoComplete="off"
       autoCorrect={false}
-      importantForAutofill="no"
+      importantForAutofill={inputProps.autoComplete && inputProps.autoComplete !== "off" ? "yes" : "no"}
       textContentType="none"
       placeholderTextColor={colors.greenDark70}
       style={[fieldStyles.control, error ? fieldStyles.controlInvalid : null]}

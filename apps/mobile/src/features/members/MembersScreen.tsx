@@ -3,6 +3,7 @@ import { toErrorCode } from "@repo/shared/client";
 import { useRouter } from "expo-router";
 import { ActivityIndicator, FlatList, StyleSheet, Text, View } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
+import { useAbility } from "../../api/auth";
 import { useMemberPages } from "../../api/members";
 import { Button } from "../../components/Button";
 import { errorMessage, t } from "../../lib/messages";
@@ -43,6 +44,7 @@ const ListState = () => {
 
 export const MembersScreen = () => {
   const router = useRouter();
+  const ability = useAbility();
   const members = useMemberPages(DEFAULT_PAGE_SIZE);
   const items = members.data?.pages.flatMap((page) => page.items) ?? [];
 
@@ -53,9 +55,11 @@ export const MembersScreen = () => {
         keyExtractor={(member) => member.id}
         renderItem={({ item }) => <MemberRow member={item} />}
         ListHeaderComponent={
-          <View style={styles.header}>
-            <Button label={t("members.add")} onPress={() => router.push("/members/new")} />
-          </View>
+          ability.can("create", "Member") ? (
+            <View style={styles.header}>
+              <Button label={t("members.add")} onPress={() => router.push("/members/new")} />
+            </View>
+          ) : undefined
         }
         ListEmptyComponent={<ListState />}
         ListFooterComponent={

@@ -4,24 +4,12 @@ import { Figtree_900Black } from "@expo-google-fonts/figtree/900Black";
 import { RedHatDisplay_400Regular } from "@expo-google-fonts/red-hat-display/400Regular";
 import { RedHatDisplay_600SemiBold } from "@expo-google-fonts/red-hat-display/600SemiBold";
 import { RedHatDisplay_900Black } from "@expo-google-fonts/red-hat-display/900Black";
-import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
+import { QueryClientProvider } from "@tanstack/react-query";
 import { useFonts } from "expo-font";
-import { Stack } from "expo-router";
 import { StatusBar } from "expo-status-bar";
 import { SafeAreaProvider } from "react-native-safe-area-context";
-import { t } from "../src/lib/messages";
-import { colors, fonts } from "../src/theme/tokens";
-
-// Native headers only on the members screens; other screens draw their own heading.
-const headerOptions = {
-  headerShown: true,
-  headerTintColor: colors.greenDark,
-  headerStyle: { backgroundColor: colors.beige10 },
-  headerTitleStyle: { fontFamily: fonts.displayBlack },
-  headerBackButtonDisplayMode: "minimal",
-} as const;
-
-const queryClient = new QueryClient();
+import { queryClient } from "../src/api/queryClient";
+import { RootNavigator } from "../src/features/auth/RootNavigator";
 
 export default function RootLayout() {
   const [fontsLoaded, fontError] = useFonts({
@@ -42,13 +30,7 @@ export default function RootLayout() {
     <QueryClientProvider client={queryClient}>
       <SafeAreaProvider>
         <StatusBar style="dark" />
-        <Stack screenOptions={{ headerShown: false }}>
-          <Stack.Screen name="members/index" options={{ ...headerOptions, title: t("members.title") }} />
-          <Stack.Screen
-            name="members/new"
-            options={{ ...headerOptions, title: t("memberForm.title"), presentation: "modal" }}
-          />
-        </Stack>
+        <RootNavigator />
       </SafeAreaProvider>
     </QueryClientProvider>
   );
