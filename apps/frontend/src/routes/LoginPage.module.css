@@ -1,0 +1,26 @@
+.page {
+  display: grid;
+  min-height: 100vh;
+  place-items: center;
+  padding: var(--space-6) var(--space-4);
+}
+
+.card {
+  display: grid;
+  gap: var(--space-6);
+  width: 100%;
+  max-width: var(--width-dialog);
+  padding: var(--space-8) var(--space-6);
+  border: var(--border-width) solid var(--color-green-dark-30);
+  background-color: var(--color-beige-10);
+}
+
+.brand {
+  font-family: var(--font-display);
+  font-size: var(--text-xl);
+  font-weight: var(--weight-black);
+}
+
+.title {
+  font-size: var(--text-2xl);
+}

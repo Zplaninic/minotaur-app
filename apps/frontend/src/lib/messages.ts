@@ -8,6 +8,22 @@ const messages = {
   "app.name": "Minotaur",
   "nav.label": "Main",
   "nav.members": "Members",
+  "nav.loggedInAs": "Logged in as {name}",
+  "nav.logout": "Log out",
+
+  "login.title": "Log in",
+  "login.email": "Email",
+  "login.password": "Password",
+  "login.showPassword": "Show password",
+  "login.submit": "Log in",
+  "login.submitting": "Logging in…",
+  "login.error.email": "Enter a valid email address.",
+  "login.error.password": "Enter your password.",
+  "login.error.credentials": "Email or password is wrong.",
+  "login.error.rateLimited": "Too many attempts. Wait a minute and try again.",
+
+  "auth.checking": "Checking your login…",
+  "auth.noAccess": "Your role does not give you access to this page.",
   "notFound.title": "Page not found",
   "notFound.home": "Back to the start page",
 
@@ -75,6 +91,9 @@ const messages = {
 
 const errorMessages: Record<ClientErrorCode, string> = {
   VALIDATION_ERROR: "Some of the information is not valid. Check it and try again.",
+  UNAUTHORIZED: "Your login has ended. Log in again.",
+  FORBIDDEN: "You are not allowed to do this.",
+  RATE_LIMITED: "Too many attempts. Wait a minute and try again.",
   NOT_FOUND: "We could not find what you were looking for.",
   CONFLICT: "This already exists.",
   INTERNAL_ERROR: "Something went wrong on our side. Try again in a moment.",

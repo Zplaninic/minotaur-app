@@ -17,6 +17,7 @@ const ana: MemberResponse = {
   name: "Ana",
   surname: "Horvat",
   birthday: "2014-03-12",
+  role: "child",
   taxNumber: null,
   email: null,
   phone: null,
@@ -32,6 +33,9 @@ beforeEach(() => {
   members = [ana];
   fetchMock.mockReset();
   fetchMock.mockImplementation(async (path, _schema, init) => {
+    if (path === "/me") {
+      return { memberId: "9", name: "Zvonimir", surname: "Admin", email: "admin@example.com", role: "admin" };
+    }
     if (path === "/orgs") {
       return { items: [{ id: "1", name: "SPK Minotaur" }] };
     }
@@ -57,7 +61,7 @@ const renderPage = () =>
   );
 
 const openDialog = async () => {
-  fireEvent.click(screen.getByRole("button", { name: t("members.add") }));
+  fireEvent.click(await screen.findByRole("button", { name: t("members.add") }));
   const dialog = screen.getByRole("dialog", { name: t("memberForm.title") });
   await within(dialog).findByLabelText(t("memberForm.name"));
   return dialog;

@@ -48,3 +48,30 @@
   margin: 0 auto;
   padding: var(--space-6) var(--space-4);
 }
+
+.account {
+  display: inline-flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: var(--space-2) var(--space-4);
+  margin-left: auto;
+}
+
+.name {
+  font-size: var(--text-sm);
+}
+
+.logout {
+  min-height: var(--space-12);
+  padding: 0 var(--space-4);
+  border: var(--border-width) solid var(--color-beige-10);
+  background: none;
+  color: var(--color-beige-10);
+  font: inherit;
+  font-weight: var(--weight-semibold);
+  cursor: pointer;
+}
+
+.logout:hover:not(:disabled) {
+  background-color: var(--color-green-dark-90);
+}

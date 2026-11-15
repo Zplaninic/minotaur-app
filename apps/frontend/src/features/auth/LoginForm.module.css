@@ -1,0 +1,25 @@
+.form {
+  display: grid;
+  gap: var(--space-4);
+}
+
+.toggle {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--space-2);
+  min-height: var(--space-12);
+  cursor: pointer;
+}
+
+.toggle input {
+  width: var(--space-4);
+  height: var(--space-4);
+  margin: 0;
+  accent-color: var(--color-green-dark);
+}
+
+.formError {
+  padding: var(--space-3) var(--space-4);
+  border-left: var(--space-1) solid var(--color-red);
+  background-color: var(--color-red-10);
+}

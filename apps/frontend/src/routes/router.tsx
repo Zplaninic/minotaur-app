@@ -1,29 +1,48 @@
-import { createRootRoute, createRoute, createRouter } from "@tanstack/react-router";
+import { createRootRoute, createRoute, createRouter, Outlet, type RouterHistory } from "@tanstack/react-router";
+import { z } from "zod";
+import { AppLayout } from "./AppLayout";
 import { HomePage } from "./HomePage";
+import { LoginPage } from "./LoginPage";
 import { MembersPage } from "./MembersPage";
 import { NotFoundPage } from "./NotFoundPage";
-import { RootLayout } from "./RootLayout";
 
 const rootRoute = createRootRoute({
-  component: RootLayout,
+  component: Outlet,
   notFoundComponent: NotFoundPage,
 });
 
-const homeRoute = createRoute({
+const loginRoute = createRoute({
   getParentRoute: () => rootRoute,
+  path: "/login",
+  validateSearch: z.object({ redirect: z.string().optional() }),
+  component: LoginPage,
+});
+
+// Pathless layout: every page below needs a login.
+const appRoute = createRoute({
+  getParentRoute: () => rootRoute,
+  id: "app",
+  component: AppLayout,
+});
+
+const homeRoute = createRoute({
+  getParentRoute: () => appRoute,
   path: "/",
   component: HomePage,
 });
 
 const membersRoute = createRoute({
-  getParentRoute: () => rootRoute,
+  getParentRoute: () => appRoute,
   path: "/members",
   component: MembersPage,
 });
 
-export const router = createRouter({
-  routeTree: rootRoute.addChildren([homeRoute, membersRoute]),
-});
+const routeTree = rootRoute.addChildren([loginRoute, appRoute.addChildren([homeRoute, membersRoute])]);
+
+export const createAppRouter = (history?: RouterHistory) =>
+  createRouter({ routeTree, ...(history ? { history } : {}) });
+
+export const router = createAppRouter();
 
 declare module "@tanstack/react-router" {
   interface Register {
