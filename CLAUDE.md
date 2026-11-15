@@ -44,17 +44,25 @@ apps/
       theme/                design tokens from DESIGN.md
       lib/                  utilities, formatting helpers
 packages/
-  shared/                   @repo/shared: zod schemas and inferred types
+  shared/                   @repo/shared: zod schemas, types, and client code
     src/
-      <resource>.ts         schemas and types for one resource
-      common.ts             pagination, id, errorResponse
-      index.ts              re-exports everything public
+      types/                imported as "@repo/shared", by all apps
+        <resource>.ts       schemas and types for one resource
+        common.ts           pagination, id, errorResponse
+      client/               imported as "@repo/shared/client", by frontend and mobile
+        apiClient.ts        createApiClient: fetch, parse with zod, ApiError
+        <resource>.ts       query keys, query options, requests for one resource
+        <name>Draft.ts      form logic: draft to request body, field error codes
+      index.ts              re-exports types/
 ```
 
 ## Boundaries
 - Dependency direction: backend -> shared, frontend -> shared,
   mobile -> shared. The three apps never import from each other. Shared
   imports only zod and must run in the browser, Node, and React Native.
+- The backend imports only `@repo/shared`, never `@repo/shared/client`.
+- Code that frontend and mobile both need, and that does not touch the DOM,
+  React Native, or React, goes in shared `client/` instead of being copied.
 - All API request/response schemas live in shared as zod schemas. Types are
   inferred with z.infer. Never duplicate a type or hand-write an interface a
   schema covers.
@@ -105,7 +113,14 @@ Always run per package, never for the whole repo.
 - Define a zod schema first, then export its type with z.infer.
 - Name schemas by role: createUserBody, updateUserBody, userResponse,
   listUsersQuery. Types use PascalCase: CreateUserBody, UserResponse.
-- No business logic and no side effects. Only schemas, types, and constants.
+- `types/`: no business logic and no side effects. Only schemas, types, and
+  constants.
+- `client/`: pure functions for the client apps (API client, query keys and
+  query options, request functions, form logic, formatting). No React or
+  TanStack Query imports: export plain query option objects and let each app
+  wrap them in hooks, so an app never bundles two copies of React. No side
+  effects at import time. Form logic returns error codes; each app maps them
+  to its own messages.
 - Response schemas describe what clients receive, not database rows. Never
   include password hashes or internal flags.
 - Dates use zod's ISO datetime validator, never a plain string.
