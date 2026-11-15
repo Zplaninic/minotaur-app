@@ -6,3 +6,14 @@ generator client {
 datasource db {
   provider = "postgresql"
 }
+
+model Org {
+  id          Int      @id @default(autoincrement())
+  name        String
+  contactName String
+  email       String
+  createdAt   DateTime @default(now()) @db.Timestamptz
+  updatedAt   DateTime @updatedAt @db.Timestamptz
+
+  @@map("org")
+}
