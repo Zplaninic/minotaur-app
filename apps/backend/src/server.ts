@@ -3,6 +3,9 @@ import { serializerCompiler, validatorCompiler } from "fastify-type-provider-zod
 import { config } from "./config.js";
 import { dbPlugin } from "./plugins/db.js";
 import { errorHandlerPlugin } from "./plugins/errorHandler.js";
+import { guardianRoutes } from "./routes/guardians.js";
+import { memberRoutes } from "./routes/members.js";
+import { orgRoutes } from "./routes/orgs.js";
 
 export const buildServer = async (): Promise<FastifyInstance> => {
   const app = Fastify({
@@ -22,7 +25,9 @@ export const buildServer = async (): Promise<FastifyInstance> => {
   await app.register(errorHandlerPlugin);
   await app.register(dbPlugin);
 
-  // Register each resource here: await app.register(<resource>Routes, { prefix: "/<resource>" });
+  await app.register(orgRoutes, { prefix: "/orgs" });
+  await app.register(guardianRoutes, { prefix: "/guardians" });
+  await app.register(memberRoutes, { prefix: "/members" });
 
   return app;
 };
