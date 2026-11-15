@@ -59,7 +59,10 @@ export const memberResponse = z.object({
 });
 export type MemberResponse = z.infer<typeof memberResponse>;
 
-export const listMembersQuery = paginationQuery;
+export const listMembersQuery = paginationQuery.extend({
+  // Only members with this role.
+  role: memberRole.optional(),
+});
 export type ListMembersQuery = z.infer<typeof listMembersQuery>;
 
 export const listMembersResponse = paginatedResponse(memberResponse);

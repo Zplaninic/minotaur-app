@@ -2,7 +2,7 @@ import { AbilityBuilder, createMongoAbility, type MongoAbility } from "@casl/abi
 import type { MemberRole } from "../types/member.js";
 
 export type Action = "manage" | "read" | "create" | "update" | "delete";
-export type Subject = "Org" | "Guardian" | "Member" | "all";
+export type Subject = "Org" | "Guardian" | "Member" | "Group" | "all";
 export type AppAbility = MongoAbility<[Action, Subject]>;
 
 export type AbilityUser = { memberId: string; role: MemberRole };
@@ -10,12 +10,16 @@ export type AbilityUser = { memberId: string; role: MemberRole };
 // The only place that says what each role may do. The backend enforces it;
 // the apps use it to hide what is not allowed.
 export const defineAbilityFor = (user: AbilityUser): AppAbility => {
-  const { can, build } = new AbilityBuilder<AppAbility>(createMongoAbility);
+  const { can, cannot, build } = new AbilityBuilder<AppAbility>(createMongoAbility);
 
   switch (user.role) {
     case "admin":
+      can("manage", "all");
+      break;
     case "trainer":
       can("manage", "all");
+      // Trainers see the groups; only admins set them up.
+      cannot(["create", "update", "delete"], "Group");
       break;
     case "member":
     case "child":
