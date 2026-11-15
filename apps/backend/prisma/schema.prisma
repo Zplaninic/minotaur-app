@@ -14,6 +14,50 @@ model Org {
   email       String
   createdAt   DateTime @default(now()) @db.Timestamptz
   updatedAt   DateTime @updatedAt @db.Timestamptz
+  members     Member[]
 
   @@map("org")
+}
+
+model Guardian {
+  id        Int              @id @default(autoincrement())
+  name      String
+  surname   String
+  email     String?
+  phone     String?
+  createdAt DateTime         @default(now()) @db.Timestamptz
+  updatedAt DateTime         @updatedAt @db.Timestamptz
+  members   MemberGuardian[]
+
+  @@map("guardian")
+}
+
+model Member {
+  id        Int              @id @default(autoincrement())
+  orgId     Int
+  name      String
+  surname   String
+  birthday  DateTime         @db.Date
+  taxNumber String?          @unique
+  email     String?
+  phone     String?
+  createdAt DateTime         @default(now()) @db.Timestamptz
+  updatedAt DateTime         @updatedAt @db.Timestamptz
+  org       Org              @relation(fields: [orgId], references: [id], onDelete: Restrict)
+  guardians MemberGuardian[]
+
+  @@index([orgId])
+  @@map("member")
+}
+
+model MemberGuardian {
+  memberId   Int
+  guardianId Int
+  createdAt  DateTime @default(now()) @db.Timestamptz
+  member     Member   @relation(fields: [memberId], references: [id], onDelete: Cascade)
+  guardian   Guardian @relation(fields: [guardianId], references: [id], onDelete: Restrict)
+
+  @@id([memberId, guardianId])
+  @@index([guardianId])
+  @@map("member_guardian")
 }
