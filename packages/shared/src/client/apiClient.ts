@@ -22,11 +22,19 @@ export type ApiClient = {
   fetch: <Schema extends z.ZodType>(path: string, schema: Schema, init?: RequestInit) => Promise<z.infer<Schema>>;
 };
 
+export type ApiClientOptions = {
+  // Extra headers for every request, e.g. the mobile app's bearer token.
+  getHeaders?: () => Promise<Record<string, string>>;
+};
+
 // Every response is parsed with its shared schema; every failure becomes an ApiError.
-export const createApiClient = (baseUrl: string): ApiClient => ({
+export const createApiClient = (baseUrl: string, options: ApiClientOptions = {}): ApiClient => ({
   fetch: async (path, schema, init = {}) => {
     const headers = new Headers(init.headers);
     headers.set("Accept", "application/json");
+    for (const [name, value] of Object.entries((await options.getHeaders?.()) ?? {})) {
+      headers.set(name, value);
+    }
 
     let response: Response;
     try {

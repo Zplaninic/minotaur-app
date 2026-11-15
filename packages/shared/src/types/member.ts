@@ -6,6 +6,13 @@ import { email, personName, phone } from "./person.js";
 // Members younger than this need at least one guardian.
 export const ADULT_AGE = 18;
 
+// Mirrored by the Postgres enum member_role.
+export const memberRole = z.enum(["child", "member", "trainer", "admin"]);
+export type MemberRole = z.infer<typeof memberRole>;
+
+// Every member created through the API gets this role.
+export const DEFAULT_MEMBER_ROLE: MemberRole = "child";
+
 // Croatian OIB format: 11 digits. The checksum is not verified.
 export const taxNumber = z.string().trim().regex(/^\d{11}$/);
 
@@ -43,6 +50,7 @@ export const memberResponse = z.object({
   name: z.string(),
   surname: z.string(),
   birthday: z.iso.date(),
+  role: memberRole,
   taxNumber: z.string().nullable(),
   email: z.string().nullable(),
   phone: z.string().nullable(),

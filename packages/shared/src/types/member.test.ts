@@ -57,6 +57,7 @@ describe("memberResponse", () => {
       name: "Ana",
       surname: "Horvat",
       birthday: "2014-03-12",
+      role: "child",
       taxNumber: null,
       email: null,
       phone: null,
@@ -65,5 +66,11 @@ describe("memberResponse", () => {
     };
     expect(memberResponse.parse(value)).toEqual(value);
     expect(memberResponse.safeParse({ ...value, createdAt: "2026-11-15" }).success).toBe(false);
+  });
+});
+
+describe("email", () => {
+  it("is trimmed and stored lowercase", () => {
+    expect(createMemberBody.parse({ ...validBody, email: " Ana@Example.COM " }).email).toBe("ana@example.com");
   });
 });

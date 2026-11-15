@@ -5,7 +5,8 @@ export const MAX_EMAIL_LENGTH = 254;
 
 export const personName = z.string().trim().min(1).max(MAX_NAME_LENGTH);
 
-export const email = z.email().max(MAX_EMAIL_LENGTH);
+// Stored lowercase, so "Ana@X.com" and "ana@x.com" are the same address.
+export const email = z.string().trim().toLowerCase().pipe(z.email().max(MAX_EMAIL_LENGTH));
 
 // Digits with an optional leading +, spaces, dashes and slashes allowed.
 export const phone = z

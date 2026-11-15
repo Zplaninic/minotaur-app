@@ -13,6 +13,10 @@
     "./client": {
       "types": "./dist/client/index.d.ts",
       "default": "./dist/client/index.js"
+    },
+    "./auth": {
+      "types": "./dist/auth/index.d.ts",
+      "default": "./dist/auth/index.js"
     }
   },
   "files": [
@@ -26,7 +30,8 @@
     "test": "vitest run"
   },
   "dependencies": {
-    "zod": "catalog:"
+    "zod": "catalog:",
+    "@casl/ability": "7.1.3"
   },
   "devDependencies": {
     "oxlint": "catalog:",

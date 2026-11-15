@@ -48,3 +48,19 @@ describe("toErrorCode", () => {
     expect(toErrorCode(new Error("boom"))).toBe("UNEXPECTED_RESPONSE");
   });
 });
+
+describe("createApiClient options", () => {
+  it("adds the headers from getHeaders to every request", async () => {
+    let sentHeaders: Headers | undefined;
+    vi.stubGlobal(
+      "fetch",
+      vi.fn(async (_url: string, init: RequestInit) => {
+        sentHeaders = new Headers(init.headers);
+        return Response.json({ name: "a" });
+      }),
+    );
+    const withToken = createApiClient("/api", { getHeaders: async () => ({ Authorization: "Bearer abc" }) });
+    await withToken.fetch("/things", schema);
+    expect(sentHeaders?.get("Authorization")).toBe("Bearer abc");
+  });
+});
