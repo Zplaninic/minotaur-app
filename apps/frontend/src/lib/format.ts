@@ -1,6 +1,11 @@
-import { formatCalendarDate as formatCalendarDateIn } from "@repo/shared/client";
+import {
+  formatCalendarDate as formatCalendarDateIn,
+  formatTimeOfDay as formatTimeOfDayIn,
+} from "@repo/shared/client";
 import { locale } from "./messages";
 
 export { formatPersonName, formatSortedName } from "@repo/shared/client";
 
 export const formatCalendarDate = (isoDate: string): string => formatCalendarDateIn(isoDate, locale);
+
+export const formatTimeOfDay = (time: string): string => formatTimeOfDayIn(time, locale);

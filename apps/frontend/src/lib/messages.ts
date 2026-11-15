@@ -1,4 +1,5 @@
-import type { ClientErrorCode, MemberFieldError } from "@repo/shared/client";
+import type { Weekday } from "@repo/shared";
+import type { ClientErrorCode, GroupFieldError, MemberFieldError } from "@repo/shared/client";
 
 export const locale = "en";
 
@@ -9,6 +10,7 @@ const messages = {
   "app.clubName": "Minotaur sports climbing club",
   "nav.label": "Main",
   "nav.members": "Members",
+  "nav.groups": "Groups",
   "nav.loggedInAs": "Logged in as {name}",
   "nav.logout": "Log out",
 
@@ -88,6 +90,44 @@ const messages = {
   "memberForm.error.guardianDuplicate": "The same guardian is listed twice.",
   "memberForm.error.guardianRequired": "A member under {age} needs at least one guardian.",
   "memberForm.error.invalid": "Check this field.",
+
+  "weekday.monday": "Monday",
+  "weekday.tuesday": "Tuesday",
+  "weekday.wednesday": "Wednesday",
+  "weekday.thursday": "Thursday",
+  "weekday.friday": "Friday",
+  "weekday.saturday": "Saturday",
+  "weekday.sunday": "Sunday",
+
+  "groups.title": "Groups",
+  "groups.add": "Add group",
+  "groups.empty": "No groups yet.",
+  "groups.loading": "Loading groups…",
+  "groups.table.caption": "Training groups, sorted by trainer",
+  "groups.name": "{trainer} - {days} - {from} - {to}",
+  "groups.table.name": "Name",
+  "groups.table.owner": "Trainer",
+  "groups.table.days": "Days",
+  "groups.table.time": "Time",
+  "groups.timeRange": "{from} – {to}",
+
+  "groupForm.title": "Add group",
+  "groupForm.owner": "Trainer",
+  "groupForm.ownerPlaceholder": "Choose a trainer",
+  "groupForm.trainersLoading": "Loading trainers…",
+  "groupForm.trainersEmpty": "There is no trainer yet, so no group can be added.",
+  "groupForm.days": "Days",
+  "groupForm.from": "From",
+  "groupForm.to": "To",
+  "groupForm.submit": "Save group",
+  "groupForm.submitting": "Saving…",
+
+  "groupForm.error.owner": "Choose a trainer.",
+  "groupForm.error.days": "Choose at least one day.",
+  "groupForm.error.from": "Enter a start time.",
+  "groupForm.error.to": "Enter an end time.",
+  "groupForm.error.timeOrder": "The end time must be after the start time.",
+  "groupForm.error.invalid": "Check this field.",
 } as const;
 
 const errorMessages: Record<ClientErrorCode, string> = {
@@ -111,3 +151,7 @@ export const t = (key: MessageKey, params: MessageParams = {}): string =>
 export const errorMessage = (code: ClientErrorCode): string => errorMessages[code];
 
 export const memberFieldErrorKey = (code: MemberFieldError): MessageKey => `memberForm.error.${code}` as const;
+
+export const groupFieldErrorKey = (code: GroupFieldError): MessageKey => `groupForm.error.${code}` as const;
+
+export const weekdayKey = (day: Weekday): MessageKey => `weekday.${day}` as const;

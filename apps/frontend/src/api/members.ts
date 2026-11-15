@@ -6,6 +6,9 @@ import { api } from "./client";
 export const useMembers = (query: PaginationQuery) =>
   useQuery({ ...memberQueries.list(api, query), placeholderData: keepPreviousData });
 
+// The members who can own a group.
+export const useTrainers = () => useQuery(memberQueries.trainers(api));
+
 export const useCreateMember = () => {
   const queryClient = useQueryClient();
   return useMutation({

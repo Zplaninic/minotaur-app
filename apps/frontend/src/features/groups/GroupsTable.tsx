@@ -1,0 +1,58 @@
+import { toErrorCode } from "@repo/shared/client";
+import { useGroups } from "../../api/groups";
+import { Button } from "../../components/Button";
+import { formatSortedName, formatTimeOfDay } from "../../lib/format";
+import { errorMessage, t, weekdayKey } from "../../lib/messages";
+import { groupName } from "./groupName";
+import styles from "./GroupsTable.module.css";
+
+export const GroupsTable = () => {
+  const groups = useGroups();
+
+  if (groups.isPending) {
+    return <output>{t("groups.loading")}</output>;
+  }
+  if (groups.isError) {
+    return (
+      <div className={styles.state} role="alert">
+        <p>{errorMessage(toErrorCode(groups.error))}</p>
+        <div>
+          <Button variant="secondary" onClick={() => void groups.refetch()}>
+            {t("common.retry")}
+          </Button>
+        </div>
+      </div>
+    );
+  }
+  if (groups.data.items.length === 0) {
+    return <p className={styles.state}>{t("groups.empty")}</p>;
+  }
+
+  return (
+    <div className={styles.scroll}>
+      <table className={styles.table}>
+        <caption className={styles.caption}>{t("groups.table.caption")}</caption>
+        <thead>
+          <tr>
+            <th scope="col">{t("groups.table.name")}</th>
+            <th scope="col">{t("groups.table.owner")}</th>
+            <th scope="col">{t("groups.table.days")}</th>
+            <th scope="col">{t("groups.table.time")}</th>
+          </tr>
+        </thead>
+        <tbody>
+          {groups.data.items.map((group) => (
+            <tr key={group.id}>
+              <th scope="row">{groupName(group)}</th>
+              <td className={styles.nowrap}>{formatSortedName(group.owner)}</td>
+              <td>{group.days.map((day) => t(weekdayKey(day))).join(", ")}</td>
+              <td className={styles.nowrap}>
+                {t("groups.timeRange", { from: formatTimeOfDay(group.from), to: formatTimeOfDay(group.to) })}
+              </td>
+            </tr>
+          ))}
+        </tbody>
+      </table>
+    </div>
+  );
+};

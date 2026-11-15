@@ -1,6 +1,7 @@
 import { createRootRoute, createRoute, createRouter, Outlet, type RouterHistory } from "@tanstack/react-router";
 import { z } from "zod";
 import { AppLayout } from "./AppLayout";
+import { GroupsPage } from "./GroupsPage";
 import { HomePage } from "./HomePage";
 import { LoginPage } from "./LoginPage";
 import { MembersPage } from "./MembersPage";
@@ -37,7 +38,16 @@ const membersRoute = createRoute({
   component: MembersPage,
 });
 
-const routeTree = rootRoute.addChildren([loginRoute, appRoute.addChildren([homeRoute, membersRoute])]);
+const groupsRoute = createRoute({
+  getParentRoute: () => appRoute,
+  path: "/groups",
+  component: GroupsPage,
+});
+
+const routeTree = rootRoute.addChildren([
+  loginRoute,
+  appRoute.addChildren([homeRoute, membersRoute, groupsRoute]),
+]);
 
 export const createAppRouter = (history?: RouterHistory) =>
   createRouter({ routeTree, ...(history ? { history } : {}) });

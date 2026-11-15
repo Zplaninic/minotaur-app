@@ -50,6 +50,11 @@ export const AppLayout = () => {
               {t("nav.members")}
             </Link>
           ) : null}
+          {ability.can("read", "Group") ? (
+            <Link to="/groups" className={styles.link} activeProps={{ "aria-current": "page" }}>
+              {t("nav.groups")}
+            </Link>
+          ) : null}
           <div className={styles.account}>
             <span className={styles.name}>{t("nav.loggedInAs", { name: `${me.data.name} ${me.data.surname}` })}</span>
             <button
