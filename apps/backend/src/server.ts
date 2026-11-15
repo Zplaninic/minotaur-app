@@ -1,10 +1,13 @@
 import Fastify, { type FastifyInstance } from "fastify";
 import { serializerCompiler, validatorCompiler } from "fastify-type-provider-zod";
 import { config } from "./config.js";
+import { authPlugin } from "./plugins/auth.js";
 import { dbPlugin } from "./plugins/db.js";
 import { errorHandlerPlugin } from "./plugins/errorHandler.js";
+import { authRoutes } from "./routes/auth.js";
 import { guardianRoutes } from "./routes/guardians.js";
 import { memberRoutes } from "./routes/members.js";
+import { meRoutes } from "./routes/me.js";
 import { orgRoutes } from "./routes/orgs.js";
 
 export const buildServer = async (): Promise<FastifyInstance> => {
@@ -24,7 +27,10 @@ export const buildServer = async (): Promise<FastifyInstance> => {
 
   await app.register(errorHandlerPlugin);
   await app.register(dbPlugin);
+  await app.register(authPlugin);
 
+  await app.register(authRoutes, { prefix: "/auth" });
+  await app.register(meRoutes, { prefix: "/me" });
   await app.register(orgRoutes, { prefix: "/orgs" });
   await app.register(guardianRoutes, { prefix: "/guardians" });
   await app.register(memberRoutes, { prefix: "/members" });

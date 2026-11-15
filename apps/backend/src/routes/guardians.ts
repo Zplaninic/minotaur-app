@@ -8,7 +8,10 @@ export const guardianRoutes: FastifyPluginAsync = async (app) => {
 
   routes.get(
     "/",
-    { schema: { response: { 200: listGuardiansResponse, 500: errorResponse } } },
+    {
+      onRequest: app.requireAbility("read", "Guardian"),
+      schema: { response: { 200: listGuardiansResponse, 401: errorResponse, 403: errorResponse, 500: errorResponse } },
+    },
     async () => listGuardians(app.db),
   );
 };

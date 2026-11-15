@@ -43,6 +43,21 @@ pnpm --filter @repo/frontend dev    # web app on http://localhost:5173
 pnpm --filter @repo/mobile dev      # Expo dev server
 ```
 
+## Logins
+
+Only trainers and admins log in, with their member email. There is no
+sign-up and no password reset yet; logins are managed with backend commands,
+which ask for the password without showing it:
+
+```sh
+# First admin: creates the member and the login
+pnpm --filter @repo/backend login:create --org-id 1 --name <name> --surname <surname> --birthday <YYYY-MM-DD> --email <email> --role admin
+# Existing member becomes trainer or admin (uses the member's email)
+pnpm --filter @repo/backend login:create --member-id <id> --role trainer
+pnpm --filter @repo/backend login:set-password --member-id <id>
+pnpm --filter @repo/backend member:set-role --member-id <id> --role <child|member|trainer|admin>
+```
+
 Each package also has `typecheck`, `lint`, and `test`:
 
 ```sh

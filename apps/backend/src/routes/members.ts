@@ -9,9 +9,10 @@ export const memberRoutes: FastifyPluginAsync = async (app) => {
   routes.get(
     "/",
     {
+      onRequest: app.requireAbility("read", "Member"),
       schema: {
         querystring: listMembersQuery,
-        response: { 200: listMembersResponse, 400: errorResponse, 500: errorResponse },
+        response: { 200: listMembersResponse, 400: errorResponse, 401: errorResponse, 403: errorResponse, 500: errorResponse },
       },
     },
     async (request) => listMembers(app.db, request.query),
@@ -20,11 +21,15 @@ export const memberRoutes: FastifyPluginAsync = async (app) => {
   routes.post(
     "/",
     {
+      // A new member may bring new guardians, so both abilities are needed.
+      onRequest: [app.requireAbility("create", "Member"), app.requireAbility("create", "Guardian")],
       schema: {
         body: createMemberBody,
         response: {
           201: memberResponse,
           400: errorResponse,
+          401: errorResponse,
+          403: errorResponse,
           404: errorResponse,
           409: errorResponse,
           500: errorResponse,

@@ -11,9 +11,14 @@
     "lint": "oxlint src test",
     "test": "vitest run",
     "prisma": "prisma",
+    "login:create": "tsx --env-file=.env src/cli/loginCreate.ts",
+    "login:set-password": "tsx --env-file=.env src/cli/loginSetPassword.ts",
+    "member:set-role": "tsx --env-file=.env src/cli/memberSetRole.ts",
     "postinstall": "prisma generate"
   },
   "dependencies": {
+    "@fastify/cookie": "11.1.5",
+    "@fastify/rate-limit": "11.2.2",
     "@prisma/adapter-pg": "7.10.1",
     "@prisma/client": "7.10.1",
     "@repo/shared": "workspace:*",

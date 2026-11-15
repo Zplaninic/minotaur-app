@@ -8,7 +8,10 @@ export const orgRoutes: FastifyPluginAsync = async (app) => {
 
   routes.get(
     "/",
-    { schema: { response: { 200: listOrgsResponse, 500: errorResponse } } },
+    {
+      onRequest: app.requireAbility("read", "Org"),
+      schema: { response: { 200: listOrgsResponse, 401: errorResponse, 403: errorResponse, 500: errorResponse } },
+    },
     async () => listOrgs(app.db),
   );
 };

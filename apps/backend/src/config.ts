@@ -6,6 +6,8 @@ const envSchema = z.object({
   PORT: z.coerce.number().int().min(1).max(65535).default(3000),
   LOG_LEVEL: z.enum(["fatal", "error", "warn", "info", "debug", "trace", "silent"]).default("info"),
   DATABASE_URL: z.url(),
+  // The web app's origin. Requests that change data with a session cookie must come from it.
+  WEB_ORIGIN: z.url(),
 });
 
 export type Config = z.infer<typeof envSchema>;
