@@ -42,7 +42,14 @@ export const GroupPage = () => {
       ) : null}
       {group.isSuccess ? (
         <>
-          <h1 className={styles.title}>{groupName(group.data)}</h1>
+          <div className={styles.header}>
+            <h1 className={styles.title}>{groupName(group.data)}</h1>
+            {ability.can("read", "Attendance") ? (
+              <Link to="/groups/$groupId/attendance" params={{ groupId }} search={{}} className={styles.attendance}>
+                {t("group.attendance")}
+              </Link>
+            ) : null}
+          </div>
           <dl className={styles.facts}>
             <div>
               <dt>{t("group.owner")}</dt>

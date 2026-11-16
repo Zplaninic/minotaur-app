@@ -1,0 +1,24 @@
+.wrapper {
+  display: grid;
+  gap: var(--space-3);
+}
+
+.count {
+  font-size: var(--text-sm);
+}
+
+.list {
+  margin: 0;
+  padding: 0;
+  list-style: none;
+  border: var(--border-width) solid var(--color-green-dark-30);
+  background-color: var(--color-beige-10);
+}
+
+.list li + li {
+  border-top: var(--border-width) solid var(--color-green-dark-30);
+}
+
+.list li:has(:checked) {
+  background-color: var(--color-green-light-20);
+}

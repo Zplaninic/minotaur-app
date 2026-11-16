@@ -99,13 +99,14 @@ Logo colors per background:
 
 ## Interface
 
-| Token            | Value                     |
-| ---------------- | ------------------------- |
-| `border-width`   | 1px                       |
-| corner radius    | none, square corners      |
-| `color-backdrop` | `green-dark` at 50% alpha |
-| `width-dialog`   | 40rem, maximum            |
-| `width-page`     | 72rem, maximum            |
+| Token               | Value                                     |
+| ------------------- | ----------------------------------------- |
+| `border-width`      | 1px                                       |
+| corner radius       | none, square corners                      |
+| `color-backdrop`    | `green-dark` at 50% alpha                 |
+| `width-dialog`      | 40rem, maximum                            |
+| `width-page`        | 72rem, maximum                            |
+| `breakpoint-narrow` | 48rem; narrower screens get phone layouts |
 
 Borders on inputs use `green-dark-60`; table lines use `green-dark-30`. A
 field with an error has a `red` border and its message in `green-dark` text

@@ -53,3 +53,20 @@
   border: var(--border-width) solid var(--color-green-dark-30);
   background-color: var(--color-beige-20);
 }
+
+/* A link styled like the primary button. */
+.attendance {
+  display: inline-flex;
+  align-items: center;
+  min-height: var(--space-12);
+  padding: var(--space-2) var(--space-6);
+  border: var(--border-width) solid var(--color-green-dark);
+  background-color: var(--color-green-dark);
+  color: var(--color-beige-10);
+  font-weight: var(--weight-semibold);
+  text-decoration: none;
+}
+
+.attendance:hover {
+  background-color: var(--color-green-dark-90);
+}

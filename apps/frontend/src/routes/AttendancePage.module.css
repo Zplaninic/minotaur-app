@@ -1,0 +1,33 @@
+.page {
+  display: grid;
+  gap: var(--space-6);
+}
+
+.back {
+  justify-self: start;
+  font-weight: var(--weight-semibold);
+  text-underline-offset: var(--space-1);
+}
+
+.header {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: flex-end;
+  justify-content: space-between;
+  gap: var(--space-4);
+}
+
+.title {
+  font-size: var(--text-3xl);
+}
+
+.group {
+  margin-top: var(--space-1);
+  font-weight: var(--weight-semibold);
+}
+
+.actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--space-3);
+}

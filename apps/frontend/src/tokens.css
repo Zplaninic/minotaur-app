@@ -76,5 +76,7 @@
 
   --width-dialog: 40rem;
   --width-page: 72rem;
+  /* Read by useNarrowScreen: custom properties cannot be used in @media. */
+  --breakpoint-narrow: 48rem;
   --width-logo: calc(var(--space-16) * 4);
 }
