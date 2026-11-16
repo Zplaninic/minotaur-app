@@ -27,7 +27,7 @@ describe("groupKeys", () => {
 describe("groupMemberCandidates", () => {
   it("keeps children and members who are not in the group yet", () => {
     const members = [member("1", "child"), member("2", "member"), member("3", "trainer"), member("4", "admin")];
-    const current = [{ id: "2", name: "Ana", surname: "Horvat" }];
+    const current = [member("2", "member")];
     expect(groupMemberCandidates(members, current).map((candidate) => candidate.id)).toEqual(["1"]);
   });
 });

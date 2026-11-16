@@ -1,6 +1,6 @@
 import { z } from "zod";
 import { id } from "./common.js";
-import type { MemberRole } from "./member.js";
+import { memberResponse, type MemberRole } from "./member.js";
 
 // In week order. Mirrored by the Postgres enum weekday.
 export const weekday = z.enum(["monday", "tuesday", "wednesday", "thursday", "friday", "saturday", "sunday"]);
@@ -64,10 +64,14 @@ export type GroupParams = z.infer<typeof groupParams>;
 export const groupMemberParams = z.object({ id, memberId: id });
 export type GroupMemberParams = z.infer<typeof groupMemberParams>;
 
-export const groupMemberResponse = z.object({
-  id,
-  name: z.string(),
-  surname: z.string(),
+export const groupMemberResponse = memberResponse.pick({
+  id: true,
+  name: true,
+  surname: true,
+  birthday: true,
+  email: true,
+  phone: true,
+  guardians: true,
 });
 export type GroupMemberResponse = z.infer<typeof groupMemberResponse>;
 

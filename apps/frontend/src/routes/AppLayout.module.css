@@ -40,6 +40,13 @@
   padding: var(--space-6) var(--space-4);
 }
 
+/* A page marked data-layout="wide" gets a third more room, for wide tables.
+   The navigation widens with it so both stay aligned. */
+.main:has(> [data-layout="wide"]),
+.header:has(+ .main > [data-layout="wide"]) .nav {
+  max-width: calc(var(--width-page) * 4 / 3);
+}
+
 .account {
   display: inline-flex;
   flex-wrap: wrap;

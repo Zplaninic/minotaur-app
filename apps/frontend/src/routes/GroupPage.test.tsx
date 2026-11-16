@@ -50,7 +50,17 @@ let groupMembers: GroupMemberResponse[];
 
 beforeEach(() => {
   me = admin;
-  groupMembers = [{ id: "4", name: "Ana", surname: "Horvat" }];
+  groupMembers = [
+    {
+      id: "4",
+      name: "Ana",
+      surname: "Horvat",
+      birthday: "2014-03-12",
+      email: null,
+      phone: "+385 91 123 4567",
+      guardians: [{ id: "1", name: "Iva", surname: "Horvat", email: null, phone: null }],
+    },
+  ];
   fetchMock.mockReset();
   fetchMock.mockImplementation(async (path, _schema, init) => {
     if (path === "/me") {
@@ -63,7 +73,10 @@ beforeEach(() => {
       return { items: groupMembers };
     }
     if (path === "/groups/1/members/5" && init?.method === "PUT") {
-      groupMembers = [...groupMembers, { id: "5", name: "Marko", surname: "Novak" }];
+      groupMembers = [
+        ...groupMembers,
+        { id: "5", name: "Marko", surname: "Novak", birthday: "2014-03-12", email: null, phone: null, guardians: [] },
+      ];
       return undefined;
     }
     if (path === "/groups/1/members/4" && init?.method === "DELETE") {
@@ -90,7 +103,10 @@ describe("GroupPage", () => {
     expect(
       await screen.findByRole("heading", { level: 1, name: "Petra Kovač - Monday, Wednesday - 5:00 PM - 6:30 PM" }),
     ).toBeInTheDocument();
-    expect(await screen.findByRole("rowheader", { name: "Horvat Ana" })).toBeInTheDocument();
+    const row = (await screen.findByRole("rowheader", { name: "Horvat Ana" })).closest("tr");
+    expect(within(row as HTMLElement).getByText("Mar 12, 2014")).toBeInTheDocument();
+    expect(within(row as HTMLElement).getByText("+385 91 123 4567")).toBeInTheDocument();
+    expect(within(row as HTMLElement).getByText("Iva Horvat")).toBeInTheDocument();
   });
 
   it("shows the empty state when the group has no members", async () => {

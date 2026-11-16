@@ -11,6 +11,7 @@ import {
 import type { Db } from "../db/client.js";
 import { AppError } from "../errors.js";
 import type { Prisma } from "../generated/prisma/client.js";
+import { guardianSelect, toGuardianResponse } from "./guardians.js";
 import { toApiId, toDbId } from "./ids.js";
 
 const groupSelect = {
@@ -93,12 +94,25 @@ export const getGroup = async (db: Db, groupId: string): Promise<GroupResponse> 
   return toGroupResponse(group);
 };
 
+const groupMemberSelect = {
+  id: true,
+  name: true,
+  surname: true,
+  birthday: true,
+  email: true,
+  phone: true,
+  guardians: {
+    select: { guardian: { select: guardianSelect } },
+    orderBy: [{ guardian: { surname: "asc" } }, { guardian: { name: "asc" } }, { guardianId: "asc" }],
+  },
+} satisfies Prisma.MemberSelect;
+
 export const listGroupMembers = async (db: Db, groupId: string): Promise<ListGroupMembersResponse> => {
   const group = await db.group.findUnique({
     where: { id: requireGroupId(groupId) },
     select: {
       members: {
-        select: { member: { select: { id: true, name: true, surname: true } } },
+        select: { member: { select: groupMemberSelect } },
         orderBy: [{ member: { surname: "asc" } }, { member: { name: "asc" } }, { memberId: "asc" }],
       },
     },
@@ -107,7 +121,15 @@ export const listGroupMembers = async (db: Db, groupId: string): Promise<ListGro
     throw groupNotFound();
   }
   return {
-    items: group.members.map(({ member }) => ({ id: toApiId(member.id), name: member.name, surname: member.surname })),
+    items: group.members.map(({ member }) => ({
+      id: toApiId(member.id),
+      name: member.name,
+      surname: member.surname,
+      birthday: member.birthday.toISOString().slice(0, 10),
+      email: member.email,
+      phone: member.phone,
+      guardians: member.guardians.map((link) => toGuardianResponse(link.guardian)),
+    })),
   };
 };
 

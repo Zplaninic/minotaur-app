@@ -1,5 +1,5 @@
 import { afterAll, beforeEach, describe, expect, it } from "vitest";
-import { createLoginMember, createOrg, resetDb } from "../../test/db.js";
+import { createGuardian, createLoginMember, createOrg, resetDb } from "../../test/db.js";
 import { prisma } from "../db/client.js";
 import { addGroupMember, createGroup, getGroup, listGroupMembers, listGroups, removeGroupMember } from "./groups.js";
 import { setMemberRole } from "./logins.js";
@@ -119,7 +119,26 @@ describe("addGroupMember", () => {
     const memberId = await addedMember(role, "Ana", "Horvat");
     await addGroupMember(prisma, created.id, memberId);
     expect((await listGroupMembers(prisma, created.id)).items).toEqual([
-      { id: memberId, name: "Ana", surname: "Horvat" },
+      {
+        id: memberId,
+        name: "Ana",
+        surname: "Horvat",
+        birthday: "1990-01-01",
+        email: "Ana.Horvat@example.com",
+        phone: null,
+        guardians: [],
+      },
+    ]);
+  });
+
+  it("lists a member's guardians", async () => {
+    const created = await createGroup(prisma, group());
+    const memberId = await addedMember("child", "Ana", "Horvat");
+    const guardianId = await createGuardian(prisma);
+    await prisma.memberGuardian.create({ data: { memberId: Number(memberId), guardianId: Number(guardianId) } });
+    await addGroupMember(prisma, created.id, memberId);
+    expect((await listGroupMembers(prisma, created.id)).items[0]?.guardians).toEqual([
+      { id: guardianId, name: "Iva", surname: "Horvat", email: null, phone: null },
     ]);
   });
 

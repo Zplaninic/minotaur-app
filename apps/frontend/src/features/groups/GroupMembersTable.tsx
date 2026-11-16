@@ -2,7 +2,7 @@ import { toErrorCode } from "@repo/shared/client";
 import { useAbility } from "../../api/auth";
 import { useGroupMembers, useRemoveGroupMember } from "../../api/groups";
 import { Button } from "../../components/Button";
-import { formatPersonName, formatSortedName } from "../../lib/format";
+import { formatCalendarDate, formatPersonName, formatSortedName } from "../../lib/format";
 import { errorMessage, t } from "../../lib/messages";
 import styles from "./GroupMembersTable.module.css";
 
@@ -48,6 +48,10 @@ export const GroupMembersTable = ({ groupId }: GroupMembersTableProps) => {
           <thead>
             <tr>
               <th scope="col">{t("groupMembers.table.name")}</th>
+              <th scope="col">{t("groupMembers.table.birthday")}</th>
+              <th scope="col">{t("groupMembers.table.email")}</th>
+              <th scope="col">{t("groupMembers.table.phone")}</th>
+              <th scope="col">{t("groupMembers.table.guardians")}</th>
               {canChange ? <th scope="col">{t("groupMembers.table.actions")}</th> : null}
             </tr>
           </thead>
@@ -55,6 +59,14 @@ export const GroupMembersTable = ({ groupId }: GroupMembersTableProps) => {
             {members.data.items.map((member) => (
               <tr key={member.id}>
                 <th scope="row">{formatSortedName(member)}</th>
+                <td className={styles.nowrap}>{formatCalendarDate(member.birthday)}</td>
+                <td>{member.email ?? t("common.empty")}</td>
+                <td className={styles.nowrap}>{member.phone ?? t("common.empty")}</td>
+                <td>
+                  {member.guardians.length === 0
+                    ? t("common.empty")
+                    : member.guardians.map(formatPersonName).join(", ")}
+                </td>
                 {canChange ? (
                   <td className={styles.actions}>
                     <Button

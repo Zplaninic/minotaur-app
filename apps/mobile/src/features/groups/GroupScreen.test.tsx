@@ -33,7 +33,9 @@ let online: boolean;
 
 beforeEach(() => {
   me = admin;
-  members = [{ id: "4", name: "Ana", surname: "Horvat" }];
+  members = [
+    { id: "4", name: "Ana", surname: "Horvat", birthday: "2014-03-12", email: null, phone: null, guardians: [] },
+  ];
   online = true;
   mockPush.mockReset();
   fetchMock.mockReset();

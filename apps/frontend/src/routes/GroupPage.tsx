@@ -24,7 +24,7 @@ export const GroupPage = () => {
   }
 
   return (
-    <div className={styles.page}>
+    <div className={styles.page} data-layout="wide">
       <Link to="/groups" className={styles.back}>
         {t("group.back")}
       </Link>

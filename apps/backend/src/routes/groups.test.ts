@@ -136,8 +136,8 @@ describe("PUT /groups/:id/members/:memberId", () => {
 
     const list = await app.inject({ method: "GET", url: `/groups/${groupId}/members`, headers: trainer });
     expect(list.statusCode).toBe(200);
-    expect(listGroupMembersResponse.parse(list.json()).items).toEqual([
-      { id: childId, name: "Test", surname: "child" },
+    expect(listGroupMembersResponse.parse(list.json()).items).toMatchObject([
+      { id: childId, name: "Test", surname: "child", birthday: "1990-01-01", guardians: [] },
     ]);
   });
 

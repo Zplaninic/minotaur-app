@@ -61,7 +61,7 @@ export const keysToInvalidateAfterGroupMemberChange = [groupKeys.all] as const;
 // The members who can still be added to a group: the right role, not yet in it.
 export const groupMemberCandidates = (
   members: readonly MemberResponse[],
-  current: readonly GroupMemberResponse[],
+  current: readonly Pick<GroupMemberResponse, "id">[],
 ): MemberResponse[] => {
   const currentIds = new Set(current.map((member) => member.id));
   return members.filter((member) => isGroupMemberRole(member.role) && !currentIds.has(member.id));

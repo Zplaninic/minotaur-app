@@ -46,8 +46,20 @@ describe("isGroupMemberRole", () => {
 });
 
 describe("listGroupMembersResponse", () => {
-  it("accepts members with an id, a name and a surname", () => {
-    const value = { items: [{ id: "4", name: "Ana", surname: "Horvat" }] };
+  it("accepts members with their contact details and guardians", () => {
+    const value = {
+      items: [
+        {
+          id: "4",
+          name: "Ana",
+          surname: "Horvat",
+          birthday: "2014-03-12",
+          email: null,
+          phone: null,
+          guardians: [{ id: "1", name: "Iva", surname: "Horvat", email: null, phone: "+385 91 123 4567" }],
+        },
+      ],
+    };
     expect(listGroupMembersResponse.parse(value)).toEqual(value);
     expect(listGroupMembersResponse.safeParse({ items: [{ id: "4", name: "Ana" }] }).success).toBe(false);
   });
