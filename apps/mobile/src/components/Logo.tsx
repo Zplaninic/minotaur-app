@@ -30,8 +30,9 @@ export const Logo = ({ variant, label, isHeader = false, compact = false }: Logo
 const styles = StyleSheet.create({
   logo: {
     width: logoWidth,
-    // Both files are 1200x1133.
-    aspectRatio: 1200 / 1133,
+    // Both files are 1200x1133. An explicit height is needed: a required image
+    // defaults to the file's own height, which would override aspectRatio.
+    height: (logoWidth * 1133) / 1200,
     alignSelf: "center",
   },
   // The artwork sits in the middle half of the file's height, so a centered
