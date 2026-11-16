@@ -1,14 +1,19 @@
 import { DEFAULT_PAGE_SIZE, type MemberResponse } from "@repo/shared";
-import { toErrorCode } from "@repo/shared/client";
+import { toErrorCode, type ClientErrorCode } from "@repo/shared/client";
 import { useState } from "react";
 import { useAbility } from "../../api/auth";
-import { useMembers } from "../../api/members";
+import { useArchiveMember, useMembers } from "../../api/members";
 import { Button } from "../../components/Button";
+import { ConfirmDialog } from "../../components/ConfirmDialog";
 import { formatCalendarDate, formatPersonName, formatSortedName } from "../../lib/format";
 import { errorMessage, t } from "../../lib/messages";
 import styles from "./MembersTable.module.css";
 
 const orEmpty = (value: string | null) => value ?? t("common.empty");
+
+// The only CONFLICT here is a trainer who still leads groups.
+const archiveErrorMessage = (code: ClientErrorCode): string =>
+  code === "CONFLICT" ? t("members.deleteOwnerConflict") : errorMessage(code);
 
 type MembersTableProps = {
   onEdit: (member: MemberResponse) => void;
@@ -17,8 +22,15 @@ type MembersTableProps = {
 export const MembersTable = ({ onEdit }: MembersTableProps) => {
   const ability = useAbility();
   const canEdit = ability.can("update", "Member");
+  const canDelete = ability.can("delete", "Member");
   const [page, setPage] = useState(1);
   const members = useMembers({ page, pageSize: DEFAULT_PAGE_SIZE });
+  const archiveMember = useArchiveMember();
+  const [deleting, setDeleting] = useState<MemberResponse | undefined>();
+  const closeConfirm = () => {
+    setDeleting(undefined);
+    archiveMember.reset();
+  };
 
   if (members.isPending) {
     return <output>{t("members.loading")}</output>;
@@ -54,7 +66,7 @@ export const MembersTable = ({ onEdit }: MembersTableProps) => {
               <th scope="col">{t("members.table.email")}</th>
               <th scope="col">{t("members.table.phone")}</th>
               <th scope="col">{t("members.table.guardians")}</th>
-              {canEdit ? <th scope="col">{t("members.table.actions")}</th> : null}
+              {canEdit || canDelete ? <th scope="col">{t("members.table.actions")}</th> : null}
             </tr>
           </thead>
           <tbody>
@@ -72,15 +84,26 @@ export const MembersTable = ({ onEdit }: MembersTableProps) => {
                     ? t("common.empty")
                     : member.guardians.map(formatPersonName).join(", ")}
                 </td>
-                {canEdit ? (
+                {canEdit || canDelete ? (
                   <td className={styles.actions}>
-                    <Button
-                      variant="secondary"
-                      onClick={() => onEdit(member)}
-                      aria-label={t("members.editLabel", { name: formatPersonName(member) })}
-                    >
-                      {t("members.edit")}
-                    </Button>
+                    {canEdit ? (
+                      <Button
+                        variant="secondary"
+                        onClick={() => onEdit(member)}
+                        aria-label={t("members.editLabel", { name: formatPersonName(member) })}
+                      >
+                        {t("members.edit")}
+                      </Button>
+                    ) : null}
+                    {canDelete ? (
+                      <Button
+                        variant="secondary"
+                        onClick={() => setDeleting(member)}
+                        aria-label={t("members.deleteLabel", { name: formatPersonName(member) })}
+                      >
+                        {t("common.delete")}
+                      </Button>
+                    ) : null}
                   </td>
                 ) : null}
               </tr>
@@ -88,6 +111,18 @@ export const MembersTable = ({ onEdit }: MembersTableProps) => {
           </tbody>
         </table>
       </div>
+
+      <ConfirmDialog
+        open={deleting !== undefined}
+        title={deleting ? t("members.deleteConfirmTitle", { name: formatPersonName(deleting) }) : ""}
+        message={t("members.deleteConfirmText")}
+        confirmLabel={t("common.delete")}
+        pendingLabel={t("common.deleting")}
+        pending={archiveMember.isPending}
+        error={archiveMember.error ? archiveErrorMessage(toErrorCode(archiveMember.error)) : undefined}
+        onConfirm={() => deleting && archiveMember.mutate(deleting.id, { onSuccess: closeConfirm })}
+        onCancel={closeConfirm}
+      />
 
       {pages > 1 ? (
         <nav className={styles.pagination} aria-label={t("members.pagination.label")}>

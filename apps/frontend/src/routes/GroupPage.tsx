@@ -1,9 +1,10 @@
 import { toErrorCode } from "@repo/shared/client";
-import { Link, useParams } from "@tanstack/react-router";
+import { Link, useNavigate, useParams } from "@tanstack/react-router";
 import { useState } from "react";
 import { useAbility } from "../api/auth";
-import { useGroup } from "../api/groups";
+import { useArchiveGroup, useGroup } from "../api/groups";
 import { Button } from "../components/Button";
+import { ConfirmDialog } from "../components/ConfirmDialog";
 import { Dialog } from "../components/Dialog";
 import { AddGroupMemberForm } from "../features/groups/AddGroupMemberForm";
 import { GroupMembersTable } from "../features/groups/GroupMembersTable";
@@ -16,8 +17,15 @@ export const GroupPage = () => {
   const { groupId } = useParams({ from: "/app/groups/$groupId" });
   const ability = useAbility();
   const group = useGroup(groupId);
+  const navigate = useNavigate();
+  const archiveGroup = useArchiveGroup(groupId);
   const [adding, setAdding] = useState(false);
+  const [deleting, setDeleting] = useState(false);
   const close = () => setAdding(false);
+  const closeConfirm = () => {
+    setDeleting(false);
+    archiveGroup.reset();
+  };
 
   if (!ability.can("read", "Group")) {
     return <p role="alert">{t("auth.noAccess")}</p>;
@@ -44,11 +52,18 @@ export const GroupPage = () => {
         <>
           <div className={styles.header}>
             <h1 className={styles.title}>{groupName(group.data)}</h1>
-            {ability.can("read", "Attendance") ? (
-              <Link to="/groups/$groupId/attendance" params={{ groupId }} search={{}} className={styles.attendance}>
-                {t("group.attendance")}
-              </Link>
-            ) : null}
+            <div className={styles.headerActions}>
+              {ability.can("delete", "Group") ? (
+                <Button variant="secondary" onClick={() => setDeleting(true)}>
+                  {t("group.delete")}
+                </Button>
+              ) : null}
+              {ability.can("read", "Attendance") ? (
+                <Link to="/groups/$groupId/attendance" params={{ groupId }} search={{}} className={styles.attendance}>
+                  {t("group.attendance")}
+                </Link>
+              ) : null}
+            </div>
           </div>
           <dl className={styles.facts}>
             <div>
@@ -83,6 +98,17 @@ export const GroupPage = () => {
           <Dialog open={adding} onClose={close} title={t("groupMemberForm.title")}>
             <AddGroupMemberForm groupId={groupId} onCancel={close} onSaved={close} />
           </Dialog>
+          <ConfirmDialog
+            open={deleting}
+            title={t("group.deleteConfirmTitle")}
+            message={t("group.deleteConfirmText")}
+            confirmLabel={t("common.delete")}
+            pendingLabel={t("common.deleting")}
+            pending={archiveGroup.isPending}
+            error={archiveGroup.error ? errorMessage(toErrorCode(archiveGroup.error)) : undefined}
+            onConfirm={() => archiveGroup.mutate(undefined, { onSuccess: () => void navigate({ to: "/groups" }) })}
+            onCancel={closeConfirm}
+          />
         </>
       ) : null}
     </div>

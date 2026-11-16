@@ -1,6 +1,8 @@
 import type { CreateMemberBody, PaginationQuery, UpdateMemberBody } from "@repo/shared";
 import {
+  archiveMember,
   createMember,
+  keysToInvalidateAfterArchiveMember,
   keysToInvalidateAfterCreateMember,
   keysToInvalidateAfterUpdateMember,
   memberQueries,
@@ -37,6 +39,18 @@ export const useUpdateMember = (memberId: string) => {
     onSuccess: async () => {
       await Promise.all(
         keysToInvalidateAfterUpdateMember.map((queryKey) => queryClient.invalidateQueries({ queryKey })),
+      );
+    },
+  });
+};
+
+export const useArchiveMember = () => {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: (memberId: string) => archiveMember(api, memberId),
+    onSuccess: async () => {
+      await Promise.all(
+        keysToInvalidateAfterArchiveMember.map((queryKey) => queryClient.invalidateQueries({ queryKey })),
       );
     },
   });

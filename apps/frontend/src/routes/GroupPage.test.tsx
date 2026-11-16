@@ -66,8 +66,14 @@ beforeEach(() => {
     if (path === "/me") {
       return me;
     }
+    if (path === "/groups/1" && init?.method === "DELETE") {
+      return undefined;
+    }
     if (path === "/groups/1") {
       return group;
+    }
+    if (path === "/groups") {
+      return { items: [] };
     }
     if (path === "/groups/1/members") {
       return { items: groupMembers };
@@ -184,5 +190,16 @@ describe("GroupPage", () => {
     expect(await screen.findByRole("rowheader", { name: "Horvat Ana" })).toBeInTheDocument();
     expect(screen.queryByRole("button", { name: t("groupMembers.add") })).not.toBeInTheDocument();
     expect(screen.queryByRole("button", { name: /Remove/ })).not.toBeInTheDocument();
+    expect(screen.queryByRole("button", { name: t("group.delete") })).not.toBeInTheDocument();
+  });
+
+  it("deletes the group after confirming and goes back to the groups", async () => {
+    renderAt("/groups/1");
+    fireEvent.click(await screen.findByRole("button", { name: t("group.delete") }));
+    const confirm = screen.getByRole("dialog", { name: t("group.deleteConfirmTitle") });
+    fireEvent.click(within(confirm).getByRole("button", { name: t("common.delete") }));
+
+    expect(await screen.findByRole("heading", { name: t("groups.title") })).toBeInTheDocument();
+    expect(fetchMock).toHaveBeenCalledWith("/groups/1", expect.anything(), expect.objectContaining({ method: "DELETE" }));
   });
 });

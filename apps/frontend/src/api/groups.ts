@@ -1,8 +1,10 @@
 import type { CreateGroupBody } from "@repo/shared";
 import {
   addGroupMember,
+  archiveGroup,
   createGroup,
   groupQueries,
+  keysToInvalidateAfterArchiveGroup,
   keysToInvalidateAfterCreateGroup,
   keysToInvalidateAfterGroupMemberChange,
   removeGroupMember,
@@ -45,3 +47,19 @@ export const useAddGroupMember = (groupId: string) =>
 
 export const useRemoveGroupMember = (groupId: string) =>
   useGroupMemberChange((memberId) => removeGroupMember(api, groupId, memberId));
+
+// The page of the archived group is left right after, so its queries are only
+// marked stale: refetching them now would answer NOT_FOUND on the way out.
+export const useArchiveGroup = (groupId: string) => {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: () => archiveGroup(api, groupId),
+    onSuccess: async () => {
+      await Promise.all(
+        keysToInvalidateAfterArchiveGroup.map((queryKey) =>
+          queryClient.invalidateQueries({ queryKey, refetchType: "none" }),
+        ),
+      );
+    },
+  });
+};

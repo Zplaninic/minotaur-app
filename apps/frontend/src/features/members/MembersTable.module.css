@@ -85,3 +85,7 @@
   width: 1%;
   white-space: nowrap;
 }
+
+.actions > * + * {
+  margin-inline-start: var(--space-2);
+}
