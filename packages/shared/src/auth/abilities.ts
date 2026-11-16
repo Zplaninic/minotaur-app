@@ -2,7 +2,7 @@ import { AbilityBuilder, createMongoAbility, type MongoAbility } from "@casl/abi
 import type { MemberRole } from "../types/member.js";
 
 export type Action = "manage" | "read" | "create" | "update" | "delete";
-export type Subject = "Org" | "Guardian" | "Member" | "Group" | "all";
+export type Subject = "Org" | "Guardian" | "Member" | "Group" | "Attendance" | "all";
 export type AppAbility = MongoAbility<[Action, Subject]>;
 
 export type AbilityUser = { memberId: string; role: MemberRole };

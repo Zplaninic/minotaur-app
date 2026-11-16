@@ -23,6 +23,13 @@ describe("defineAbilityFor", () => {
     expect(ability.can("delete", "Group")).toBe(false);
   });
 
+  it.each(["admin", "trainer"] as const)("lets %s keep attendance in every group", (role) => {
+    const ability = defineAbilityFor({ memberId: "1", role });
+    for (const action of ["read", "create", "update", "delete"] as const) {
+      expect(ability.can(action, "Attendance")).toBe(true);
+    }
+  });
+
   it.each(["member", "child"] as const)("lets %s do nothing", (role) => {
     const ability = defineAbilityFor({ memberId: "1", role });
     expect(ability.can("read", "Member")).toBe(false);

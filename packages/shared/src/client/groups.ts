@@ -10,6 +10,7 @@ import {
 } from "../types/group.js";
 import type { MemberResponse } from "../types/member.js";
 import type { ApiClient } from "./apiClient.js";
+import { attendanceKeys } from "./attendance.js";
 
 export const groupKeys = {
   all: ["groups"] as const,
@@ -55,8 +56,9 @@ export const addGroupMember = (api: ApiClient, groupId: string, memberId: string
 export const removeGroupMember = (api: ApiClient, groupId: string, memberId: string): Promise<undefined> =>
   api.fetch(groupMemberPath(groupId, memberId), z.undefined(), { method: "DELETE" });
 
-// The member list, and the member count on the group and in the groups list.
-export const keysToInvalidateAfterGroupMemberChange = [groupKeys.all] as const;
+// The member list, the member count on the group and in the groups list, and
+// the month rosters, which follow the group's members.
+export const keysToInvalidateAfterGroupMemberChange = [groupKeys.all, attendanceKeys.all] as const;
 
 // The members who can still be added to a group: the right role, not yet in it.
 export const groupMemberCandidates = (
