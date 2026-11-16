@@ -1,8 +1,11 @@
 import type { CreateGroupBody } from "@repo/shared";
 import {
   addGroupMember,
+  archiveGroup,
   createGroup,
+  groupKeys,
   groupQueries,
+  keysToInvalidateAfterArchiveGroup,
   keysToInvalidateAfterCreateGroup,
   keysToInvalidateAfterGroupMemberChange,
   removeGroupMember,
@@ -45,3 +48,23 @@ export const useAddGroupMember = (groupId: string) =>
 
 export const useRemoveGroupMember = (groupId: string) =>
   useGroupMemberChange((memberId) => removeGroupMember(api, groupId, memberId));
+
+// The group's screen is left right after, so its queries are not refetched:
+// that would answer NOT_FOUND on the way out.
+export const useArchiveGroup = (groupId: string) => {
+  const queryClient = useQueryClient();
+  const leaving = [groupKeys.detail(groupId), groupKeys.members(groupId)].map((key) => JSON.stringify(key));
+  return useMutation({
+    mutationFn: () => archiveGroup(api, groupId),
+    onSuccess: async () => {
+      await Promise.all(
+        keysToInvalidateAfterArchiveGroup.map((queryKey) =>
+          queryClient.invalidateQueries({
+            queryKey,
+            predicate: (query) => !leaving.includes(JSON.stringify(query.queryKey)),
+          }),
+        ),
+      );
+    },
+  });
+};

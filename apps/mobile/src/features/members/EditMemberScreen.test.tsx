@@ -4,7 +4,7 @@ import { Alert } from "react-native";
 import { api } from "../../api/client";
 import { t } from "../../lib/messages";
 import { EditMemberScreen } from "./EditMemberScreen";
-import { ana, Providers } from "./testUtils";
+import { admin, ana, Providers } from "./testUtils";
 
 jest.mock("../../api/client", () => ({ api: { fetch: jest.fn() } }));
 jest.mock("../../lib/sessionToken", () => ({ clearSessionToken: jest.fn(), saveSessionToken: jest.fn() }));
@@ -42,8 +42,14 @@ beforeEach(() => {
     if (!online) {
       throw new ApiError("NETWORK_ERROR");
     }
+    if (path === "/me") {
+      return admin;
+    }
     if (path === "/orgs") {
       return { items: [{ id: "1", name: "SPK Minotaur" }] };
+    }
+    if (path === "/members/1" && init?.method === "DELETE") {
+      return undefined;
     }
     if (path === "/guardians") {
       return { items: ana.guardians };
@@ -106,5 +112,37 @@ describe("EditMemberScreen", () => {
     await renderScreen();
     expect(await screen.findByText(t("memberForm.offlineTitle"))).toBeOnTheScreen();
     expect(screen.getByRole("button", { name: t("common.retry") })).toBeOnTheScreen();
+  });
+
+  it("deletes the member after confirming and goes back", async () => {
+    jest.spyOn(Alert, "alert").mockImplementation(() => undefined);
+    await renderScreen();
+    await fireEvent.press(await screen.findByRole("button", { name: t("memberForm.delete") }));
+    expect(Alert.alert).toHaveBeenCalledWith(
+      t("memberForm.deleteConfirmTitle", { name: "Ana Horvat" }),
+      t("memberForm.deleteConfirmText"),
+      expect.anything(),
+    );
+    await pressAlertButton(t("common.delete"));
+    await waitFor(() => expect(mockBack).toHaveBeenCalled());
+    expect(fetchMock).toHaveBeenCalledWith("/members/1", expect.anything(), expect.objectContaining({ method: "DELETE" }));
+    // The screen stays mounted here, as the router is mocked; wait for the mutation to settle.
+    expect(await screen.findByRole("button", { name: t("memberForm.delete") })).toBeOnTheScreen();
+  });
+
+  it("explains why a trainer who leads groups cannot be deleted", async () => {
+    jest.spyOn(Alert, "alert").mockImplementation(() => undefined);
+    const fallback = fetchMock.getMockImplementation();
+    fetchMock.mockImplementation(async (path, schema, init) => {
+      if (path === "/members/1" && init?.method === "DELETE") {
+        throw new ApiError("CONFLICT", 409);
+      }
+      return fallback?.(path, schema, init);
+    });
+    await renderScreen();
+    await fireEvent.press(await screen.findByRole("button", { name: t("memberForm.delete") }));
+    await pressAlertButton(t("common.delete"));
+    expect(await screen.findByText(t("memberForm.deleteOwnerConflict"))).toBeOnTheScreen();
+    expect(mockBack).not.toHaveBeenCalled();
   });
 });

@@ -1,6 +1,6 @@
 import type { GroupMemberResponse, GroupResponse } from "@repo/shared";
 import { ApiError } from "@repo/shared/client";
-import { act, fireEvent, render, screen } from "@testing-library/react-native";
+import { act, fireEvent, render, screen, waitFor } from "@testing-library/react-native";
 import { Alert } from "react-native";
 import { api } from "../../api/client";
 import { t } from "../../lib/messages";
@@ -11,7 +11,8 @@ jest.mock("../../api/client", () => ({ api: { fetch: jest.fn() } }));
 jest.mock("../../lib/sessionToken", () => ({ clearSessionToken: jest.fn(), saveSessionToken: jest.fn() }));
 
 const mockPush = jest.fn();
-jest.mock("expo-router", () => ({ useRouter: () => ({ push: mockPush, back: jest.fn() }) }));
+const mockBack = jest.fn();
+jest.mock("expo-router", () => ({ useRouter: () => ({ push: mockPush, back: mockBack }) }));
 
 const fetchMock = jest.mocked(api.fetch);
 
@@ -50,6 +51,7 @@ beforeEach(() => {
   ];
   online = true;
   mockPush.mockReset();
+  mockBack.mockReset();
   fetchMock.mockReset();
   fetchMock.mockImplementation(async (path, _schema, init) => {
     if (path === "/me") {
@@ -57,6 +59,9 @@ beforeEach(() => {
     }
     if (!online) {
       throw new ApiError("NETWORK_ERROR");
+    }
+    if (path === "/groups/1" && init?.method === "DELETE") {
+      return undefined;
     }
     if (path === "/groups/1") {
       return group;
@@ -150,5 +155,20 @@ describe("GroupScreen", () => {
     expect(await screen.findByText("Horvat Ana")).toBeOnTheScreen();
     expect(screen.queryByRole("button", { name: t("groupMembers.add") })).not.toBeOnTheScreen();
     expect(screen.queryByRole("button", { name: /^Remove/ })).not.toBeOnTheScreen();
+    expect(screen.queryByRole("button", { name: t("group.delete") })).not.toBeOnTheScreen();
+  });
+
+  it("deletes the group after confirming and goes back", async () => {
+    jest.spyOn(Alert, "alert").mockImplementation(() => undefined);
+    await renderScreen();
+    await fireEvent.press(await screen.findByRole("button", { name: t("group.delete") }));
+    expect(Alert.alert).toHaveBeenCalledWith(
+      t("group.deleteConfirmTitle"),
+      t("group.deleteConfirmText"),
+      expect.anything(),
+    );
+    await pressAlertButton(t("common.delete"));
+    await waitFor(() => expect(mockBack).toHaveBeenCalled());
+    expect(fetchMock).toHaveBeenCalledWith("/groups/1", expect.anything(), expect.objectContaining({ method: "DELETE" }));
   });
 });

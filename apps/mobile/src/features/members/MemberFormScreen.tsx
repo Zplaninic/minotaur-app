@@ -27,6 +27,7 @@ import { confirmRemove } from "../../lib/confirmRemove";
 import { formatCalendarDate } from "../../lib/format";
 import { errorMessage, memberFieldErrorKey, t } from "../../lib/messages";
 import { bodyLineHeight, colors, fonts, fontSizes, headingLineHeight, spacing } from "../../theme/tokens";
+import { DeleteMemberButton } from "./DeleteMemberButton";
 import { GuardianFields } from "./GuardianFields";
 
 // Where the birthday picker starts: an adult member is the common case.
@@ -239,6 +240,7 @@ export const MemberFormScreen = ({ member }: MemberFormScreenProps) => {
         onPress={save}
         disabled={saving.isPending}
       />
+      {member ? <DeleteMemberButton member={member} /> : null}
     </Screen>
   );
 };

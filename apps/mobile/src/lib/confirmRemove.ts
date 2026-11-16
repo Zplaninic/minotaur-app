@@ -5,11 +5,18 @@ type ConfirmRemoveOptions = {
   title: string;
   message: string;
   onConfirm: () => void;
+  // The destructive button's text; "Remove" when left out.
+  confirmLabel?: string;
 };
 
 // Asks with the platform's own alert before something is removed.
-export const confirmRemove = ({ title, message, onConfirm }: ConfirmRemoveOptions): void =>
+export const confirmRemove = ({
+  title,
+  message,
+  onConfirm,
+  confirmLabel = t("common.remove"),
+}: ConfirmRemoveOptions): void =>
   Alert.alert(title, message, [
     { text: t("common.cancel"), style: "cancel" },
-    { text: t("common.remove"), style: "destructive", onPress: onConfirm },
+    { text: confirmLabel, style: "destructive", onPress: onConfirm },
   ]);

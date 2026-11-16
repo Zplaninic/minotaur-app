@@ -1,7 +1,9 @@
 import type { CreateMemberBody, UpdateMemberBody } from "@repo/shared";
 import {
+  archiveMember,
   createMember,
   fetchMembersPage,
+  keysToInvalidateAfterArchiveMember,
   keysToInvalidateAfterCreateMember,
   keysToInvalidateAfterUpdateMember,
   memberKeys,
@@ -48,6 +50,23 @@ export const useUpdateMember = (memberId: string) => {
     onSuccess: async () => {
       await Promise.all(
         keysToInvalidateAfterUpdateMember.map((queryKey) => queryClient.invalidateQueries({ queryKey })),
+      );
+    },
+  });
+};
+
+// The screen showing the member is left right after, so its query is not
+// refetched: that would answer NOT_FOUND on the way out.
+export const useArchiveMember = (memberId: string) => {
+  const queryClient = useQueryClient();
+  const leaving = JSON.stringify(memberKeys.detail(memberId));
+  return useMutation({
+    mutationFn: () => archiveMember(api, memberId),
+    onSuccess: async () => {
+      await Promise.all(
+        keysToInvalidateAfterArchiveMember.map((queryKey) =>
+          queryClient.invalidateQueries({ queryKey, predicate: (query) => JSON.stringify(query.queryKey) !== leaving }),
+        ),
       );
     },
   });

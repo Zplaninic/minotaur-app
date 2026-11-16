@@ -3,7 +3,7 @@ import { useRouter } from "expo-router";
 import { ActivityIndicator, FlatList, StyleSheet, Text, View } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
 import { useAbility } from "../../api/auth";
-import { useGroup, useGroupMembers, useRemoveGroupMember } from "../../api/groups";
+import { useArchiveGroup, useGroup, useGroupMembers, useRemoveGroupMember } from "../../api/groups";
 import { Button } from "../../components/Button";
 import { confirmRemove } from "../../lib/confirmRemove";
 import { formatPersonName } from "../../lib/format";
@@ -22,7 +22,9 @@ export const GroupScreen = ({ groupId }: GroupScreenProps) => {
   const group = useGroup(groupId);
   const members = useGroupMembers(groupId);
   const removeMember = useRemoveGroupMember(groupId);
+  const archiveGroup = useArchiveGroup(groupId);
   const canChange = ability.can("update", "Group");
+  const changeError = removeMember.error ?? archiveGroup.error;
   const refetch = () => void Promise.all([group.refetch(), members.refetch()]);
 
   if (group.isPending || members.isPending) {
@@ -84,6 +86,21 @@ export const GroupScreen = ({ groupId }: GroupScreenProps) => {
                 onPress={() => router.push({ pathname: "/groups/[id]/attendance", params: { id: groupId } })}
               />
             ) : null}
+            {ability.can("delete", "Group") ? (
+              <Button
+                label={archiveGroup.isPending ? t("common.deleting") : t("group.delete")}
+                variant="secondary"
+                disabled={archiveGroup.isPending}
+                onPress={() =>
+                  confirmRemove({
+                    title: t("group.deleteConfirmTitle"),
+                    message: t("group.deleteConfirmText"),
+                    confirmLabel: t("common.delete"),
+                    onConfirm: () => archiveGroup.mutate(undefined, { onSuccess: () => router.back() }),
+                  })
+                }
+              />
+            ) : null}
             <Text accessibilityRole="header" style={styles.subtitle}>
               {t("groupMembers.title")}
             </Text>
@@ -93,9 +110,9 @@ export const GroupScreen = ({ groupId }: GroupScreenProps) => {
                 onPress={() => router.push({ pathname: "/groups/[id]/add-member", params: { id: groupId } })}
               />
             ) : null}
-            {removeMember.error ? (
+            {changeError ? (
               <Text style={styles.error} accessibilityLiveRegion="polite">
-                {errorMessage(toErrorCode(removeMember.error))}
+                {errorMessage(toErrorCode(changeError))}
               </Text>
             ) : null}
           </View>

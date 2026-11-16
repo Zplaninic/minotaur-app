@@ -36,6 +36,8 @@ const messages = {
   "common.cancel": "Cancel",
   "common.optional": "optional",
   "common.remove": "Remove",
+  "common.delete": "Delete",
+  "common.deleting": "Deleting…",
   "common.change": "Change",
   "common.done": "Done",
 
@@ -53,6 +55,10 @@ const messages = {
   "memberForm.title": "Add member",
   "memberForm.editTitle": "Edit member",
   "memberForm.saveChanges": "Save changes",
+  "memberForm.delete": "Delete member",
+  "memberForm.deleteConfirmTitle": "Delete {name}?",
+  "memberForm.deleteConfirmText": "They leave the member list and their groups, and can no longer log in. Their past attendance stays saved.",
+  "memberForm.deleteOwnerConflict": "This trainer still leads groups. Delete those groups first.",
   "memberForm.loading": "Loading the member…",
   "memberForm.offlineTitle": "No connection",
   "memberForm.error.taken": "Another member already has this tax number or login email.",
@@ -119,6 +125,9 @@ const messages = {
   "group.title": "Group",
   "group.loading": "Loading the group…",
   "group.offlineTitle": "No connection",
+  "group.delete": "Delete group",
+  "group.deleteConfirmTitle": "Delete this group?",
+  "group.deleteConfirmText": "The group leaves the group list. Its past attendance stays saved.",
 
   "group.attendance": "Attendance",
 
