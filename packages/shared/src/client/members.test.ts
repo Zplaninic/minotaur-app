@@ -1,6 +1,7 @@
 import { describe, expect, it } from "vitest";
+import type { ApiClient } from "./apiClient.js";
 import { formatCalendarDate, formatSortedName } from "./format.js";
-import { memberKeys, nextMembersPage } from "./members.js";
+import { fetchAllMembers, memberKeys, nextMembersPage } from "./members.js";
 
 describe("nextMembersPage", () => {
   it("returns the next page while members remain", () => {
@@ -16,6 +17,21 @@ describe("memberKeys", () => {
   it("nests every member query under the same root, so one invalidation covers all", () => {
     expect(memberKeys.list({ page: 1, pageSize: 20 }).slice(0, 1)).toEqual(memberKeys.all);
     expect(memberKeys.pages(20).slice(0, 1)).toEqual(memberKeys.all);
+    expect(memberKeys.everyone().slice(0, 1)).toEqual(memberKeys.all);
+  });
+});
+
+describe("fetchAllMembers", () => {
+  it("asks for page after page until the last one", async () => {
+    const paths: string[] = [];
+    const api: ApiClient = {
+      fetch: async (path, schema) => {
+        paths.push(path);
+        return schema.parse({ items: [], page: paths.length, pageSize: 100, total: 150 });
+      },
+    };
+    expect(await fetchAllMembers(api)).toEqual([]);
+    expect(paths).toEqual(["/members?page=1&pageSize=100", "/members?page=2&pageSize=100"]);
   });
 });
 

@@ -15,6 +15,7 @@ export const memberKeys = {
   list: (query: PaginationQuery) => [...memberKeys.all, "list", query] as const,
   pages: (pageSize: number) => [...memberKeys.all, "pages", pageSize] as const,
   trainers: () => [...memberKeys.all, "trainers"] as const,
+  everyone: () => [...memberKeys.all, "everyone"] as const,
 };
 
 export const fetchMembersPage = (api: ApiClient, query: PaginationQuery): Promise<ListMembersResponse> =>
@@ -24,11 +25,27 @@ export const fetchMembersPage = (api: ApiClient, query: PaginationQuery): Promis
 export const nextMembersPage = (last: ListMembersResponse): number | undefined =>
   last.page * last.pageSize < last.total ? last.page + 1 : undefined;
 
+// Every member, fetched page by page. For pickers that need the whole club.
+export const fetchAllMembers = async (api: ApiClient): Promise<MemberResponse[]> => {
+  const members: MemberResponse[] = [];
+  let page: number | undefined = 1;
+  while (page !== undefined) {
+    const result = await fetchMembersPage(api, { page, pageSize: MAX_PAGE_SIZE });
+    members.push(...result.items);
+    page = nextMembersPage(result);
+  }
+  return members;
+};
+
 // Query options for TanStack Query: useQuery(memberQueries.list(api, query)).
 export const memberQueries = {
   list: (api: ApiClient, query: PaginationQuery) => ({
     queryKey: memberKeys.list(query),
     queryFn: () => fetchMembersPage(api, query),
+  }),
+  everyone: (api: ApiClient) => ({
+    queryKey: memberKeys.everyone(),
+    queryFn: () => fetchAllMembers(api),
   }),
   // The members who can own a group. One page: a club has few trainers.
   trainers: (api: ApiClient) => ({
