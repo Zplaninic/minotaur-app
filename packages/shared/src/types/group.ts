@@ -1,5 +1,6 @@
 import { z } from "zod";
 import { id } from "./common.js";
+import type { MemberRole } from "./member.js";
 
 // In week order. Mirrored by the Postgres enum weekday.
 export const weekday = z.enum(["monday", "tuesday", "wednesday", "thursday", "friday", "saturday", "sunday"]);
@@ -7,6 +8,13 @@ export type Weekday = z.infer<typeof weekday>;
 
 // The role a group's owner must have.
 export const GROUP_OWNER_ROLE = "trainer";
+
+// The roles a member needs to be added to a group.
+export const GROUP_MEMBER_ROLES = ["child", "member"] as const satisfies readonly MemberRole[];
+export type GroupMemberRole = (typeof GROUP_MEMBER_ROLES)[number];
+
+export const isGroupMemberRole = (role: MemberRole): role is GroupMemberRole =>
+  GROUP_MEMBER_ROLES.some((allowed) => allowed === role);
 
 // Wall-clock time at the gym, 24-hour HH:mm. Not tied to a date or a time zone.
 export const timeOfDay = z.string().regex(/^([01]\d|2[0-3]):[0-5]\d$/);
@@ -39,6 +47,7 @@ export const groupResponse = z.object({
   days: z.array(weekday),
   from: timeOfDay,
   to: timeOfDay,
+  memberCount: z.number().int().min(0),
   createdAt: z.iso.datetime(),
   updatedAt: z.iso.datetime(),
 });
@@ -48,3 +57,21 @@ export const listGroupsResponse = z.object({
   items: z.array(groupResponse),
 });
 export type ListGroupsResponse = z.infer<typeof listGroupsResponse>;
+
+export const groupParams = z.object({ id });
+export type GroupParams = z.infer<typeof groupParams>;
+
+export const groupMemberParams = z.object({ id, memberId: id });
+export type GroupMemberParams = z.infer<typeof groupMemberParams>;
+
+export const groupMemberResponse = z.object({
+  id,
+  name: z.string(),
+  surname: z.string(),
+});
+export type GroupMemberResponse = z.infer<typeof groupMemberResponse>;
+
+export const listGroupMembersResponse = z.object({
+  items: z.array(groupMemberResponse),
+});
+export type ListGroupMembersResponse = z.infer<typeof listGroupMembersResponse>;

@@ -1,5 +1,6 @@
 import { describe, expect, it } from "vitest";
-import { createGroupBody, groupResponse } from "./group.js";
+import { createGroupBody, groupResponse, isGroupMemberRole, listGroupMembersResponse } from "./group.js";
+import { memberRole } from "./member.js";
 
 const validBody = { ownerId: "1", days: ["monday", "wednesday"], from: "17:00", to: "18:30" };
 
@@ -29,10 +30,25 @@ describe("groupResponse", () => {
       days: ["monday"],
       from: "17:00",
       to: "18:30",
+      memberCount: 3,
       createdAt: "2026-11-15T17:00:22.251Z",
       updatedAt: "2026-11-15T17:00:22.251Z",
     };
     expect(groupResponse.parse(value)).toEqual(value);
     expect(groupResponse.safeParse({ ...value, updatedAt: "2026-11-15" }).success).toBe(false);
+  });
+});
+
+describe("isGroupMemberRole", () => {
+  it("allows children and members only", () => {
+    expect(memberRole.options.filter(isGroupMemberRole)).toEqual(["child", "member"]);
+  });
+});
+
+describe("listGroupMembersResponse", () => {
+  it("accepts members with an id, a name and a surname", () => {
+    const value = { items: [{ id: "4", name: "Ana", surname: "Horvat" }] };
+    expect(listGroupMembersResponse.parse(value)).toEqual(value);
+    expect(listGroupMembersResponse.safeParse({ items: [{ id: "4", name: "Ana" }] }).success).toBe(false);
   });
 });
