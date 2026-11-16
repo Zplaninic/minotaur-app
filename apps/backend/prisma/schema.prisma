@@ -57,23 +57,25 @@ model Guardian {
 }
 
 model Member {
-  id               Int              @id @default(autoincrement())
+  id               Int                @id @default(autoincrement())
   orgId            Int
   name             String
   surname          String
-  birthday         DateTime         @db.Date
-  role             MemberRole       @default(child)
-  taxNumber        String?          @unique
+  birthday         DateTime           @db.Date
+  role             MemberRole         @default(child)
+  taxNumber        String?            @unique
   email            String?
   phone            String?
-  createdAt        DateTime         @default(now()) @db.Timestamptz
-  updatedAt        DateTime         @updatedAt @db.Timestamptz
-  org              Org              @relation(fields: [orgId], references: [id], onDelete: Restrict)
+  createdAt        DateTime           @default(now()) @db.Timestamptz
+  updatedAt        DateTime           @updatedAt @db.Timestamptz
+  org              Org                @relation(fields: [orgId], references: [id], onDelete: Restrict)
   guardians        MemberGuardian[]
   login            Login?
   sessions         Session[]
   ownedGroups      Group[]
   groupMemberships GroupMember[]
+  attendance       Attendance[]
+  monthMemberships GroupMonthMember[]
 
   // People who can log in never share an email. The roles listed here must
   // match LOGIN_ROLES in @repo/shared/auth. Written the way Postgres stores
@@ -121,16 +123,18 @@ model MemberGuardian {
 // A training group. The owner is a member with the trainer role; the service
 // checks that, the database only knows the member exists.
 model Group {
-  id        Int           @id @default(autoincrement())
-  ownerId   Int
-  days      Weekday[]
+  id           Int                @id @default(autoincrement())
+  ownerId      Int
+  days         Weekday[]
   // Wall-clock times at the gym, without a date or a time zone.
-  from      DateTime      @db.Time(0)
-  to        DateTime      @db.Time(0)
-  createdAt DateTime      @default(now()) @db.Timestamptz
-  updatedAt DateTime      @updatedAt @db.Timestamptz
-  owner     Member        @relation(fields: [ownerId], references: [id], onDelete: Restrict)
-  members   GroupMember[]
+  from         DateTime           @db.Time(0)
+  to           DateTime           @db.Time(0)
+  createdAt    DateTime           @default(now()) @db.Timestamptz
+  updatedAt    DateTime           @updatedAt @db.Timestamptz
+  owner        Member             @relation(fields: [ownerId], references: [id], onDelete: Restrict)
+  members      GroupMember[]
+  sessions     TrainingSession[]
+  monthMembers GroupMonthMember[]
 
   @@index([ownerId])
   @@map("group")
@@ -147,4 +151,46 @@ model GroupMember {
   @@id([groupId, memberId])
   @@index([memberId])
   @@map("group_member")
+}
+
+// One training of a group on one day. "Session" is taken by login sessions.
+model TrainingSession {
+  id         Int          @id @default(autoincrement())
+  groupId    Int
+  date       DateTime     @db.Date
+  createdAt  DateTime     @default(now()) @db.Timestamptz
+  group      Group        @relation(fields: [groupId], references: [id], onDelete: Cascade)
+  attendance Attendance[]
+
+  @@unique([groupId, date])
+  @@map("training_session")
+}
+
+// A member who attended a session. No row means the member was absent.
+model Attendance {
+  sessionId Int
+  memberId  Int
+  createdAt DateTime        @default(now()) @db.Timestamptz
+  session   TrainingSession @relation(fields: [sessionId], references: [id], onDelete: Cascade)
+  member    Member          @relation(fields: [memberId], references: [id], onDelete: Cascade)
+
+  @@id([sessionId, memberId])
+  @@index([memberId])
+  @@map("attendance")
+}
+
+// The members shown and tickable in one month of a group. Copied from the
+// group's members when the month gets its first session, then edited per month.
+model GroupMonthMember {
+  groupId   Int
+  // The first day of the month.
+  month     DateTime @db.Date
+  memberId  Int
+  createdAt DateTime @default(now()) @db.Timestamptz
+  group     Group    @relation(fields: [groupId], references: [id], onDelete: Cascade)
+  member    Member   @relation(fields: [memberId], references: [id], onDelete: Cascade)
+
+  @@id([groupId, month, memberId])
+  @@index([memberId])
+  @@map("group_month_member")
 }

@@ -11,6 +11,7 @@ import {
 import type { Db } from "../db/client.js";
 import { AppError } from "../errors.js";
 import type { Prisma } from "../generated/prisma/client.js";
+import { monthOf, monthStart, monthsFrom } from "./attendance.js";
 import { guardianSelect, toGuardianResponse } from "./guardians.js";
 import { toApiId, toDbId } from "./ids.js";
 
@@ -133,8 +134,10 @@ export const listGroupMembers = async (db: Db, groupId: string): Promise<ListGro
   };
 };
 
-// Adding a member who is already in the group changes nothing.
-export const addGroupMember = async (db: Db, groupId: string, memberId: string): Promise<void> => {
+// Adding a member who is already in the group changes nothing. The member
+// also joins the roster of the current month and of later months with
+// sessions; past months stay as they were. today is YYYY-MM-DD at the gym.
+export const addGroupMember = async (db: Db, groupId: string, memberId: string, today: string): Promise<void> => {
   const groupDbId = requireGroupId(groupId);
   const memberDbId = toDbId(memberId);
   if (memberDbId === undefined) {
@@ -158,17 +161,29 @@ export const addGroupMember = async (db: Db, groupId: string, memberId: string):
       create: { groupId: groupDbId, memberId: memberDbId },
       update: {},
     });
+    const months = await monthsFrom(tx, groupDbId, monthOf(today));
+    await tx.groupMonthMember.createMany({
+      data: months.map((month) => ({ groupId: groupDbId, month: monthStart(month), memberId: memberDbId })),
+      skipDuplicates: true,
+    });
   });
 };
 
-// Removing a member who is not in the group changes nothing.
-export const removeGroupMember = async (db: Db, groupId: string, memberId: string): Promise<void> => {
+// Removing a member who is not in the group changes nothing. The member also
+// leaves the rosters of months after the current one, which have no ticks
+// yet; the current and past months keep them. today is YYYY-MM-DD at the gym.
+export const removeGroupMember = async (db: Db, groupId: string, memberId: string, today: string): Promise<void> => {
   const groupDbId = requireGroupId(groupId);
   if (!(await db.group.findUnique({ where: { id: groupDbId }, select: { id: true } }))) {
     throw groupNotFound();
   }
   const memberDbId = toDbId(memberId);
   if (memberDbId !== undefined) {
-    await db.groupMember.deleteMany({ where: { groupId: groupDbId, memberId: memberDbId } });
+    await db.$transaction([
+      db.groupMember.deleteMany({ where: { groupId: groupDbId, memberId: memberDbId } }),
+      db.groupMonthMember.deleteMany({
+        where: { groupId: groupDbId, memberId: memberDbId, month: { gt: monthStart(monthOf(today)) } },
+      }),
+    ]);
   }
 };

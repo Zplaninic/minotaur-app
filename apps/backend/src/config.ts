@@ -8,6 +8,12 @@ const envSchema = z.object({
   DATABASE_URL: z.url(),
   // The web app's origin. Requests that change data with a session cookie must come from it.
   WEB_ORIGIN: z.url(),
+  // IANA time zone of the gym. Decides which day "today" is for attendance.
+  GYM_TIME_ZONE: z
+    .string()
+    .min(1)
+    .refine((zone) => Intl.supportedValuesOf("timeZone").includes(zone) || zone === "UTC")
+    .default("Europe/Zagreb"),
 });
 
 export type Config = z.infer<typeof envSchema>;

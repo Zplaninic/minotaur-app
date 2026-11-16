@@ -4,6 +4,8 @@ import { prisma } from "../db/client.js";
 import { addGroupMember, createGroup, getGroup, listGroupMembers, listGroups, removeGroupMember } from "./groups.js";
 import { setMemberRole } from "./logins.js";
 
+const TODAY = "2026-11-16";
+
 let orgId: string;
 let trainerId: string;
 
@@ -103,7 +105,7 @@ const addedMember = async (role: "child" | "member", name: string, surname: stri
 describe("getGroup", () => {
   it("returns the group with its member count", async () => {
     const created = await createGroup(prisma, group());
-    await addGroupMember(prisma, created.id, await addedMember("child", "Ana", "Horvat"));
+    await addGroupMember(prisma, created.id, await addedMember("child", "Ana", "Horvat"), TODAY);
     expect(await getGroup(prisma, created.id)).toMatchObject({ id: created.id, memberCount: 1 });
   });
 
@@ -117,7 +119,7 @@ describe("addGroupMember", () => {
   it.each(["child", "member"] as const)("adds a %s", async (role) => {
     const created = await createGroup(prisma, group());
     const memberId = await addedMember(role, "Ana", "Horvat");
-    await addGroupMember(prisma, created.id, memberId);
+    await addGroupMember(prisma, created.id, memberId, TODAY);
     expect((await listGroupMembers(prisma, created.id)).items).toEqual([
       {
         id: memberId,
@@ -136,7 +138,7 @@ describe("addGroupMember", () => {
     const memberId = await addedMember("child", "Ana", "Horvat");
     const guardianId = await createGuardian(prisma);
     await prisma.memberGuardian.create({ data: { memberId: Number(memberId), guardianId: Number(guardianId) } });
-    await addGroupMember(prisma, created.id, memberId);
+    await addGroupMember(prisma, created.id, memberId, TODAY);
     expect((await listGroupMembers(prisma, created.id)).items[0]?.guardians).toEqual([
       { id: guardianId, name: "Iva", surname: "Horvat", email: null, phone: null },
     ]);
@@ -145,8 +147,8 @@ describe("addGroupMember", () => {
   it("changes nothing when the member is already in the group", async () => {
     const created = await createGroup(prisma, group());
     const memberId = await addedMember("child", "Ana", "Horvat");
-    await addGroupMember(prisma, created.id, memberId);
-    await addGroupMember(prisma, created.id, memberId);
+    await addGroupMember(prisma, created.id, memberId, TODAY);
+    await addGroupMember(prisma, created.id, memberId, TODAY);
     expect(await prisma.groupMember.count()).toBe(1);
   });
 
@@ -154,15 +156,15 @@ describe("addGroupMember", () => {
     const first = await createGroup(prisma, group());
     const second = await createGroup(prisma, group({ from: "19:00", to: "20:00" }));
     const memberId = await addedMember("child", "Ana", "Horvat");
-    await addGroupMember(prisma, first.id, memberId);
-    await addGroupMember(prisma, second.id, memberId);
+    await addGroupMember(prisma, first.id, memberId, TODAY);
+    await addGroupMember(prisma, second.id, memberId, TODAY);
     expect(await prisma.groupMember.count({ where: { memberId: Number(memberId) } })).toBe(2);
   });
 
   it.each(["trainer", "admin"] as const)("rejects a %s", async (role) => {
     const created = await createGroup(prisma, group());
     const { memberId } = await createLoginMember(prisma, orgId, role, "other@example.com");
-    await expect(addGroupMember(prisma, created.id, String(memberId))).rejects.toMatchObject({
+    await expect(addGroupMember(prisma, created.id, String(memberId), TODAY)).rejects.toMatchObject({
       code: "VALIDATION_ERROR",
     });
     expect(await prisma.groupMember.count()).toBe(0);
@@ -171,9 +173,9 @@ describe("addGroupMember", () => {
   it("rejects an unknown group or member", async () => {
     const created = await createGroup(prisma, group());
     const memberId = await addedMember("child", "Ana", "Horvat");
-    await expect(addGroupMember(prisma, "999999", memberId)).rejects.toMatchObject({ code: "NOT_FOUND" });
-    await expect(addGroupMember(prisma, created.id, "999999")).rejects.toMatchObject({ code: "NOT_FOUND" });
-    await expect(addGroupMember(prisma, created.id, "abc")).rejects.toMatchObject({ code: "NOT_FOUND" });
+    await expect(addGroupMember(prisma, "999999", memberId, TODAY)).rejects.toMatchObject({ code: "NOT_FOUND" });
+    await expect(addGroupMember(prisma, created.id, "999999", TODAY)).rejects.toMatchObject({ code: "NOT_FOUND" });
+    await expect(addGroupMember(prisma, created.id, "abc", TODAY)).rejects.toMatchObject({ code: "NOT_FOUND" });
   });
 });
 
@@ -181,7 +183,7 @@ describe("listGroupMembers", () => {
   it("returns the members sorted by surname, then name", async () => {
     const created = await createGroup(prisma, group());
     for (const [name, surname] of [["Marko", "Novak"], ["Iva", "Horvat"], ["Ana", "Horvat"]] as const) {
-      await addGroupMember(prisma, created.id, await addedMember("child", name, surname));
+      await addGroupMember(prisma, created.id, await addedMember("child", name, surname), TODAY);
     }
     const { items } = await listGroupMembers(prisma, created.id);
     expect(items.map((item) => `${item.surname} ${item.name}`)).toEqual(["Horvat Ana", "Horvat Iva", "Novak Marko"]);
@@ -197,21 +199,21 @@ describe("removeGroupMember", () => {
     const first = await createGroup(prisma, group());
     const second = await createGroup(prisma, group({ from: "19:00", to: "20:00" }));
     const memberId = await addedMember("child", "Ana", "Horvat");
-    await addGroupMember(prisma, first.id, memberId);
-    await addGroupMember(prisma, second.id, memberId);
+    await addGroupMember(prisma, first.id, memberId, TODAY);
+    await addGroupMember(prisma, second.id, memberId, TODAY);
 
-    await removeGroupMember(prisma, first.id, memberId);
+    await removeGroupMember(prisma, first.id, memberId, TODAY);
     expect((await listGroupMembers(prisma, first.id)).items).toEqual([]);
     expect((await listGroupMembers(prisma, second.id)).items).toHaveLength(1);
   });
 
   it("changes nothing when the member is not in the group", async () => {
     const created = await createGroup(prisma, group());
-    await expect(removeGroupMember(prisma, created.id, "999999")).resolves.toBeUndefined();
+    await expect(removeGroupMember(prisma, created.id, "999999", TODAY)).resolves.toBeUndefined();
   });
 
   it("rejects an unknown group", async () => {
-    await expect(removeGroupMember(prisma, "999999", "1")).rejects.toMatchObject({ code: "NOT_FOUND" });
+    await expect(removeGroupMember(prisma, "999999", "1", TODAY)).rejects.toMatchObject({ code: "NOT_FOUND" });
   });
 });
 
@@ -219,7 +221,7 @@ describe("a member in a group", () => {
   it("leaves the group when deleted", async () => {
     const created = await createGroup(prisma, group());
     const memberId = await addedMember("child", "Ana", "Horvat");
-    await addGroupMember(prisma, created.id, memberId);
+    await addGroupMember(prisma, created.id, memberId, TODAY);
     await prisma.member.delete({ where: { id: Number(memberId) } });
     expect((await getGroup(prisma, created.id)).memberCount).toBe(0);
   });

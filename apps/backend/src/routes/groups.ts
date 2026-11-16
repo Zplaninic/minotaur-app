@@ -10,6 +10,8 @@ import {
 import type { FastifyPluginAsync } from "fastify";
 import type { ZodTypeProvider } from "fastify-type-provider-zod";
 import { z } from "zod";
+import { config } from "../config.js";
+import { isoDateIn } from "../services/attendance.js";
 import {
   addGroupMember,
   createGroup,
@@ -97,7 +99,12 @@ export const groupRoutes: FastifyPluginAsync = async (app) => {
       },
     },
     async (request, reply) => {
-      await addGroupMember(app.db, request.params.id, request.params.memberId);
+      await addGroupMember(
+        app.db,
+        request.params.id,
+        request.params.memberId,
+        isoDateIn(new Date(), config.GYM_TIME_ZONE),
+      );
       return reply.status(204).send();
     },
   );
@@ -112,7 +119,12 @@ export const groupRoutes: FastifyPluginAsync = async (app) => {
       },
     },
     async (request, reply) => {
-      await removeGroupMember(app.db, request.params.id, request.params.memberId);
+      await removeGroupMember(
+        app.db,
+        request.params.id,
+        request.params.memberId,
+        isoDateIn(new Date(), config.GYM_TIME_ZONE),
+      );
       return reply.status(204).send();
     },
   );
