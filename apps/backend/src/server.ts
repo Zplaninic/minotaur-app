@@ -6,6 +6,7 @@ import { dbPlugin } from "./plugins/db.js";
 import { errorHandlerPlugin } from "./plugins/errorHandler.js";
 import { attendanceRoutes } from "./routes/attendance.js";
 import { authRoutes } from "./routes/auth.js";
+import { dashboardRoutes } from "./routes/dashboard.js";
 import { groupRoutes } from "./routes/groups.js";
 import { guardianRoutes } from "./routes/guardians.js";
 import { memberRoutes } from "./routes/members.js";
@@ -40,6 +41,7 @@ export const buildServer = async (): Promise<FastifyInstance> => {
   await app.register(groupRoutes, { prefix: "/groups" });
   await app.register(attendanceRoutes, { prefix: "/groups" });
   await app.register(subscriptionRoutes, { prefix: "/subscriptions" });
+  await app.register(dashboardRoutes, { prefix: "/dashboard" });
 
   return app;
 };
