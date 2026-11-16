@@ -1,9 +1,11 @@
-import { ADULT_AGE, type MemberResponse } from "@repo/shared";
+import { ADULT_AGE, MIN_BIRTHDAY, type MemberResponse } from "@repo/shared";
+import { isLoginRole } from "@repo/shared/auth";
 import {
   emptyMemberDraft,
   memberDraftFrom,
   newGuardianDraft,
   toErrorCode,
+  toIsoDate,
   toUpdateMemberBody,
   validateMemberDraft,
   type GuardianDraft,
@@ -44,7 +46,9 @@ export const MemberForm = ({ member, onCancel, onSaved }: MemberFormProps) => {
   // With a single club there is nothing to choose, so it is preselected.
   const onlyOrg = orgs.data?.items.length === 1 ? orgs.data.items[0] : undefined;
   const effectiveDraft: MemberDraft = { ...draft, orgId: draft.orgId || (onlyOrg?.id ?? "") };
-  const validation = validateMemberDraft(effectiveDraft, today);
+  // A trainer or admin logs in with their email, so it cannot be cleared.
+  const emailRequired = member !== undefined && isLoginRole(member.role);
+  const validation = validateMemberDraft(effectiveDraft, today, { emailRequired });
   const errors = submitted && !validation.ok ? validation.errors : {};
   const serverCode = save.error ? toErrorCode(save.error) : undefined;
 
@@ -153,6 +157,8 @@ export const MemberForm = ({ member, onCancel, onSaved }: MemberFormProps) => {
             value={draft.birthday}
             onChange={(birthday) => update({ birthday })}
             error={fieldError("birthday")}
+            min={MIN_BIRTHDAY}
+            max={toIsoDate(today)}
             required
           />
           <TextField
@@ -175,7 +181,8 @@ export const MemberForm = ({ member, onCancel, onSaved }: MemberFormProps) => {
             onChange={(email) => update({ email })}
             error={fieldError("email")}
             autoComplete="off"
-            optional
+            optional={!emailRequired}
+            required={emailRequired}
           />
           <TextField
             label={t("memberForm.phone")}

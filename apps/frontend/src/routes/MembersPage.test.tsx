@@ -59,7 +59,8 @@ beforeEach(() => {
       throw new ApiError("CONFLICT", 409);
     }
     if (path.startsWith("/members?")) {
-      return { items: members, page: 1, pageSize: 20, total: members.length };
+      const page = Number(new URLSearchParams(path.split("?")[1]).get("page"));
+      return { items: members.slice((page - 1) * 20, page * 20), page, pageSize: 20, total: members.length };
     }
     throw new ApiError("NOT_FOUND", 404);
   });
@@ -199,6 +200,25 @@ describe("MembersPage", () => {
 
     expect(await screen.findByText(t("members.empty"))).toBeInTheDocument();
     expect(fetchMock).toHaveBeenCalledWith("/members/1", expect.anything(), expect.objectContaining({ method: "DELETE" }));
+  });
+
+  it("goes back a page when the last page empties out", async () => {
+    const others = Array.from({ length: 20 }, (_, index) => ({ ...marko, id: `m${index}`, name: `Marko${index}` }));
+    members = [...others, ana];
+    renderPage();
+    fireEvent.click(await screen.findByRole("button", { name: t("members.pagination.next") }));
+    fireEvent.click(await screen.findByRole("button", { name: t("members.deleteLabel", { name: "Ana Horvat" }) }));
+    const confirm = screen.getByRole("dialog", { name: t("members.deleteConfirmTitle", { name: "Ana Horvat" }) });
+    fireEvent.click(within(confirm).getByRole("button", { name: t("common.delete") }));
+
+    expect(await screen.findByRole("rowheader", { name: "Babić Marko0" })).toBeInTheDocument();
+  });
+
+  it("offers no delete button for the logged-in member's own row", async () => {
+    members = [{ ...marko, id: "9" }, ana];
+    renderPage();
+    expect(await screen.findByRole("button", { name: t("members.deleteLabel", { name: "Ana Horvat" }) })).toBeInTheDocument();
+    expect(screen.queryByRole("button", { name: t("members.deleteLabel", { name: "Marko Babić" }) })).not.toBeInTheDocument();
   });
 
   it("explains why a trainer who leads groups cannot be deleted", async () => {

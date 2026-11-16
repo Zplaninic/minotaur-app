@@ -45,7 +45,11 @@ export const AddSessionForm = ({ groupId, today, onCancel, onSaved }: AddSession
         type="date"
         label={t("sessionForm.date")}
         value={date}
-        onChange={setDate}
+        onChange={(value) => {
+          setDate(value);
+          // "Already exists" was about the previous date.
+          addSession.reset();
+        }}
         min={range.min}
         max={range.max}
         error={conflict ? t("sessionForm.error.exists") : fieldError}

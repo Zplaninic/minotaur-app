@@ -1,7 +1,7 @@
 import { DEFAULT_PAGE_SIZE, type MemberResponse } from "@repo/shared";
 import { toErrorCode, type ClientErrorCode } from "@repo/shared/client";
 import { useState } from "react";
-import { useAbility } from "../../api/auth";
+import { useAbility, useMe } from "../../api/auth";
 import { useArchiveMember, useMembers } from "../../api/members";
 import { Button } from "../../components/Button";
 import { ConfirmDialog } from "../../components/ConfirmDialog";
@@ -21,6 +21,7 @@ type MembersTableProps = {
 
 export const MembersTable = ({ onEdit }: MembersTableProps) => {
   const ability = useAbility();
+  const me = useMe();
   const canEdit = ability.can("update", "Member");
   const canDelete = ability.can("delete", "Member");
   const [page, setPage] = useState(1);
@@ -53,6 +54,10 @@ export const MembersTable = ({ onEdit }: MembersTableProps) => {
     return <p className={styles.state}>{t("members.empty")}</p>;
   }
   const pages = Math.max(1, Math.ceil(total / pageSize));
+  // The last page can empty out, e.g. after its only member is deleted.
+  if (page > pages) {
+    setPage(pages);
+  }
 
   return (
     <div className={styles.wrapper}>
@@ -95,7 +100,8 @@ export const MembersTable = ({ onEdit }: MembersTableProps) => {
                         {t("members.edit")}
                       </Button>
                     ) : null}
-                    {canDelete ? (
+                    {/* Nobody deletes themselves; the backend refuses it too. */}
+                    {canDelete && member.id !== me.data?.memberId ? (
                       <Button
                         variant="secondary"
                         onClick={() => setDeleting(member)}

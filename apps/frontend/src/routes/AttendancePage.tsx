@@ -7,8 +7,6 @@ import {
   shiftMonth,
   stepSession,
   toErrorCode,
-  toIsoDate,
-  toMonth,
   type SessionPick,
 } from "@repo/shared/client";
 import { Link, useNavigate, useParams, useSearch } from "@tanstack/react-router";
@@ -29,6 +27,7 @@ import { groupName } from "../features/groups/groupName";
 import { formatMonth, formatSessionDate } from "../lib/format";
 import { errorMessage, t } from "../lib/messages";
 import { useNarrowScreen } from "../lib/useNarrowScreen";
+import { useToday } from "../lib/useToday";
 import styles from "./AttendancePage.module.css";
 
 const ROUTE = "/app/groups/$groupId/attendance";
@@ -40,14 +39,14 @@ export const AttendancePage = () => {
   const ability = useAbility();
   const narrow = useNarrowScreen();
   const group = useGroup(groupId);
-  const [now] = useState(() => new Date());
-  const month = search.month ?? toMonth(now);
+  const today = useToday();
+  // An ISO date starts with its month.
+  const month = search.month ?? today.slice(0, 7);
   const attendance = useGroupAttendance(groupId, month);
   // Which session the phone layout shows; the wide grid shows them all.
   const [pick, setPick] = useState<SessionPick>({ kind: "latest" });
   const [dialog, setDialog] = useState<"session" | "member" | undefined>();
   const closeDialog = () => setDialog(undefined);
-  const today = toIsoDate(now);
 
   if (!ability.can("read", "Attendance")) {
     return <p role="alert">{t("auth.noAccess")}</p>;
@@ -148,7 +147,7 @@ export const AttendancePage = () => {
         </nav>
       )}
 
-      <AttendanceError />
+      <AttendanceError groupId={groupId} month={month} />
 
       <AttendanceBody
         groupId={groupId}

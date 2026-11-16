@@ -3,7 +3,7 @@ import "@fontsource-variable/red-hat-display";
 import "./tokens.css";
 import "./global.css";
 
-import { authKeys, toErrorCode } from "@repo/shared/client";
+import { authKeys, shouldRetryQuery, toErrorCode } from "@repo/shared/client";
 import { MutationCache, QueryCache, QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { RouterProvider } from "@tanstack/react-router";
 import { StrictMode } from "react";
@@ -21,6 +21,7 @@ const onError = (error: unknown) => {
 const queryClient: QueryClient = new QueryClient({
   queryCache: new QueryCache({ onError }),
   mutationCache: new MutationCache({ onError }),
+  defaultOptions: { queries: { retry: shouldRetryQuery } },
 });
 
 const rootElement = document.getElementById("root");
