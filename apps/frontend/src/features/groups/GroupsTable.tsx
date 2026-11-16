@@ -1,7 +1,8 @@
 import { toErrorCode } from "@repo/shared/client";
+import { Link } from "@tanstack/react-router";
 import { useGroups } from "../../api/groups";
 import { Button } from "../../components/Button";
-import { formatSortedName, formatTimeOfDay } from "../../lib/format";
+import { formatNumber, formatSortedName, formatTimeOfDay } from "../../lib/format";
 import { errorMessage, t, weekdayKey } from "../../lib/messages";
 import { groupName } from "./groupName";
 import styles from "./GroupsTable.module.css";
@@ -38,17 +39,23 @@ export const GroupsTable = () => {
             <th scope="col">{t("groups.table.owner")}</th>
             <th scope="col">{t("groups.table.days")}</th>
             <th scope="col">{t("groups.table.time")}</th>
+            <th scope="col">{t("groups.table.members")}</th>
           </tr>
         </thead>
         <tbody>
           {groups.data.items.map((group) => (
             <tr key={group.id}>
-              <th scope="row">{groupName(group)}</th>
+              <th scope="row">
+                <Link to="/groups/$groupId" params={{ groupId: group.id }}>
+                  {groupName(group)}
+                </Link>
+              </th>
               <td className={styles.nowrap}>{formatSortedName(group.owner)}</td>
               <td>{group.days.map((day) => t(weekdayKey(day))).join(", ")}</td>
               <td className={styles.nowrap}>
                 {t("groups.timeRange", { from: formatTimeOfDay(group.from), to: formatTimeOfDay(group.to) })}
               </td>
+              <td>{formatNumber(group.memberCount)}</td>
             </tr>
           ))}
         </tbody>

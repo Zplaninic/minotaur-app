@@ -1,0 +1,55 @@
+.page {
+  display: grid;
+  gap: var(--space-6);
+}
+
+.back {
+  justify-self: start;
+  font-weight: var(--weight-semibold);
+  text-underline-offset: var(--space-1);
+}
+
+.title {
+  font-size: var(--text-3xl);
+}
+
+.facts {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(min(100%, 14rem), 1fr));
+  gap: var(--space-4);
+  margin: 0;
+}
+
+.facts dt {
+  font-size: var(--text-sm);
+  font-weight: var(--weight-semibold);
+}
+
+.facts dd {
+  margin: 0;
+}
+
+.members {
+  display: grid;
+  gap: var(--space-4);
+}
+
+.header {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--space-4);
+}
+
+.header h2 {
+  font-size: var(--text-2xl);
+}
+
+.state {
+  display: grid;
+  gap: var(--space-3);
+  padding: var(--space-6);
+  border: var(--border-width) solid var(--color-green-dark-30);
+  background-color: var(--color-beige-20);
+}

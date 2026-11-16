@@ -1,11 +1,12 @@
 import type { GroupResponse, MemberResponse, MeResponse } from "@repo/shared";
 import { ApiError } from "@repo/shared/client";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
+import { createMemoryHistory, RouterProvider } from "@tanstack/react-router";
 import { fireEvent, render, screen, waitFor, within } from "@testing-library/react";
 import { beforeEach, describe, expect, it, vi } from "vitest";
 import { api } from "../api/client";
 import { t } from "../lib/messages";
-import { GroupsPage } from "./GroupsPage";
+import { createAppRouter } from "./router";
 
 vi.mock("../api/client", () => ({ api: { fetch: vi.fn() } }));
 
@@ -33,6 +34,7 @@ const mondayGroup: GroupResponse = {
   days: ["monday", "wednesday"],
   from: "17:00",
   to: "18:30",
+  memberCount: 3,
   createdAt: "2026-11-15T17:00:00.000Z",
   updatedAt: "2026-11-15T17:00:00.000Z",
 };
@@ -67,7 +69,7 @@ beforeEach(() => {
 const renderPage = () =>
   render(
     <QueryClientProvider client={new QueryClient({ defaultOptions: { queries: { retry: false } } })}>
-      <GroupsPage />
+      <RouterProvider router={createAppRouter(createMemoryHistory({ initialEntries: ["/groups"] }))} />
     </QueryClientProvider>,
   );
 
@@ -89,6 +91,8 @@ describe("GroupsPage", () => {
     expect(within(row as HTMLElement).getByText("Kovač Petra")).toBeInTheDocument();
     expect(within(row as HTMLElement).getByText("Monday, Wednesday")).toBeInTheDocument();
     expect(within(row as HTMLElement).getByText("5:00 PM – 6:30 PM")).toBeInTheDocument();
+    expect(within(row as HTMLElement).getByRole("cell", { name: "3" })).toBeInTheDocument();
+    expect(within(row as HTMLElement).getByRole("link")).toHaveAttribute("href", "/groups/1");
   });
 
   it("shows the empty state when there are no groups", async () => {
