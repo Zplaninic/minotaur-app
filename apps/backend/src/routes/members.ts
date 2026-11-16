@@ -11,8 +11,11 @@ import type { FastifyPluginAsync } from "fastify";
 import type { ZodTypeProvider } from "fastify-type-provider-zod";
 import { z } from "zod";
 import { config } from "../config.js";
+import { AppError } from "../errors.js";
 import { isoDateIn } from "../services/attendance.js";
 import { archiveMember, createMember, getMember, listMembers, updateMember } from "../services/members.js";
+
+const todayAtGym = (): string => isoDateIn(new Date(), config.GYM_TIME_ZONE);
 
 export const memberRoutes: FastifyPluginAsync = async (app) => {
   const routes = app.withTypeProvider<ZodTypeProvider>();
@@ -47,7 +50,7 @@ export const memberRoutes: FastifyPluginAsync = async (app) => {
         },
       },
     },
-    async (request, reply) => reply.status(201).send(await createMember(app.db, request.body, new Date())),
+    async (request, reply) => reply.status(201).send(await createMember(app.db, request.body, todayAtGym())),
   );
 
   routes.get(
@@ -81,7 +84,7 @@ export const memberRoutes: FastifyPluginAsync = async (app) => {
         },
       },
     },
-    async (request) => updateMember(app.db, request.params.id, request.body, new Date()),
+    async (request) => updateMember(app.db, request.params.id, request.body, todayAtGym()),
   );
 
   routes.delete(
@@ -102,8 +105,17 @@ export const memberRoutes: FastifyPluginAsync = async (app) => {
       },
     },
     async (request, reply) => {
+      if (!request.auth) {
+        throw new AppError("UNAUTHORIZED", 401, "Log in first");
+      }
       const now = new Date();
-      await archiveMember(app.db, request.params.id, now, isoDateIn(now, config.GYM_TIME_ZONE));
+      await archiveMember(
+        app.db,
+        request.params.id,
+        request.auth.me.memberId,
+        now,
+        isoDateIn(now, config.GYM_TIME_ZONE),
+      );
       return reply.status(204).send();
     },
   );

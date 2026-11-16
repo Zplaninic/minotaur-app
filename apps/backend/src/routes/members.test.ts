@@ -44,6 +44,21 @@ describe("POST /members", () => {
     expect((await post(body(), trainer)).statusCode).toBe(201);
   });
 
+  it("answers VALIDATION_ERROR for a body that is not JSON", async () => {
+    const response = await app.inject({
+      method: "POST",
+      url: "/members",
+      payload: "{bad",
+      headers: { ...headers, "content-type": "application/json" },
+    });
+    expect(response.statusCode).toBe(400);
+    expect(errorResponse.parse(response.json()).code).toBe("VALIDATION_ERROR");
+  });
+
+  it("rejects a birthday before 1900", async () => {
+    expect((await post({ ...body(), birthday: "0000-01-01" })).statusCode).toBe(400);
+  });
+
   it("rejects an invalid body", async () => {
     const response = await post({ ...body(), birthday: "1.5.1990" });
     expect(response.statusCode).toBe(400);
@@ -145,6 +160,13 @@ describe("DELETE /members/:id", () => {
     const created = memberResponse.parse((await post(body())).json());
     expect((await archive(created.id)).statusCode).toBe(204);
     expect((await app.inject({ method: "GET", url: `/members/${created.id}`, headers })).statusCode).toBe(404);
+  });
+
+  it("answers FORBIDDEN to someone deleting themselves", async () => {
+    const me = await app.inject({ method: "GET", url: "/me", headers });
+    const response = await archive(me.json().memberId);
+    expect(response.statusCode).toBe(403);
+    expect(errorResponse.parse(response.json()).code).toBe("FORBIDDEN");
   });
 
   it("answers NOT_FOUND for an id that is not a number", async () => {

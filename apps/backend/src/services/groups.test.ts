@@ -84,14 +84,14 @@ describe("a trainer who owns groups", () => {
 
   it("cannot be moved to another role", async () => {
     await createGroup(prisma, group());
-    await expect(setMemberRole(prisma, Number(trainerId), "member")).rejects.toMatchObject({ code: "CONFLICT" });
+    await expect(setMemberRole(prisma, Number(trainerId), "member", TODAY)).rejects.toMatchObject({ code: "CONFLICT" });
     expect((await prisma.member.findUniqueOrThrow({ where: { id: Number(trainerId) } })).role).toBe("trainer");
   });
 });
 
 describe("a trainer without groups", () => {
   it("can be moved to another role", async () => {
-    await setMemberRole(prisma, Number(trainerId), "member");
+    await setMemberRole(prisma, Number(trainerId), "member", TODAY);
     expect((await prisma.member.findUniqueOrThrow({ where: { id: Number(trainerId) } })).role).toBe("member");
   });
 });

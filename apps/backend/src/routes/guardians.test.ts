@@ -1,7 +1,7 @@
 import { errorResponse, listGuardiansResponse } from "@repo/shared";
 import type { FastifyInstance } from "fastify";
 import { afterAll, beforeAll, beforeEach, describe, expect, it } from "vitest";
-import { createGuardian, createOrg, loggedInAs, resetDb } from "../../test/db.js";
+import { authHeaders, createGuardian, createLoginMember, createOrg, resetDb } from "../../test/db.js";
 import { buildServer } from "../server.js";
 
 let app: FastifyInstance;
@@ -19,10 +19,18 @@ afterAll(async () => {
 });
 
 describe("GET /guardians", () => {
-  it("lists guardians sorted by surname", async () => {
-    const headers = await loggedInAs(app.db, await createOrg(app.db), "admin");
-    await createGuardian(app.db, "Iva", "Zorić");
-    await createGuardian(app.db, "Ivan", "Babić");
+  it("lists the guardians of active members, sorted by surname", async () => {
+    const orgId = await createOrg(app.db);
+    const { memberId } = await createLoginMember(app.db, orgId, "admin");
+    const headers = await authHeaders(app.db, memberId);
+    const archived = await createLoginMember(app.db, orgId, "child");
+    await app.db.member.update({ where: { id: archived.memberId }, data: { deletedAt: new Date() } });
+    const link = (guardianId: string, toMemberId: number) =>
+      app.db.memberGuardian.create({ data: { memberId: toMemberId, guardianId: Number(guardianId) } });
+    await link(await createGuardian(app.db, "Iva", "Zorić"), memberId);
+    await link(await createGuardian(app.db, "Ivan", "Babić"), memberId);
+    await link(await createGuardian(app.db, "Petar", "Arhiviran"), archived.memberId);
+    await createGuardian(app.db, "Nitko", "Nevezan");
     const response = await app.inject({ method: "GET", url: "/guardians", headers });
     expect(response.statusCode).toBe(200);
     expect(listGuardiansResponse.parse(response.json()).items.map((guardian) => guardian.surname)).toEqual([

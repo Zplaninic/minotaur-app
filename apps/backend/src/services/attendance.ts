@@ -201,9 +201,10 @@ export const deleteTrainingSession = async (db: Db, groupId: string, sessionId: 
 
 type AttendanceTarget = { groupId: string; sessionId: string; memberId: string };
 
+// A session of an archived group is as gone as the group.
 const requireSession = async (db: DbClient, groupId: number, sessionId: number) => {
   const session = await db.trainingSession.findFirst({
-    where: { id: sessionId, groupId },
+    where: { id: sessionId, groupId, group: { deletedAt: null } },
     select: { id: true, date: true },
   });
   if (!session) {
@@ -265,7 +266,7 @@ export const unmarkAttendance = async (db: Db, target: AttendanceTarget): Promis
 type MonthMemberTarget = { groupId: string; month: Month; memberId: string };
 
 // Adding a member who is already on the roster changes nothing. Only the
-// group's members can be added.
+// group's members can be added, and only to a month that has sessions.
 export const addMonthMember = async (db: Db, target: MonthMemberTarget): Promise<void> => {
   const groupDbId = requireDbId(target.groupId, groupNotFound);
   const memberDbId = requireDbId(target.memberId, memberNotFound);
@@ -281,6 +282,9 @@ export const addMonthMember = async (db: Db, target: MonthMemberTarget): Promise
         throw memberNotFound();
       }
       throw new AppError("VALIDATION_ERROR", 400, "The member is not in the group");
+    }
+    if ((await countMonthSessions(tx, groupDbId, target.month)) === 0) {
+      throw new AppError("VALIDATION_ERROR", 400, "The month has no sessions");
     }
     await tx.groupMonthMember.upsert({
       where: {

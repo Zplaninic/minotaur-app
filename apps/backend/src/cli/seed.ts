@@ -133,7 +133,7 @@ const demoEmail = (name: string, surname: string): string =>
     .normalize("NFD")
     .replace(/[\u0300-\u036f]/g, "");
 
-const createChild = async (db: Db, orgId: string, birthYears: [number, number], now: Date): Promise<string> => {
+const createChild = async (db: Db, orgId: string, birthYears: [number, number], today: string): Promise<string> => {
   const child = inventChild(birthYears);
   const parent = pick(PARENT_NAMES);
   const member = await createMember(
@@ -152,18 +152,18 @@ const createChild = async (db: Db, orgId: string, birthYears: [number, number], 
         },
       ],
     },
-    now,
+    today,
   );
   return member.id;
 };
 
-const seedGroup = async (db: Db, orgId: string, ownerId: string, demo: DemoGroup, now: Date, today: string) => {
+const seedGroup = async (db: Db, orgId: string, ownerId: string, demo: DemoGroup, today: string) => {
   const group = await createGroup(db, { ownerId, days: demo.days, from: demo.from, to: demo.to });
   const currentMonth = SEASON.indexOf(today.slice(0, 7));
 
   const children: DemoChild[] = [];
   for (let index = 0; index < demo.size; index += 1) {
-    const memberId = await createChild(db, orgId, demo.birthYears, now);
+    const memberId = await createChild(db, orgId, demo.birthYears, today);
     children.push({ memberId, ...seasonSpan(), rate: 0.55 + random() * 0.4 });
   }
 
@@ -230,7 +230,7 @@ await runCommand("pnpm --filter @repo/backend db:seed", {}, async (db) => {
       DEMO_TRAINER_PASSWORD,
     );
     for (const group of trainer.groups) {
-      const { children, ticks } = await seedGroup(db, orgId, String(trainerId), group, now, today);
+      const { children, ticks } = await seedGroup(db, orgId, String(trainerId), group, today);
       lines.push(
         `${trainer.name} ${trainer.surname}, ${group.days.join("/")} ${group.from}–${group.to}: ${children} children, ${ticks} ticks`,
       );

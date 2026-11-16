@@ -119,7 +119,7 @@ describe("sessions", () => {
     const headers = await authHeaders(app.db, memberId);
     expect((await app.inject({ method: "GET", url: "/members", headers })).statusCode).toBe(200);
 
-    await setMemberRole(app.db, memberId, "member");
+    await setMemberRole(app.db, memberId, "member", "2026-11-16");
     expect((await app.inject({ method: "GET", url: "/members", headers })).statusCode).toBe(401);
   });
 

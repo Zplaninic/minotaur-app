@@ -1,5 +1,7 @@
 import { email as emailSchema } from "@repo/shared";
 import { LOGIN_ROLES, type LoginRole } from "@repo/shared/auth";
+import { config } from "../config.js";
+import { isoDateIn } from "../services/attendance.js";
 import { createLoginForMember, createMemberWithLogin } from "../services/logins.js";
 import { readNewPassword } from "./readPassword.js";
 import { required, requiredId, runCommand } from "./run.js";
@@ -31,7 +33,13 @@ await runCommand(
 
     if (values["member-id"]) {
       const memberId = requiredId(values, "member-id");
-      await createLoginForMember(db, memberId, role, await readNewPassword());
+      await createLoginForMember(
+        db,
+        memberId,
+        role,
+        await readNewPassword(),
+        isoDateIn(new Date(), config.GYM_TIME_ZONE),
+      );
       return `Member ${memberId} is now ${role} and can log in with their member email.`;
     }
 

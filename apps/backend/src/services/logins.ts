@@ -1,9 +1,17 @@
-import { email as emailSchema, GROUP_OWNER_ROLE, newPassword, personName, type MemberRole } from "@repo/shared";
+import {
+  email as emailSchema,
+  GROUP_OWNER_ROLE,
+  isGroupMemberRole,
+  newPassword,
+  personName,
+  type MemberRole,
+} from "@repo/shared";
 import { isLoginRole, type LoginRole } from "@repo/shared/auth";
 import { hashPassword } from "../auth/password.js";
 import { deleteMemberSessions } from "../auth/sessions.js";
 import type { Db } from "../db/client.js";
 import { AppError } from "../errors.js";
+import { leaveGroups } from "./groups.js";
 
 // Used by the backend commands until there are screens for managing logins.
 
@@ -23,12 +31,15 @@ const validPassword = (password: string): string => {
   return result.data;
 };
 
-// Gives an existing member a role that can log in and a password.
+// Gives an existing member a role that can log in and a password. Trainers
+// and admins do not train in groups, so the member leaves theirs. today is
+// YYYY-MM-DD at the gym.
 export const createLoginForMember = async (
   db: Db,
   memberId: number,
   role: LoginRole,
   password: string,
+  today: string,
 ): Promise<void> => {
   const passwordHash = await hashPassword(validPassword(password));
   await db.$transaction(async (tx) => {
@@ -40,6 +51,7 @@ export const createLoginForMember = async (
       throw new AppError("VALIDATION_ERROR", 400, "The member has no email, which is needed to log in");
     }
     await tx.member.update({ where: { id: memberId }, data: { role } });
+    await leaveGroups(tx, memberId, today);
     await tx.login.upsert({ where: { memberId }, create: { memberId, passwordHash }, update: { passwordHash } });
   });
 };
@@ -78,12 +90,20 @@ export const setLoginPassword = async (db: Db, memberId: number, password: strin
 
 // Moving someone to a role that cannot log in also ends their sessions.
 // A group's owner must stay a trainer, so a trainer who owns groups keeps the role.
-export const setMemberRole = async (db: Db, memberId: number, role: MemberRole): Promise<void> => {
+// Only children and members train in groups, so anyone else leaves theirs.
+// today is YYYY-MM-DD at the gym.
+export const setMemberRole = async (db: Db, memberId: number, role: MemberRole, today: string): Promise<void> => {
   await db.$transaction(async (tx) => {
+    if (!(await tx.member.findUnique({ where: { id: memberId, deletedAt: null }, select: { id: true } }))) {
+      throw new AppError("NOT_FOUND", 404, "Member not found");
+    }
     if (role !== GROUP_OWNER_ROLE && (await tx.group.count({ where: { ownerId: memberId, deletedAt: null } })) > 0) {
       throw new AppError("CONFLICT", 409, "The member owns groups; give them to another trainer first");
     }
     await tx.member.update({ where: { id: memberId }, data: { role } });
+    if (!isGroupMemberRole(role)) {
+      await leaveGroups(tx, memberId, today);
+    }
     if (!isLoginRole(role)) {
       await deleteMemberSessions(tx, memberId);
     }

@@ -63,7 +63,7 @@ model Member {
   surname          String
   birthday         DateTime           @db.Date
   role             MemberRole         @default(child)
-  taxNumber        String?            @unique
+  taxNumber        String?
   email            String?
   phone            String?
   createdAt        DateTime           @default(now()) @db.Timestamptz
@@ -79,10 +79,12 @@ model Member {
   attendance       Attendance[]
   monthMemberships GroupMonthMember[]
 
-  // People who can log in never share an email. The roles listed here must
+  // Active people who can log in never share an email. The roles listed here must
   // match LOGIN_ROLES in @repo/shared/auth. Written the way Postgres stores
   // the condition, so Prisma does not see a difference and recreate it.
-  @@unique([email], map: "member_login_email_key", where: raw("role = ANY (ARRAY['trainer'::member_role, 'admin'::member_role])"))
+  @@unique([email], map: "member_login_email_key", where: raw("((role = ANY (ARRAY['trainer'::member_role, 'admin'::member_role])) AND (\"deletedAt\" IS NULL))"))
+  // An archived member's OIB is free again, so the same person can come back.
+  @@unique([taxNumber], map: "member_taxNumber_key", where: raw("(\"deletedAt\" IS NULL)"))
   @@index([orgId])
   @@map("member")
 }

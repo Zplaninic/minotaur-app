@@ -6,7 +6,11 @@ import { addTrainingSession, getGroupAttendance, markAttendance } from "./attend
 import { addGroupMember, archiveGroup, createGroup, listGroupMembers } from "./groups.js";
 import { ageOn, archiveMember, createMember, getMember, listMembers, updateMember } from "./members.js";
 
-const today = new Date("2026-11-15T12:00:00.000Z");
+const now = new Date("2026-11-15T12:00:00.000Z");
+// The day at the gym.
+const today = "2026-11-15";
+// Whoever is logged in; never one of the members under test.
+const ACTOR = "999999";
 
 let orgId: string;
 
@@ -180,6 +184,24 @@ describe("updateMember", () => {
     ).rejects.toMatchObject({ code: "P2002" });
   });
 
+  it("keeps the email of a member who logs in", async () => {
+    const { memberId } = await createLoginMember(prisma, orgId, "trainer");
+    await expect(updateMember(prisma, String(memberId), edit, today)).rejects.toMatchObject({
+      code: "VALIDATION_ERROR",
+    });
+  });
+
+  it("refuses a birthday in the future", async () => {
+    const created = await createMember(prisma, adult(), today);
+    const guardians = [{ kind: "new" as const, name: "Iva", surname: "Horvat" }];
+    await expect(createMember(prisma, adult({ birthday: "2026-11-16", guardians }), today)).rejects.toMatchObject({
+      code: "VALIDATION_ERROR",
+    });
+    await expect(
+      updateMember(prisma, created.id, { ...edit, birthday: "2026-11-16", guardians }, today),
+    ).rejects.toMatchObject({ code: "VALIDATION_ERROR" });
+  });
+
   it("answers NOT_FOUND for an unknown member or guardian", async () => {
     await expect(updateMember(prisma, "999999", edit, today)).rejects.toMatchObject({ code: "NOT_FOUND" });
     const created = await createMember(prisma, adult(), today);
@@ -208,7 +230,7 @@ describe("archiveMember", () => {
     await addTrainingSession(prisma, groupId, "2026-12-07", TODAY);
     await markAttendance(prisma, { groupId, sessionId, memberId: childId }, TODAY);
 
-    await archiveMember(prisma, childId, today, TODAY);
+    await archiveMember(prisma, childId, ACTOR, now, TODAY);
 
     await expect(getMember(prisma, childId)).rejects.toMatchObject({ code: "NOT_FOUND" });
     expect((await listMembers(prisma, { page: 1, pageSize: 20 })).items.map((member) => member.id)).not.toContain(
@@ -223,9 +245,9 @@ describe("archiveMember", () => {
 
   it("removes the login and every session", async () => {
     const { memberId } = await createLoginMember(prisma, orgId, "admin");
-    await prisma.session.create({ data: { id: "hash", memberId, expiresAt: today } });
+    await prisma.session.create({ data: { id: "hash", memberId, expiresAt: now } });
 
-    await archiveMember(prisma, String(memberId), today, TODAY);
+    await archiveMember(prisma, String(memberId), ACTOR, now, TODAY);
 
     expect(await prisma.login.count({ where: { memberId } })).toBe(0);
     expect(await prisma.session.count({ where: { memberId } })).toBe(0);
@@ -233,18 +255,33 @@ describe("archiveMember", () => {
 
   it("refuses the owner of an active group and changes nothing", async () => {
     const { trainerId, groupId } = await groupWithChild();
-    await expect(archiveMember(prisma, trainerId, today, TODAY)).rejects.toMatchObject({ code: "CONFLICT" });
+    await expect(archiveMember(prisma, trainerId, ACTOR, now, TODAY)).rejects.toMatchObject({ code: "CONFLICT" });
     expect((await getMember(prisma, trainerId)).id).toBe(trainerId);
 
-    await archiveGroup(prisma, groupId, today);
-    await archiveMember(prisma, trainerId, today, TODAY);
+    await archiveGroup(prisma, groupId, now);
+    await archiveMember(prisma, trainerId, ACTOR, now, TODAY);
     await expect(getMember(prisma, trainerId)).rejects.toBeInstanceOf(AppError);
+  });
+
+  it("refuses to archive the member who asks", async () => {
+    const { memberId } = await createLoginMember(prisma, orgId, "admin");
+    await expect(archiveMember(prisma, String(memberId), String(memberId), now, TODAY)).rejects.toMatchObject({
+      code: "FORBIDDEN",
+    });
+    expect((await getMember(prisma, String(memberId))).id).toBe(String(memberId));
+  });
+
+  it("frees the tax number of an archived member", async () => {
+    const first = await createMember(prisma, adult({ taxNumber: "01234567890" }), today);
+    await archiveMember(prisma, first.id, ACTOR, now, TODAY);
+    const second = await createMember(prisma, adult({ taxNumber: "01234567890" }), today);
+    expect(second.taxNumber).toBe("01234567890");
   });
 
   it("answers NOT_FOUND for an unknown or already archived member", async () => {
     const { childId } = await groupWithChild();
-    await archiveMember(prisma, childId, today, TODAY);
-    await expect(archiveMember(prisma, childId, today, TODAY)).rejects.toMatchObject({ code: "NOT_FOUND" });
-    await expect(archiveMember(prisma, "abc", today, TODAY)).rejects.toMatchObject({ code: "NOT_FOUND" });
+    await archiveMember(prisma, childId, ACTOR, now, TODAY);
+    await expect(archiveMember(prisma, childId, ACTOR, now, TODAY)).rejects.toMatchObject({ code: "NOT_FOUND" });
+    await expect(archiveMember(prisma, "abc", ACTOR, now, TODAY)).rejects.toMatchObject({ code: "NOT_FOUND" });
   });
 });

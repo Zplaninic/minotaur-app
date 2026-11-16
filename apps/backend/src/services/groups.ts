@@ -192,6 +192,14 @@ export const removeGroupMember = async (db: Db, groupId: string, memberId: strin
   }
 };
 
+// Takes a member out of every group and out of the rosters after the current
+// month, which have no ticks yet; the current and past months keep them.
+// today is YYYY-MM-DD at the gym.
+export const leaveGroups = async (db: Prisma.TransactionClient, memberId: number, today: string): Promise<void> => {
+  await db.groupMember.deleteMany({ where: { memberId } });
+  await db.groupMonthMember.deleteMany({ where: { memberId, month: { gt: monthStart(monthOf(today)) } } });
+};
+
 // Hides the group and keeps its members, rosters, sessions and attendance for history.
 export const archiveGroup = async (db: Db, groupId: string, now: Date): Promise<void> => {
   const { count } = await db.group.updateMany({

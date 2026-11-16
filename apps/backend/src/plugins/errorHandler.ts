@@ -14,6 +14,17 @@ const internalError: MappedError = {
   body: { code: "INTERNAL_ERROR", message: "Something went wrong" },
 };
 
+const isClientError = (error: unknown): boolean =>
+  typeof error === "object" &&
+  error !== null &&
+  "code" in error &&
+  typeof error.code === "string" &&
+  error.code.startsWith("FST_ERR_") &&
+  "statusCode" in error &&
+  typeof error.statusCode === "number" &&
+  error.statusCode >= 400 &&
+  error.statusCode < 500;
+
 const mapError = (error: unknown): MappedError => {
   if (hasZodFastifySchemaValidationErrors(error)) {
     return { statusCode: 400, body: { code: "VALIDATION_ERROR", message: "Request validation failed" } };
@@ -28,6 +39,11 @@ const mapError = (error: unknown): MappedError => {
     if (error.code === RECORD_NOT_FOUND) {
       return { statusCode: 404, body: { code: "NOT_FOUND", message: "Resource not found" } };
     }
+  }
+  // Fastify's own refusals of a request it cannot read: malformed JSON, an
+  // empty JSON body, an unsupported content type, a body that is too large.
+  if (isClientError(error)) {
+    return { statusCode: 400, body: { code: "VALIDATION_ERROR", message: "The request could not be read" } };
   }
   return internalError;
 };

@@ -9,11 +9,12 @@ import {
   type MemberResponse,
   type UpdateMemberBody,
 } from "@repo/shared";
+import { isLoginRole } from "@repo/shared/auth";
 import type { Db } from "../db/client.js";
 import { deleteMemberSessions } from "../auth/sessions.js";
 import { AppError } from "../errors.js";
 import type { Prisma } from "../generated/prisma/client.js";
-import { monthOf, monthStart } from "./attendance.js";
+import { leaveGroups } from "./groups.js";
 import { guardianSelect, toGuardianResponse } from "./guardians.js";
 import { toApiId, toDbId } from "./ids.js";
 
@@ -42,13 +43,11 @@ type ResolvedGuardian = { kind: "existing"; id: number } | ({ kind: "new" } & Cr
 const toDbDate = (isoDate: string): Date => new Date(`${isoDate}T00:00:00.000Z`);
 const toIsoDate = (date: Date): string => date.toISOString().slice(0, 10);
 
-export const ageOn = (birthday: string, today: Date): number => {
-  const birth = toDbDate(birthday);
-  const age = today.getUTCFullYear() - birth.getUTCFullYear();
-  const beforeBirthday =
-    today.getUTCMonth() < birth.getUTCMonth() ||
-    (today.getUTCMonth() === birth.getUTCMonth() && today.getUTCDate() < birth.getUTCDate());
-  return beforeBirthday ? age - 1 : age;
+// Age in whole years. Both dates are YYYY-MM-DD; today is the day at the gym.
+// The MM-DD parts sort like the days of the year they stand for.
+export const ageOn = (birthday: string, today: string): number => {
+  const age = Number(today.slice(0, 4)) - Number(birthday.slice(0, 4));
+  return today.slice(5) < birthday.slice(5) ? age - 1 : age;
 };
 
 const toMemberResponse = (member: MemberRow): MemberResponse => ({
@@ -90,7 +89,12 @@ const requireDbId = (value: string, notFoundMessage: string): number => {
 
 type DbClient = Db | Prisma.TransactionClient;
 
-const requireGuardianForMinor = (body: { birthday: string; guardians: readonly unknown[] }, today: Date): void => {
+// A birthday cannot be in the future, and a minor needs a guardian. today is
+// YYYY-MM-DD at the gym; ISO dates sort like the days they stand for.
+const requireValidBirthday = (body: { birthday: string; guardians: readonly unknown[] }, today: string): void => {
+  if (body.birthday > today) {
+    throw new AppError("VALIDATION_ERROR", 400, "The birthday cannot be in the future");
+  }
   if (body.guardians.length === 0 && ageOn(body.birthday, today) < ADULT_AGE) {
     throw new AppError("VALIDATION_ERROR", 400, `A member younger than ${ADULT_AGE} needs at least one guardian`);
   }
@@ -131,8 +135,8 @@ const linkGuardians = async (db: DbClient, memberId: number, guardians: readonly
   }
 };
 
-export const createMember = async (db: Db, body: CreateMemberBody, today: Date): Promise<MemberResponse> => {
-  requireGuardianForMinor(body, today);
+export const createMember = async (db: Db, body: CreateMemberBody, today: string): Promise<MemberResponse> => {
+  requireValidBirthday(body, today);
   const orgId = requireDbId(body.orgId, "Org not found");
   const guardians = resolveGuardians(body.guardians);
 
@@ -174,20 +178,25 @@ export const getMember = async (db: Db, memberId: string): Promise<MemberRespons
 };
 
 // Replaces the editable fields. A taken OIB or login email is a unique
-// constraint error, answered as CONFLICT. Unlinked guardians are kept.
+// constraint error, answered as CONFLICT. Unlinked guardians are kept. A
+// member who logs in keeps an email: it is their login name.
 export const updateMember = async (
   db: Db,
   memberId: string,
   body: UpdateMemberBody,
-  today: Date,
+  today: string,
 ): Promise<MemberResponse> => {
-  requireGuardianForMinor(body, today);
+  requireValidBirthday(body, today);
   const memberDbId = requireDbId(memberId, "Member not found");
   const guardians = resolveGuardians(body.guardians);
 
   return db.$transaction(async (tx) => {
-    if (!(await tx.member.findUnique({ where: { id: memberDbId, deletedAt: null }, select: { id: true } }))) {
+    const member = await tx.member.findUnique({ where: { id: memberDbId, deletedAt: null }, select: { role: true } });
+    if (!member) {
       throw new AppError("NOT_FOUND", 404, "Member not found");
+    }
+    if (isLoginRole(member.role) && !body.email) {
+      throw new AppError("VALIDATION_ERROR", 400, "A member who logs in needs an email");
     }
     await requireExistingGuardians(tx, guardians);
 
@@ -212,10 +221,20 @@ export const updateMember = async (
 // Hides the member and keeps their past rosters and attendance for history.
 // They leave their groups and the rosters after the current month, the same
 // as being removed from a group, and lose their login. A group's owner must
-// be active, so an owner of active groups cannot be archived. today is
-// YYYY-MM-DD at the gym.
-export const archiveMember = async (db: Db, memberId: string, now: Date, today: string): Promise<void> => {
+// be active, so an owner of active groups cannot be archived. Nobody archives
+// themselves, so the last admin cannot lock everyone out. today is YYYY-MM-DD
+// at the gym.
+export const archiveMember = async (
+  db: Db,
+  memberId: string,
+  actingMemberId: string,
+  now: Date,
+  today: string,
+): Promise<void> => {
   const memberDbId = requireDbId(memberId, "Member not found");
+  if (memberDbId === toDbId(actingMemberId)) {
+    throw new AppError("FORBIDDEN", 403, "You cannot delete yourself");
+  }
 
   await db.$transaction(async (tx) => {
     const { count } = await tx.member.updateMany({
@@ -228,8 +247,7 @@ export const archiveMember = async (db: Db, memberId: string, now: Date, today: 
     if ((await tx.group.count({ where: { ownerId: memberDbId, deletedAt: null } })) > 0) {
       throw new AppError("CONFLICT", 409, "The member owns groups; give them to another trainer first");
     }
-    await tx.groupMember.deleteMany({ where: { memberId: memberDbId } });
-    await tx.groupMonthMember.deleteMany({ where: { memberId: memberDbId, month: { gt: monthStart(monthOf(today)) } } });
+    await leaveGroups(tx, memberDbId, today);
     await tx.login.deleteMany({ where: { memberId: memberDbId } });
     await deleteMemberSessions(tx, memberDbId);
   });

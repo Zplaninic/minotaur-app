@@ -13,7 +13,7 @@ import {
   trainingDates,
   unmarkAttendance,
 } from "./attendance.js";
-import { addGroupMember, createGroup, removeGroupMember } from "./groups.js";
+import { addGroupMember, archiveGroup, createGroup, removeGroupMember } from "./groups.js";
 
 let orgId: string;
 let groupId: string;
@@ -245,6 +245,21 @@ describe("month rosters", () => {
     await addMonthMember(prisma, { groupId, month: "2026-11", memberId: childId });
     await addMonthMember(prisma, { groupId, month: "2026-11", memberId: childId });
     expect(await rosterIds("2026-11")).toEqual([childId]);
+  });
+
+  it("only adds to a month that has sessions", async () => {
+    await expect(addMonthMember(prisma, { groupId, month: "2027-05", memberId: childId })).rejects.toMatchObject({
+      code: "VALIDATION_ERROR",
+    });
+    expect(await rosterIds("2027-05")).toEqual([]);
+  });
+
+  it("refuses ticks on a session of an archived group", async () => {
+    const sessionId = await sessionOn("2026-11-09");
+    await archiveGroup(prisma, groupId, new Date());
+    const target = { groupId, sessionId, memberId: childId };
+    await expect(markAttendance(prisma, target, TODAY)).rejects.toMatchObject({ code: "NOT_FOUND" });
+    await expect(unmarkAttendance(prisma, target)).rejects.toMatchObject({ code: "NOT_FOUND" });
   });
 
   it("only adds members of the group", async () => {
