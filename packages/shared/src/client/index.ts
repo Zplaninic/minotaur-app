@@ -2,6 +2,7 @@ export * from "./age.js";
 export * from "./apiClient.js";
 export * from "./attendance.js";
 export * from "./auth.js";
+export * from "./dashboard.js";
 export * from "./format.js";
 export * from "./groupDraft.js";
 export * from "./groups.js";
