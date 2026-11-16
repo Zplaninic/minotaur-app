@@ -29,7 +29,7 @@ export const memberRoutes: FastifyPluginAsync = async (app) => {
         response: { 200: listMembersResponse, 400: errorResponse, 401: errorResponse, 403: errorResponse, 500: errorResponse },
       },
     },
-    async (request) => listMembers(app.db, request.query),
+    async (request) => listMembers(app.db, request.query, todayAtGym()),
   );
 
   routes.post(

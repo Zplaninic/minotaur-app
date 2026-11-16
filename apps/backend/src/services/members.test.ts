@@ -112,11 +112,11 @@ describe("listMembers", () => {
     await createMember(prisma, adult({ name: "Ana", surname: "Babić" }), today);
     await createMember(prisma, adult({ name: "Marko", surname: "Babić" }), today);
 
-    const first = await listMembers(prisma, { page: 1, pageSize: 2 });
+    const first = await listMembers(prisma, { page: 1, pageSize: 2 }, today);
     expect(first.total).toBe(3);
     expect(first.items.map((member) => member.name)).toEqual(["Ana", "Marko"]);
 
-    const second = await listMembers(prisma, { page: 2, pageSize: 2 });
+    const second = await listMembers(prisma, { page: 2, pageSize: 2 }, today);
     expect(second.items.map((member) => member.name)).toEqual(["Luka"]);
   });
 });
@@ -233,7 +233,7 @@ describe("archiveMember", () => {
     await archiveMember(prisma, childId, ACTOR, now, TODAY);
 
     await expect(getMember(prisma, childId)).rejects.toMatchObject({ code: "NOT_FOUND" });
-    expect((await listMembers(prisma, { page: 1, pageSize: 20 })).items.map((member) => member.id)).not.toContain(
+    expect((await listMembers(prisma, { page: 1, pageSize: 20 }, TODAY)).items.map((member) => member.id)).not.toContain(
       childId,
     );
     expect((await listGroupMembers(prisma, groupId)).items).toEqual([]);

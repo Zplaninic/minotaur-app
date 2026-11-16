@@ -1,13 +1,24 @@
 import {
   errorResponse,
   listSubscriptionsResponse,
+  overduePaymentsResponse,
   subscriptionBody,
   subscriptionParams,
   subscriptionResponse,
+  subscriptionSummaryQuery,
+  subscriptionSummaryResponse,
 } from "@repo/shared";
 import type { FastifyPluginAsync } from "fastify";
 import type { ZodTypeProvider } from "fastify-type-provider-zod";
-import { createSubscription, listSubscriptions, updateSubscription } from "../services/subscriptions.js";
+import { config } from "../config.js";
+import { isoDateIn } from "../services/attendance.js";
+import {
+  createSubscription,
+  getSubscriptionSummary,
+  listOverduePayments,
+  listSubscriptions,
+  updateSubscription,
+} from "../services/subscriptions.js";
 
 export const subscriptionRoutes: FastifyPluginAsync = async (app) => {
   const routes = app.withTypeProvider<ZodTypeProvider>();
@@ -21,6 +32,35 @@ export const subscriptionRoutes: FastifyPluginAsync = async (app) => {
       },
     },
     async () => listSubscriptions(app.db),
+  );
+
+  routes.get(
+    "/summary",
+    {
+      onRequest: app.requireAbility("read", "Subscription"),
+      schema: {
+        querystring: subscriptionSummaryQuery,
+        response: {
+          200: subscriptionSummaryResponse,
+          400: errorResponse,
+          401: errorResponse,
+          403: errorResponse,
+          500: errorResponse,
+        },
+      },
+    },
+    async (request) => getSubscriptionSummary(app.db, request.query.month),
+  );
+
+  routes.get(
+    "/overdue",
+    {
+      onRequest: app.requireAbility("read", "Subscription"),
+      schema: {
+        response: { 200: overduePaymentsResponse, 401: errorResponse, 403: errorResponse, 500: errorResponse },
+      },
+    },
+    async () => listOverduePayments(app.db, isoDateIn(new Date(), config.GYM_TIME_ZONE)),
   );
 
   routes.post(

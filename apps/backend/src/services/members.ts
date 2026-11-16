@@ -14,6 +14,7 @@ import type { Db } from "../db/client.js";
 import { deleteMemberSessions } from "../auth/sessions.js";
 import { AppError } from "../errors.js";
 import type { Prisma } from "../generated/prisma/client.js";
+import { monthOf, monthStart } from "./attendance.js";
 import { leaveGroups } from "./groups.js";
 import { guardianSelect, toGuardianResponse } from "./guardians.js";
 import { toApiId, toDbId } from "./ids.js";
@@ -64,8 +65,20 @@ const toMemberResponse = (member: MemberRow): MemberResponse => ({
   createdAt: member.createdAt.toISOString(),
 });
 
-export const listMembers = async (db: Db, query: ListMembersQuery): Promise<ListMembersResponse> => {
-  const where = { deletedAt: null, ...(query.role ? { role: query.role } : {}) };
+// With unpaid, only members who had a subscription in a month before the
+// current one and did not pay for it. today is YYYY-MM-DD at the gym.
+export const listMembers = async (db: Db, query: ListMembersQuery, today: string): Promise<ListMembersResponse> => {
+  const where: Prisma.MemberWhereInput = {
+    deletedAt: null,
+    ...(query.role ? { role: query.role } : {}),
+    ...(query.unpaid
+      ? {
+          months: {
+            some: { month: { lt: monthStart(monthOf(today)) }, subscriptionId: { not: null }, paid: false },
+          },
+        }
+      : {}),
+  };
   const [total, members] = await db.$transaction([
     db.member.count({ where }),
     db.member.findMany({

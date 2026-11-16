@@ -3,6 +3,7 @@ import type { FastifyInstance } from "fastify";
 import { afterAll, beforeAll, beforeEach, describe, expect, it } from "vitest";
 import { createOrg, loggedInAs, resetDb } from "../../test/db.js";
 import { buildServer } from "../server.js";
+import { createSubscription } from "../services/subscriptions.js";
 
 let app: FastifyInstance;
 let orgId: string;
@@ -177,5 +178,40 @@ describe("DELETE /members/:id", () => {
 
   it("answers UNAUTHORIZED without a session", async () => {
     expect((await app.inject({ method: "DELETE", url: "/members/1" })).statusCode).toBe(401);
+  });
+});
+
+describe("GET /members?unpaid=true", () => {
+  // September 2026 is the first month, so it is always in the past.
+  const september = new Date("2026-09-01T00:00:00.000Z");
+
+  it("lists only members with an unpaid past month", async () => {
+    const created = async (name: string) => memberResponse.parse((await post({ ...body(), name })).json()).id;
+    const ana = await created("Ana");
+    const ivo = await created("Ivo");
+    await created("Luka");
+    const subscription = await createSubscription(app.db, { name: "Adults 2x", sessionsPerWeek: 2, price: 5000 });
+    const month = (memberId: string, paid: boolean) => ({
+      memberId: Number(memberId),
+      month: september,
+      subscriptionId: Number(subscription.id),
+      subscriptionPrice: 5000,
+      subscriptionSessionsPerWeek: 2,
+      paid,
+    });
+    await app.db.memberMonth.createMany({ data: [month(ana, false), month(ivo, true)] });
+
+    const response = await app.inject({ method: "GET", url: "/members?unpaid=true", headers });
+    expect(response.statusCode).toBe(200);
+    expect(listMembersResponse.parse(response.json()).items.map((member) => member.id)).toEqual([ana]);
+
+    const all = await app.inject({ method: "GET", url: "/members", headers });
+    expect(listMembersResponse.parse(all.json()).total).toBeGreaterThanOrEqual(3);
+  });
+
+  it("rejects a filter value that is not true or false", async () => {
+    const response = await app.inject({ method: "GET", url: "/members?unpaid=maybe", headers });
+    expect(response.statusCode).toBe(400);
+    expect(errorResponse.parse(response.json()).code).toBe("VALIDATION_ERROR");
   });
 });

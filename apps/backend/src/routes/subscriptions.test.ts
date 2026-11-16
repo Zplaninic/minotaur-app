@@ -1,4 +1,10 @@
-import { errorResponse, listSubscriptionsResponse, subscriptionResponse } from "@repo/shared";
+import {
+  errorResponse,
+  listSubscriptionsResponse,
+  overduePaymentsResponse,
+  subscriptionResponse,
+  subscriptionSummaryResponse,
+} from "@repo/shared";
 import type { FastifyInstance } from "fastify";
 import { afterAll, beforeAll, beforeEach, describe, expect, it } from "vitest";
 import { authHeaders, createLoginMember, createOrg, resetDb } from "../../test/db.js";
@@ -131,5 +137,37 @@ describe("PUT /subscriptions/:id", () => {
     const id = await createdId();
     const response = await put(id, body, trainer);
     expect(response.statusCode).toBe(403);
+  });
+});
+
+describe("GET /subscriptions/summary", () => {
+  it("lets a trainer read a month's totals", async () => {
+    const response = await app.inject({ method: "GET", url: "/subscriptions/summary?month=2026-11", headers: trainer });
+    expect(response.statusCode).toBe(200);
+    expect(subscriptionSummaryResponse.parse(response.json())).toMatchObject({ month: "2026-11", members: 0 });
+  });
+
+  it.each(["", "?month=2026-8", "?month=2026-08"])("rejects %j", async (query) => {
+    const response = await app.inject({ method: "GET", url: `/subscriptions/summary${query}`, headers: trainer });
+    expect(response.statusCode).toBe(400);
+    expect(errorCode(response)).toBe("VALIDATION_ERROR");
+  });
+
+  it("answers UNAUTHORIZED without a session", async () => {
+    const response = await app.inject({ method: "GET", url: "/subscriptions/summary?month=2026-11" });
+    expect(response.statusCode).toBe(401);
+  });
+});
+
+describe("GET /subscriptions/overdue", () => {
+  it("lets a trainer read the overdue list", async () => {
+    const response = await app.inject({ method: "GET", url: "/subscriptions/overdue", headers: trainer });
+    expect(response.statusCode).toBe(200);
+    expect(overduePaymentsResponse.parse(response.json())).toEqual({ items: [], total: 0 });
+  });
+
+  it("answers UNAUTHORIZED without a session", async () => {
+    const response = await app.inject({ method: "GET", url: "/subscriptions/overdue" });
+    expect(response.statusCode).toBe(401);
   });
 });
