@@ -137,3 +137,23 @@ describe("PUT /members/:id and GET /members/:id", () => {
     expect(response.statusCode).toBe(404);
   });
 });
+
+describe("DELETE /members/:id", () => {
+  const archive = (memberId: string) => app.inject({ method: "DELETE", url: `/members/${memberId}`, headers });
+
+  it("archives a member, who then answers NOT_FOUND", async () => {
+    const created = memberResponse.parse((await post(body())).json());
+    expect((await archive(created.id)).statusCode).toBe(204);
+    expect((await app.inject({ method: "GET", url: `/members/${created.id}`, headers })).statusCode).toBe(404);
+  });
+
+  it("answers NOT_FOUND for an id that is not a number", async () => {
+    const response = await archive("abc");
+    expect(response.statusCode).toBe(404);
+    expect(errorResponse.parse(response.json()).code).toBe("NOT_FOUND");
+  });
+
+  it("answers UNAUTHORIZED without a session", async () => {
+    expect((await app.inject({ method: "DELETE", url: "/members/1" })).statusCode).toBe(401);
+  });
+});

@@ -9,7 +9,10 @@ import {
 } from "@repo/shared";
 import type { FastifyPluginAsync } from "fastify";
 import type { ZodTypeProvider } from "fastify-type-provider-zod";
-import { createMember, getMember, listMembers, updateMember } from "../services/members.js";
+import { z } from "zod";
+import { config } from "../config.js";
+import { isoDateIn } from "../services/attendance.js";
+import { archiveMember, createMember, getMember, listMembers, updateMember } from "../services/members.js";
 
 export const memberRoutes: FastifyPluginAsync = async (app) => {
   const routes = app.withTypeProvider<ZodTypeProvider>();
@@ -79,5 +82,29 @@ export const memberRoutes: FastifyPluginAsync = async (app) => {
       },
     },
     async (request) => updateMember(app.db, request.params.id, request.body, new Date()),
+  );
+
+  routes.delete(
+    "/:id",
+    {
+      onRequest: app.requireAbility("delete", "Member"),
+      schema: {
+        params: memberParams,
+        response: {
+          204: z.undefined(),
+          400: errorResponse,
+          401: errorResponse,
+          403: errorResponse,
+          404: errorResponse,
+          409: errorResponse,
+          500: errorResponse,
+        },
+      },
+    },
+    async (request, reply) => {
+      const now = new Date();
+      await archiveMember(app.db, request.params.id, now, isoDateIn(now, config.GYM_TIME_ZONE));
+      return reply.status(204).send();
+    },
   );
 };

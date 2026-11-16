@@ -32,7 +32,7 @@ export const createLoginForMember = async (
 ): Promise<void> => {
   const passwordHash = await hashPassword(validPassword(password));
   await db.$transaction(async (tx) => {
-    const member = await tx.member.findUnique({ where: { id: memberId }, select: { email: true } });
+    const member = await tx.member.findUnique({ where: { id: memberId, deletedAt: null }, select: { email: true } });
     if (!member) {
       throw new AppError("NOT_FOUND", 404, "Member not found");
     }
@@ -80,7 +80,7 @@ export const setLoginPassword = async (db: Db, memberId: number, password: strin
 // A group's owner must stay a trainer, so a trainer who owns groups keeps the role.
 export const setMemberRole = async (db: Db, memberId: number, role: MemberRole): Promise<void> => {
   await db.$transaction(async (tx) => {
-    if (role !== GROUP_OWNER_ROLE && (await tx.group.count({ where: { ownerId: memberId } })) > 0) {
+    if (role !== GROUP_OWNER_ROLE && (await tx.group.count({ where: { ownerId: memberId, deletedAt: null } })) > 0) {
       throw new AppError("CONFLICT", 409, "The member owns groups; give them to another trainer first");
     }
     await tx.member.update({ where: { id: memberId }, data: { role } });

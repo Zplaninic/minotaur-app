@@ -47,6 +47,7 @@ const toGroupResponse = (group: GroupRow): GroupResponse => ({
 
 export const listGroups = async (db: Db): Promise<ListGroupsResponse> => {
   const groups = await db.group.findMany({
+    where: { deletedAt: null },
     select: groupSelect,
     orderBy: [{ owner: { surname: "asc" } }, { owner: { name: "asc" } }, { from: "asc" }, { id: "asc" }],
   });
@@ -60,7 +61,7 @@ export const createGroup = async (db: Db, body: CreateGroupBody): Promise<GroupR
   }
 
   return db.$transaction(async (tx) => {
-    const owner = await tx.member.findUnique({ where: { id: ownerId }, select: { role: true } });
+    const owner = await tx.member.findUnique({ where: { id: ownerId, deletedAt: null }, select: { role: true } });
     if (!owner) {
       throw new AppError("NOT_FOUND", 404, "Owner not found");
     }
@@ -88,7 +89,10 @@ const requireGroupId = (groupId: string): number => {
 };
 
 export const getGroup = async (db: Db, groupId: string): Promise<GroupResponse> => {
-  const group = await db.group.findUnique({ where: { id: requireGroupId(groupId) }, select: groupSelect });
+  const group = await db.group.findUnique({
+    where: { id: requireGroupId(groupId), deletedAt: null },
+    select: groupSelect,
+  });
   if (!group) {
     throw groupNotFound();
   }
@@ -110,7 +114,7 @@ const groupMemberSelect = {
 
 export const listGroupMembers = async (db: Db, groupId: string): Promise<ListGroupMembersResponse> => {
   const group = await db.group.findUnique({
-    where: { id: requireGroupId(groupId) },
+    where: { id: requireGroupId(groupId), deletedAt: null },
     select: {
       members: {
         select: { member: { select: groupMemberSelect } },
@@ -145,10 +149,10 @@ export const addGroupMember = async (db: Db, groupId: string, memberId: string, 
   }
 
   await db.$transaction(async (tx) => {
-    if (!(await tx.group.findUnique({ where: { id: groupDbId }, select: { id: true } }))) {
+    if (!(await tx.group.findUnique({ where: { id: groupDbId, deletedAt: null }, select: { id: true } }))) {
       throw groupNotFound();
     }
-    const member = await tx.member.findUnique({ where: { id: memberDbId }, select: { role: true } });
+    const member = await tx.member.findUnique({ where: { id: memberDbId, deletedAt: null }, select: { role: true } });
     if (!member) {
       throw memberNotFound();
     }
@@ -174,7 +178,7 @@ export const addGroupMember = async (db: Db, groupId: string, memberId: string, 
 // yet; the current and past months keep them. today is YYYY-MM-DD at the gym.
 export const removeGroupMember = async (db: Db, groupId: string, memberId: string, today: string): Promise<void> => {
   const groupDbId = requireGroupId(groupId);
-  if (!(await db.group.findUnique({ where: { id: groupDbId }, select: { id: true } }))) {
+  if (!(await db.group.findUnique({ where: { id: groupDbId, deletedAt: null }, select: { id: true } }))) {
     throw groupNotFound();
   }
   const memberDbId = toDbId(memberId);
@@ -185,5 +189,16 @@ export const removeGroupMember = async (db: Db, groupId: string, memberId: strin
         where: { groupId: groupDbId, memberId: memberDbId, month: { gt: monthStart(monthOf(today)) } },
       }),
     ]);
+  }
+};
+
+// Hides the group and keeps its members, rosters, sessions and attendance for history.
+export const archiveGroup = async (db: Db, groupId: string, now: Date): Promise<void> => {
+  const { count } = await db.group.updateMany({
+    where: { id: requireGroupId(groupId), deletedAt: null },
+    data: { deletedAt: now },
+  });
+  if (count === 0) {
+    throw groupNotFound();
   }
 };

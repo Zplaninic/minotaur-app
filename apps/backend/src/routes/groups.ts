@@ -14,6 +14,7 @@ import { config } from "../config.js";
 import { isoDateIn } from "../services/attendance.js";
 import {
   addGroupMember,
+  archiveGroup,
   createGroup,
   getGroup,
   listGroupMembers,
@@ -62,6 +63,28 @@ export const groupRoutes: FastifyPluginAsync = async (app) => {
       },
     },
     async (request) => getGroup(app.db, request.params.id),
+  );
+
+  routes.delete(
+    "/:id",
+    {
+      onRequest: app.requireAbility("delete", "Group"),
+      schema: {
+        params: groupParams,
+        response: {
+          204: z.undefined(),
+          400: errorResponse,
+          401: errorResponse,
+          403: errorResponse,
+          404: errorResponse,
+          500: errorResponse,
+        },
+      },
+    },
+    async (request, reply) => {
+      await archiveGroup(app.db, request.params.id, new Date());
+      return reply.status(204).send();
+    },
   );
 
   routes.get(

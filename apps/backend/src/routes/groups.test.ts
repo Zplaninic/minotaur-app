@@ -128,6 +128,42 @@ describe("GET /groups/:id", () => {
   });
 });
 
+describe("DELETE /groups/:id", () => {
+  it("lets an admin archive a group, which then leaves the list", async () => {
+    const groupId = await createdGroupId();
+    expect((await app.inject({ method: "DELETE", url: `/groups/${groupId}`, headers: admin })).statusCode).toBe(204);
+
+    expect((await app.inject({ method: "GET", url: `/groups/${groupId}`, headers: admin })).statusCode).toBe(404);
+    const list = await app.inject({ method: "GET", url: "/groups", headers: admin });
+    expect(listGroupsResponse.parse(list.json()).items).toEqual([]);
+  });
+
+  it("answers FORBIDDEN for a trainer", async () => {
+    const groupId = await createdGroupId();
+    const response = await app.inject({ method: "DELETE", url: `/groups/${groupId}`, headers: trainer });
+    expect(response.statusCode).toBe(403);
+    expect(errorResponse.parse(response.json()).code).toBe("FORBIDDEN");
+  });
+
+  it("answers NOT_FOUND for an unknown or already archived group", async () => {
+    const groupId = await createdGroupId();
+    await app.inject({ method: "DELETE", url: `/groups/${groupId}`, headers: admin });
+    expect((await app.inject({ method: "DELETE", url: `/groups/${groupId}`, headers: admin })).statusCode).toBe(404);
+    expect((await app.inject({ method: "DELETE", url: "/groups/abc", headers: admin })).statusCode).toBe(404);
+  });
+
+  it("answers UNAUTHORIZED without a session", async () => {
+    expect((await app.inject({ method: "DELETE", url: "/groups/1" })).statusCode).toBe(401);
+  });
+
+  it("refuses to archive the owner of an active group", async () => {
+    await createdGroupId();
+    const response = await app.inject({ method: "DELETE", url: `/members/${trainerId}`, headers: admin });
+    expect(response.statusCode).toBe(409);
+    expect(errorResponse.parse(response.json()).code).toBe("CONFLICT");
+  });
+});
+
 describe("PUT /groups/:id/members/:memberId", () => {
   it("lets an admin add a member, and add them again", async () => {
     const groupId = await createdGroupId();

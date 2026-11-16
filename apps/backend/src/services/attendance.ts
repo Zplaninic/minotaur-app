@@ -77,7 +77,7 @@ const requireDbId = (value: string, notFound: () => AppError): number => {
 };
 
 const requireGroup = async (db: DbClient, groupId: number) => {
-  const group = await db.group.findUnique({ where: { id: groupId }, select: { id: true, days: true } });
+  const group = await db.group.findUnique({ where: { id: groupId, deletedAt: null }, select: { id: true, days: true } });
   if (!group) {
     throw groupNotFound();
   }
@@ -91,7 +91,7 @@ const toSessionResponse = (session: { id: number; date: Date }): TrainingSession
 
 export const getGroupAttendance = async (db: Db, groupId: string, month: Month): Promise<GroupAttendanceResponse> => {
   const group = await db.group.findUnique({
-    where: { id: requireDbId(groupId, groupNotFound) },
+    where: { id: requireDbId(groupId, groupNotFound), deletedAt: null },
     select: {
       sessions: {
         where: { date: monthRange(month) },
@@ -186,7 +186,7 @@ export const deleteTrainingSession = async (db: Db, groupId: string, sessionId: 
 
   // One statement, so a tick that arrives meanwhile cannot be deleted with it.
   const { count } = await db.trainingSession.deleteMany({
-    where: { id: sessionDbId, groupId: groupDbId, attendance: { none: {} } },
+    where: { id: sessionDbId, groupId: groupDbId, group: { deletedAt: null }, attendance: { none: {} } },
   });
   if (count > 0) {
     return;
@@ -236,7 +236,7 @@ export const markAttendance = async (db: Db, target: AttendanceTarget, today: st
       select: { memberId: true },
     });
     if (!onRoster) {
-      if (!(await tx.member.findUnique({ where: { id: memberDbId }, select: { id: true } }))) {
+      if (!(await tx.member.findUnique({ where: { id: memberDbId, deletedAt: null }, select: { id: true } }))) {
         throw memberNotFound();
       }
       throw new AppError("VALIDATION_ERROR", 400, "The member is not on this month's roster");
@@ -277,7 +277,7 @@ export const addMonthMember = async (db: Db, target: MonthMemberTarget): Promise
       select: { memberId: true },
     });
     if (!inGroup) {
-      if (!(await tx.member.findUnique({ where: { id: memberDbId }, select: { id: true } }))) {
+      if (!(await tx.member.findUnique({ where: { id: memberDbId, deletedAt: null }, select: { id: true } }))) {
         throw memberNotFound();
       }
       throw new AppError("VALIDATION_ERROR", 400, "The member is not in the group");

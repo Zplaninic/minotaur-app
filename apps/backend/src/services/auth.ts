@@ -22,7 +22,7 @@ const invalidCredentials = () => new AppError("UNAUTHORIZED", 401, "Email or pas
 
 export const login = async (db: Db, body: Pick<LoginBody, "email" | "password">, now: Date): Promise<LoginResult> => {
   const member = await db.member.findFirst({
-    where: { email: body.email, role: { in: [...LOGIN_ROLES] }, login: { isNot: null } },
+    where: { email: body.email, deletedAt: null, role: { in: [...LOGIN_ROLES] }, login: { isNot: null } },
     select: {
       id: true,
       name: true,

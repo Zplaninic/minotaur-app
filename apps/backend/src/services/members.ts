@@ -10,8 +10,10 @@ import {
   type UpdateMemberBody,
 } from "@repo/shared";
 import type { Db } from "../db/client.js";
+import { deleteMemberSessions } from "../auth/sessions.js";
 import { AppError } from "../errors.js";
 import type { Prisma } from "../generated/prisma/client.js";
+import { monthOf, monthStart } from "./attendance.js";
 import { guardianSelect, toGuardianResponse } from "./guardians.js";
 import { toApiId, toDbId } from "./ids.js";
 
@@ -64,7 +66,7 @@ const toMemberResponse = (member: MemberRow): MemberResponse => ({
 });
 
 export const listMembers = async (db: Db, query: ListMembersQuery): Promise<ListMembersResponse> => {
-  const where = query.role ? { role: query.role } : {};
+  const where = { deletedAt: null, ...(query.role ? { role: query.role } : {}) };
   const [total, members] = await db.$transaction([
     db.member.count({ where }),
     db.member.findMany({
@@ -162,7 +164,7 @@ export const createMember = async (db: Db, body: CreateMemberBody, today: Date):
 
 export const getMember = async (db: Db, memberId: string): Promise<MemberResponse> => {
   const member = await db.member.findUnique({
-    where: { id: requireDbId(memberId, "Member not found") },
+    where: { id: requireDbId(memberId, "Member not found"), deletedAt: null },
     select: memberSelect,
   });
   if (!member) {
@@ -184,7 +186,7 @@ export const updateMember = async (
   const guardians = resolveGuardians(body.guardians);
 
   return db.$transaction(async (tx) => {
-    if (!(await tx.member.findUnique({ where: { id: memberDbId }, select: { id: true } }))) {
+    if (!(await tx.member.findUnique({ where: { id: memberDbId, deletedAt: null }, select: { id: true } }))) {
       throw new AppError("NOT_FOUND", 404, "Member not found");
     }
     await requireExistingGuardians(tx, guardians);
@@ -204,5 +206,31 @@ export const updateMember = async (
     await linkGuardians(tx, memberDbId, guardians);
 
     return toMemberResponse(await tx.member.findUniqueOrThrow({ where: { id: memberDbId }, select: memberSelect }));
+  });
+};
+
+// Hides the member and keeps their past rosters and attendance for history.
+// They leave their groups and the rosters after the current month, the same
+// as being removed from a group, and lose their login. A group's owner must
+// be active, so an owner of active groups cannot be archived. today is
+// YYYY-MM-DD at the gym.
+export const archiveMember = async (db: Db, memberId: string, now: Date, today: string): Promise<void> => {
+  const memberDbId = requireDbId(memberId, "Member not found");
+
+  await db.$transaction(async (tx) => {
+    const { count } = await tx.member.updateMany({
+      where: { id: memberDbId, deletedAt: null },
+      data: { deletedAt: now },
+    });
+    if (count === 0) {
+      throw new AppError("NOT_FOUND", 404, "Member not found");
+    }
+    if ((await tx.group.count({ where: { ownerId: memberDbId, deletedAt: null } })) > 0) {
+      throw new AppError("CONFLICT", 409, "The member owns groups; give them to another trainer first");
+    }
+    await tx.groupMember.deleteMany({ where: { memberId: memberDbId } });
+    await tx.groupMonthMember.deleteMany({ where: { memberId: memberDbId, month: { gt: monthStart(monthOf(today)) } } });
+    await tx.login.deleteMany({ where: { memberId: memberDbId } });
+    await deleteMemberSessions(tx, memberDbId);
   });
 };

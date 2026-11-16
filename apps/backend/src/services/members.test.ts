@@ -2,7 +2,9 @@ import { afterAll, beforeEach, describe, expect, it } from "vitest";
 import { createGuardian, createLoginMember, createOrg, resetDb } from "../../test/db.js";
 import { prisma } from "../db/client.js";
 import { AppError } from "../errors.js";
-import { ageOn, createMember, getMember, listMembers, updateMember } from "./members.js";
+import { addTrainingSession, getGroupAttendance, markAttendance } from "./attendance.js";
+import { addGroupMember, archiveGroup, createGroup, listGroupMembers } from "./groups.js";
+import { ageOn, archiveMember, createMember, getMember, listMembers, updateMember } from "./members.js";
 
 const today = new Date("2026-11-15T12:00:00.000Z");
 
@@ -184,5 +186,65 @@ describe("updateMember", () => {
     await expect(
       updateMember(prisma, created.id, { ...edit, guardians: [{ kind: "existing", guardianId: "999999" }] }, today),
     ).rejects.toMatchObject({ code: "NOT_FOUND" });
+  });
+});
+
+describe("archiveMember", () => {
+  const TODAY = "2026-11-16";
+
+  const groupWithChild = async () => {
+    const trainerId = String((await createLoginMember(prisma, orgId, "trainer")).memberId);
+    const groupId = (
+      await createGroup(prisma, { ownerId: trainerId, days: ["monday"], from: "18:00", to: "19:00" })
+    ).id;
+    const childId = String((await createLoginMember(prisma, orgId, "child")).memberId);
+    await addGroupMember(prisma, groupId, childId, TODAY);
+    return { trainerId, groupId, childId };
+  };
+
+  it("hides the member, takes them out of the group and keeps their attendance", async () => {
+    const { groupId, childId } = await groupWithChild();
+    const sessionId = (await addTrainingSession(prisma, groupId, "2026-11-09", TODAY)).id;
+    await addTrainingSession(prisma, groupId, "2026-12-07", TODAY);
+    await markAttendance(prisma, { groupId, sessionId, memberId: childId }, TODAY);
+
+    await archiveMember(prisma, childId, today, TODAY);
+
+    await expect(getMember(prisma, childId)).rejects.toMatchObject({ code: "NOT_FOUND" });
+    expect((await listMembers(prisma, { page: 1, pageSize: 20 })).items.map((member) => member.id)).not.toContain(
+      childId,
+    );
+    expect((await listGroupMembers(prisma, groupId)).items).toEqual([]);
+    expect((await getGroupAttendance(prisma, groupId, "2026-11")).members).toMatchObject([
+      { id: childId, attendedSessionIds: [sessionId] },
+    ]);
+    expect((await getGroupAttendance(prisma, groupId, "2026-12")).members).toEqual([]);
+  });
+
+  it("removes the login and every session", async () => {
+    const { memberId } = await createLoginMember(prisma, orgId, "admin");
+    await prisma.session.create({ data: { id: "hash", memberId, expiresAt: today } });
+
+    await archiveMember(prisma, String(memberId), today, TODAY);
+
+    expect(await prisma.login.count({ where: { memberId } })).toBe(0);
+    expect(await prisma.session.count({ where: { memberId } })).toBe(0);
+  });
+
+  it("refuses the owner of an active group and changes nothing", async () => {
+    const { trainerId, groupId } = await groupWithChild();
+    await expect(archiveMember(prisma, trainerId, today, TODAY)).rejects.toMatchObject({ code: "CONFLICT" });
+    expect((await getMember(prisma, trainerId)).id).toBe(trainerId);
+
+    await archiveGroup(prisma, groupId, today);
+    await archiveMember(prisma, trainerId, today, TODAY);
+    await expect(getMember(prisma, trainerId)).rejects.toBeInstanceOf(AppError);
+  });
+
+  it("answers NOT_FOUND for an unknown or already archived member", async () => {
+    const { childId } = await groupWithChild();
+    await archiveMember(prisma, childId, today, TODAY);
+    await expect(archiveMember(prisma, childId, today, TODAY)).rejects.toMatchObject({ code: "NOT_FOUND" });
+    await expect(archiveMember(prisma, "abc", today, TODAY)).rejects.toMatchObject({ code: "NOT_FOUND" });
   });
 });
