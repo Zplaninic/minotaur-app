@@ -65,11 +65,16 @@ export const SubscriptionsScreen = () => {
           />
         )}
         ListHeaderComponent={
-          ability.can("create", "Subscription") ? (
-            <View style={styles.header}>
+          <View style={styles.header}>
+            <Button
+              label={t("subscriptions.payments")}
+              variant="secondary"
+              onPress={() => router.push("/subscriptions/payments")}
+            />
+            {ability.can("create", "Subscription") ? (
               <Button label={t("subscriptions.add")} onPress={() => router.push("/subscriptions/new")} />
-            </View>
-          ) : undefined
+            ) : null}
+          </View>
         }
         ListEmptyComponent={<ListState />}
         refreshing={refreshing}
@@ -90,6 +95,7 @@ const styles = StyleSheet.create({
     paddingBottom: spacing[6],
   },
   header: {
+    gap: spacing[3],
     padding: spacing[4],
     borderBottomWidth: borders.width,
     borderBottomColor: colors.greenDark30,

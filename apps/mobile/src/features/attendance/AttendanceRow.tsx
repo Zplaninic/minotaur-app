@@ -1,7 +1,10 @@
 import type { AttendanceMemberResponse, Month } from "@repo/shared";
+import { overdueMonthsOf } from "@repo/shared/client";
 import { Pressable, StyleSheet, Text, View } from "react-native";
 import { useSetAttendance } from "../../api/attendance";
-import { formatMonth, formatPersonName, formatSortedName } from "../../lib/format";
+import { useAbility } from "../../api/auth";
+import { useOverduePayments } from "../../api/subscriptions";
+import { formatMonth, formatPersonName, formatShortMonth, formatSortedName } from "../../lib/format";
 import { t } from "../../lib/messages";
 import { bodyLineHeight, borders, colors, fonts, fontSizes, minTouchSize, opacity, spacing } from "../../theme/tokens";
 
@@ -27,6 +30,9 @@ export const AttendanceRow = ({
   const setAttendance = useSetAttendance(groupId, month);
   const checked = member.attendedSessionIds.includes(sessionId);
   const inactive = disabled || setAttendance.isPending;
+  const canReadPayments = useAbility().can("read", "Subscription");
+  const overdue = useOverduePayments();
+  const unpaidMonths = canReadPayments ? overdueMonthsOf(overdue.data, member.id) : [];
 
   return (
     <View style={[styles.row, checked && styles.rowChecked]}>
@@ -47,6 +53,11 @@ export const AttendanceRow = ({
               paid: member.paid ? t("attendance.paid") : t("attendance.notPaid"),
             })}
           </Text>
+          {unpaidMonths.length > 0 ? (
+            <Text style={styles.unpaid}>
+              {t("overdue.badge", { months: unpaidMonths.map(formatShortMonth).join(", ") })}
+            </Text>
+          ) : null}
         </View>
       </Pressable>
       {onChangeSubscription ? (
@@ -115,6 +126,18 @@ const styles = StyleSheet.create({
   subscription: {
     color: colors.greenDark,
     fontFamily: fonts.bodyRegular,
+    fontSize: fontSizes.sm,
+    lineHeight: bodyLineHeight(fontSizes.sm),
+  },
+  unpaid: {
+    alignSelf: "flex-start",
+    paddingHorizontal: spacing[2],
+    paddingVertical: spacing[1],
+    borderLeftWidth: spacing[1],
+    borderLeftColor: colors.red,
+    backgroundColor: colors.red10,
+    color: colors.greenDark,
+    fontFamily: fonts.bodySemibold,
     fontSize: fontSizes.sm,
     lineHeight: bodyLineHeight(fontSizes.sm),
   },

@@ -1,18 +1,24 @@
 import { DEFAULT_PAGE_SIZE } from "@repo/shared";
 import { toErrorCode } from "@repo/shared/client";
 import { useRouter } from "expo-router";
+import { useState } from "react";
 import { ActivityIndicator, FlatList, StyleSheet, Text, View } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
 import { useAbility } from "../../api/auth";
 import { useMemberPages } from "../../api/members";
 import { Button } from "../../components/Button";
+import { CheckboxList } from "../../components/CheckboxList";
 import { errorMessage, t } from "../../lib/messages";
 import { useManualRefresh } from "../../lib/useManualRefresh";
 import { bodyLineHeight, borders, colors, fonts, fontSizes, headingLineHeight, spacing } from "../../theme/tokens";
 import { MemberRow } from "./MemberRow";
 
-const ListState = () => {
-  const members = useMemberPages(DEFAULT_PAGE_SIZE);
+type ListStateProps = {
+  unpaidOnly: boolean;
+};
+
+const ListState = ({ unpaidOnly }: ListStateProps) => {
+  const members = useMemberPages(DEFAULT_PAGE_SIZE, unpaidOnly);
 
   if (members.isPending) {
     return (
@@ -38,7 +44,7 @@ const ListState = () => {
   }
   return (
     <View style={styles.state}>
-      <Text style={styles.stateText}>{t("members.empty")}</Text>
+      <Text style={styles.stateText}>{unpaidOnly ? t("members.unpaidEmpty") : t("members.empty")}</Text>
     </View>
   );
 };
@@ -46,7 +52,8 @@ const ListState = () => {
 export const MembersScreen = () => {
   const router = useRouter();
   const ability = useAbility();
-  const members = useMemberPages(DEFAULT_PAGE_SIZE);
+  const [unpaidOnly, setUnpaidOnly] = useState(false);
+  const members = useMemberPages(DEFAULT_PAGE_SIZE, unpaidOnly);
   const items = members.data?.pages.flatMap((page) => page.items) ?? [];
   const { refreshing, onRefresh } = useManualRefresh(members.refetch);
 
@@ -66,13 +73,21 @@ export const MembersScreen = () => {
           />
         )}
         ListHeaderComponent={
-          ability.can("create", "Member") ? (
-            <View style={styles.header}>
+          <View style={styles.header}>
+            {ability.can("create", "Member") ? (
               <Button label={t("members.add")} onPress={() => router.push("/members/new")} />
-            </View>
-          ) : undefined
+            ) : null}
+            {ability.can("read", "Subscription") ? (
+              <CheckboxList
+                label={t("members.filter")}
+                options={[{ value: "unpaid", label: t("members.unpaidOnly") }]}
+                selected={unpaidOnly ? ["unpaid"] : []}
+                onToggle={() => setUnpaidOnly(!unpaidOnly)}
+              />
+            ) : null}
+          </View>
         }
-        ListEmptyComponent={<ListState />}
+        ListEmptyComponent={<ListState unpaidOnly={unpaidOnly} />}
         ListFooterComponent={
           members.isFetchingNextPage ? (
             <View style={styles.footer} accessibilityLiveRegion="polite">
@@ -104,6 +119,7 @@ const styles = StyleSheet.create({
     paddingBottom: spacing[6],
   },
   header: {
+    gap: spacing[4],
     padding: spacing[4],
     borderBottomWidth: borders.width,
     borderBottomColor: colors.greenDark30,

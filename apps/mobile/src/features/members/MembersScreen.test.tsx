@@ -38,6 +38,34 @@ describe("MembersScreen", () => {
     expect(fetchMock).toHaveBeenCalledWith("/members?page=1&pageSize=20", expect.anything());
   });
 
+  it("filters to members with unpaid past months", async () => {
+    const marko = { ...ana, id: "2", name: "Marko", surname: "Babić", guardians: [] };
+    fetchMock.mockImplementation(async (path) => {
+      if (path === "/me") {
+        return admin;
+      }
+      const items = path.includes("unpaid=true") ? [ana] : [marko, ana];
+      return { items, page: 1, pageSize: 20, total: items.length };
+    });
+    await renderScreen();
+    expect(await screen.findByText("Babić Marko")).toBeOnTheScreen();
+
+    await fireEvent.press(screen.getByRole("checkbox", { name: t("members.unpaidOnly") }));
+
+    expect(await screen.findByText("Horvat Ana")).toBeOnTheScreen();
+    expect(screen.queryByText("Babić Marko")).not.toBeOnTheScreen();
+    expect(fetchMock).toHaveBeenCalledWith("/members?page=1&pageSize=20&unpaid=true", expect.anything());
+  });
+
+  it("says when nobody has an unpaid past month", async () => {
+    fetchMock.mockImplementation(async (path) =>
+      path === "/me" ? admin : { items: path.includes("unpaid=true") ? [] : [ana], page: 1, pageSize: 20, total: 0 },
+    );
+    await renderScreen();
+    await fireEvent.press(await screen.findByRole("checkbox", { name: t("members.unpaidOnly") }));
+    expect(await screen.findByText(t("members.unpaidEmpty"))).toBeOnTheScreen();
+  });
+
   it("labels trainers", async () => {
     membersAnswer(async () => ({ items: [ana, { ...ana, id: "2", name: "Marko", role: "trainer" }], page: 1, pageSize: 20, total: 2 }));
     await renderScreen();

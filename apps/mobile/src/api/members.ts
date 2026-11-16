@@ -14,11 +14,12 @@ import {
 import { useInfiniteQuery, useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { api } from "./client";
 
-// Pages are loaded one after another as the list scrolls.
-export const useMemberPages = (pageSize: number) =>
+// Pages are loaded one after another as the list scrolls. unpaid: only
+// members with an unpaid past month.
+export const useMemberPages = (pageSize: number, unpaid = false) =>
   useInfiniteQuery({
-    queryKey: memberKeys.pages(pageSize),
-    queryFn: ({ pageParam }) => fetchMembersPage(api, { page: pageParam, pageSize }),
+    queryKey: memberKeys.pages(pageSize, unpaid),
+    queryFn: ({ pageParam }) => fetchMembersPage(api, { page: pageParam, pageSize, unpaid }),
     initialPageParam: 1,
     getNextPageParam: nextMembersPage,
   });

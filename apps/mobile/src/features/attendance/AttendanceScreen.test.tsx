@@ -63,6 +63,20 @@ beforeEach(() => {
     if (path === "/groups/1") {
       return group;
     }
+    if (path === "/subscriptions/overdue") {
+      return {
+        items: [
+          {
+            id: "5",
+            name: "Nora",
+            surname: "Jurić",
+            months: [{ month: "2026-10", subscription: { id: "1", name: "Kids 1x" }, price: 3000 }],
+            total: 3000,
+          },
+        ],
+        total: 3000,
+      };
+    }
     if (path === MONTH) {
       return attendance;
     }
@@ -209,6 +223,12 @@ describe("AttendanceScreen", () => {
       pathname: "/groups/[id]/member-subscription",
       params: { id: "1", month: "2026-11", memberId: "5" },
     });
+  });
+
+  it("marks members who have not paid a past month", async () => {
+    await renderScreen();
+    expect(await screen.findByText(t("overdue.badge", { months: "Oct 2026" }))).toBeOnTheScreen();
+    expect(screen.getAllByText(/^Unpaid:/)).toHaveLength(1);
   });
 
   it("shows the no-connection state with a retry button", async () => {

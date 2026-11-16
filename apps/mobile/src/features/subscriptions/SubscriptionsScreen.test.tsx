@@ -71,6 +71,9 @@ describe("SubscriptionsScreen", () => {
 
     await fireEvent.press(screen.getByRole("button", { name: t("subscriptions.add") }));
     expect(mockPush).toHaveBeenCalledWith("/subscriptions/new");
+
+    await fireEvent.press(screen.getByRole("button", { name: t("subscriptions.payments") }));
+    expect(mockPush).toHaveBeenCalledWith("/subscriptions/payments");
   });
 
   it("shows a trainer the list without add or edit", async () => {

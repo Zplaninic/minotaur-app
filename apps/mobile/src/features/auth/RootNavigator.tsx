@@ -82,6 +82,7 @@ export const RootNavigator = () => {
           options={{ ...headerOptions, title: t("monthSubscriptionForm.title"), presentation: "modal" }}
         />
         <Stack.Screen name="subscriptions/index" options={{ ...headerOptions, title: t("subscriptions.title") }} />
+        <Stack.Screen name="subscriptions/payments" options={{ ...headerOptions, title: t("payments.title") }} />
         <Stack.Screen
           name="subscriptions/new"
           options={{ ...headerOptions, title: t("subscriptionForm.title"), presentation: "modal" }}
