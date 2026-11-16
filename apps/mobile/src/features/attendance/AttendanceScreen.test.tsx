@@ -34,8 +34,8 @@ const november = (): GroupAttendanceResponse => ({
     { id: "18", date: "2026-11-18" },
   ],
   members: [
-    { id: "4", name: "Leo", surname: "Perić", attendedSessionIds: ["11"] },
-    { id: "5", name: "Nora", surname: "Jurić", attendedSessionIds: [] },
+    { id: "4", name: "Leo", surname: "Perić", attendedSessionIds: ["11"], subscription: null, paid: false },
+    { id: "5", name: "Nora", surname: "Jurić", attendedSessionIds: [], subscription: null, paid: false },
   ],
 });
 
@@ -184,6 +184,30 @@ describe("AttendanceScreen", () => {
     expect(mockPush).toHaveBeenCalledWith({
       pathname: "/groups/[id]/add-month-member",
       params: { id: "1", month: "2026-11" },
+    });
+  });
+
+  it("shows each member's subscription and opens the picker", async () => {
+    attendance = {
+      ...attendance,
+      members: attendance.members.map((member) =>
+        member.id === "4"
+          ? { ...member, subscription: { id: "1", name: "Kids 1x", sessionsPerWeek: 1, price: 3000 }, paid: true }
+          : member,
+      ),
+    };
+    await renderScreen();
+    expect(await screen.findByText("Kids 1x · Paid")).toBeOnTheScreen();
+    expect(screen.getByText("No subscription · Not paid")).toBeOnTheScreen();
+
+    fireEvent.press(
+      screen.getByRole("button", {
+        name: t("attendance.changeSubscriptionLabel", { name: "Nora Jurić", month: "November 2026" }),
+      }),
+    );
+    expect(mockPush).toHaveBeenCalledWith({
+      pathname: "/groups/[id]/member-subscription",
+      params: { id: "1", month: "2026-11", memberId: "5" },
     });
   });
 

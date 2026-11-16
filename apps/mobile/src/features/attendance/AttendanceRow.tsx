@@ -1,7 +1,8 @@
 import type { AttendanceMemberResponse, Month } from "@repo/shared";
 import { Pressable, StyleSheet, Text, View } from "react-native";
 import { useSetAttendance } from "../../api/attendance";
-import { formatSortedName } from "../../lib/format";
+import { formatMonth, formatPersonName, formatSortedName } from "../../lib/format";
+import { t } from "../../lib/messages";
 import { bodyLineHeight, borders, colors, fonts, fontSizes, minTouchSize, opacity, spacing } from "../../theme/tokens";
 
 type AttendanceRowProps = {
@@ -10,37 +11,65 @@ type AttendanceRowProps = {
   sessionId: string;
   member: AttendanceMemberResponse;
   disabled: boolean;
+  // Without it the subscription is shown but cannot be changed.
+  onChangeSubscription?: (() => void) | undefined;
 };
 
-// The whole row is the checkbox.
-export const AttendanceRow = ({ groupId, month, sessionId, member, disabled }: AttendanceRowProps) => {
+// The row is the checkbox; the subscription button sits beside it.
+export const AttendanceRow = ({
+  groupId,
+  month,
+  sessionId,
+  member,
+  disabled,
+  onChangeSubscription,
+}: AttendanceRowProps) => {
   const setAttendance = useSetAttendance(groupId, month);
   const checked = member.attendedSessionIds.includes(sessionId);
   const inactive = disabled || setAttendance.isPending;
 
   return (
-    <Pressable
-      onPress={() => setAttendance.mutate({ sessionId, memberId: member.id, attended: !checked })}
-      disabled={inactive}
-      accessibilityRole="checkbox"
-      accessibilityLabel={formatSortedName(member)}
-      accessibilityState={{ checked, disabled: inactive }}
-      style={({ pressed }) => [styles.row, checked && styles.rowChecked, pressed && styles.rowPressed]}
-    >
-      <View style={[styles.box, checked && styles.boxChecked, disabled && styles.boxDisabled]} />
-      <Text style={styles.name}>{formatSortedName(member)}</Text>
-    </Pressable>
+    <View style={[styles.row, checked && styles.rowChecked]}>
+      <Pressable
+        onPress={() => setAttendance.mutate({ sessionId, memberId: member.id, attended: !checked })}
+        disabled={inactive}
+        accessibilityRole="checkbox"
+        accessibilityLabel={formatSortedName(member)}
+        accessibilityState={{ checked, disabled: inactive }}
+        style={({ pressed }) => [styles.check, pressed && styles.pressed]}
+      >
+        <View style={[styles.box, checked && styles.boxChecked, disabled && styles.boxDisabled]} />
+        <View style={styles.text}>
+          <Text style={styles.name}>{formatSortedName(member)}</Text>
+          <Text style={styles.subscription}>
+            {t("attendance.monthStatus", {
+              subscription: member.subscription?.name ?? t("attendance.noSubscription"),
+              paid: member.paid ? t("attendance.paid") : t("attendance.notPaid"),
+            })}
+          </Text>
+        </View>
+      </Pressable>
+      {onChangeSubscription ? (
+        <Pressable
+          onPress={onChangeSubscription}
+          accessibilityRole="button"
+          accessibilityLabel={t("attendance.changeSubscriptionLabel", {
+            name: formatPersonName(member),
+            month: formatMonth(month),
+          })}
+          style={({ pressed }) => [styles.change, pressed && styles.pressed]}
+        >
+          <Text style={styles.changeLabel}>{t("attendance.changeSubscription")}</Text>
+        </Pressable>
+      ) : null}
+    </View>
   );
 };
 
 const styles = StyleSheet.create({
   row: {
-    minHeight: minTouchSize,
     flexDirection: "row",
-    alignItems: "center",
-    gap: spacing[4],
-    paddingHorizontal: spacing[4],
-    paddingVertical: spacing[3],
+    alignItems: "stretch",
     borderBottomWidth: borders.width,
     borderBottomColor: colors.greenDark30,
     backgroundColor: colors.beige10,
@@ -48,8 +77,17 @@ const styles = StyleSheet.create({
   rowChecked: {
     backgroundColor: colors.greenLight20,
   },
-  rowPressed: {
+  pressed: {
     backgroundColor: colors.greenDark10,
+  },
+  check: {
+    flex: 1,
+    minHeight: minTouchSize,
+    flexDirection: "row",
+    alignItems: "center",
+    gap: spacing[4],
+    paddingHorizontal: spacing[4],
+    paddingVertical: spacing[3],
   },
   box: {
     width: spacing[6],
@@ -64,11 +102,35 @@ const styles = StyleSheet.create({
   boxDisabled: {
     opacity: opacity.disabled,
   },
-  name: {
+  text: {
     flexShrink: 1,
+    gap: spacing[1],
+  },
+  name: {
     color: colors.greenDark,
     fontFamily: fonts.bodySemibold,
     fontSize: fontSizes.md,
     lineHeight: bodyLineHeight(fontSizes.md),
+  },
+  subscription: {
+    color: colors.greenDark,
+    fontFamily: fonts.bodyRegular,
+    fontSize: fontSizes.sm,
+    lineHeight: bodyLineHeight(fontSizes.sm),
+  },
+  change: {
+    minWidth: minTouchSize,
+    minHeight: minTouchSize,
+    justifyContent: "center",
+    paddingHorizontal: spacing[4],
+    borderLeftWidth: borders.width,
+    borderLeftColor: colors.greenDark30,
+  },
+  changeLabel: {
+    color: colors.greenDark,
+    fontFamily: fonts.bodySemibold,
+    fontSize: fontSizes.sm,
+    lineHeight: bodyLineHeight(fontSizes.sm),
+    textDecorationLine: "underline",
   },
 });

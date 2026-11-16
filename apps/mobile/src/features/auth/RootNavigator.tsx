@@ -77,6 +77,19 @@ export const RootNavigator = () => {
           name="groups/[id]/add-member"
           options={{ ...headerOptions, title: t("groupMemberForm.title"), presentation: "modal" }}
         />
+        <Stack.Screen
+          name="groups/[id]/member-subscription"
+          options={{ ...headerOptions, title: t("monthSubscriptionForm.title"), presentation: "modal" }}
+        />
+        <Stack.Screen name="subscriptions/index" options={{ ...headerOptions, title: t("subscriptions.title") }} />
+        <Stack.Screen
+          name="subscriptions/new"
+          options={{ ...headerOptions, title: t("subscriptionForm.title"), presentation: "modal" }}
+        />
+        <Stack.Screen
+          name="subscriptions/[id]/edit"
+          options={{ ...headerOptions, title: t("subscriptionForm.editTitle"), presentation: "modal" }}
+        />
       </Stack.Protected>
       <Stack.Protected guard={!loggedIn}>
         <Stack.Screen name="login" />

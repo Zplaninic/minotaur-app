@@ -169,6 +169,15 @@ export const AttendanceScreen = ({ groupId, now: fixedNow }: AttendanceScreenPro
             sessionId={session.id}
             member={item}
             disabled={future || !ability.can("update", "Attendance")}
+            onChangeSubscription={
+              ability.can("update", "Attendance")
+                ? () =>
+                    router.push({
+                      pathname: "/groups/[id]/member-subscription",
+                      params: { id: groupId, month, memberId: item.id },
+                    })
+                : undefined
+            }
           />
         )}
         ListHeaderComponent={

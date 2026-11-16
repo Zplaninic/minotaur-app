@@ -1,5 +1,10 @@
 import type { Weekday } from "@repo/shared";
-import type { ClientErrorCode, GroupFieldError, MemberFieldError } from "@repo/shared/client";
+import type {
+  ClientErrorCode,
+  GroupFieldError,
+  MemberFieldError,
+  SubscriptionFieldError,
+} from "@repo/shared/client";
 
 export const locale = "en";
 
@@ -13,6 +18,7 @@ const messages = {
 
   "home.members": "Members",
   "home.groups": "Groups",
+  "home.subscriptions": "Subscriptions",
   "home.loggedInAs": "Logged in as {name}",
   "home.logout": "Log out",
 
@@ -144,6 +150,25 @@ const messages = {
   "attendance.futureHint": "Future sessions can be ticked on the day.",
   "attendance.count": "{count} of {total} attended",
   "attendance.addMember": "Add member to this month",
+  "attendance.noSubscription": "No subscription",
+  "attendance.changeSubscription": "Edit",
+  "attendance.paid": "Paid",
+  "attendance.notPaid": "Not paid",
+  "attendance.monthStatus": "{subscription} · {paid}",
+  "attendance.changeSubscriptionLabel": "Change the subscription and payment of {name} in {month}",
+
+  "monthSubscriptionForm.title": "Subscription and payment",
+  "monthSubscriptionForm.payment": "Payment",
+  "monthSubscriptionForm.paid": "Paid for this month",
+  "monthSubscriptionForm.paidNeedsSubscription": "Choose a subscription before marking the month paid.",
+  "monthSubscriptionForm.paidKeepsSubscription": "Untick Paid before removing the subscription.",
+  "monthSubscriptionForm.allGroups": "Applies to all of their groups this month.",
+  "monthSubscriptionForm.hint": "{name} in {month}",
+  "monthSubscriptionForm.label": "Subscription",
+  "monthSubscriptionForm.option": "{name} · {price}",
+  "monthSubscriptionForm.loading": "Loading subscriptions…",
+  "monthSubscriptionForm.offlineTitle": "No connection",
+  "monthSubscriptionForm.saving": "Saving…",
 
   "monthMemberForm.title": "Add member to this month",
   "monthMemberForm.hint": "Tap a member to add them to {month}.",
@@ -184,6 +209,30 @@ const messages = {
   "groupForm.error.to": "Choose an end time.",
   "groupForm.error.timeOrder": "The end time must be after the start time.",
   "groupForm.error.invalid": "Check this field.",
+
+  "subscriptions.title": "Subscriptions",
+  "subscriptions.add": "Add subscription",
+  "subscriptions.loading": "Loading subscriptions…",
+  "subscriptions.empty": "No subscriptions yet.",
+  "subscriptions.offlineTitle": "No connection",
+  "subscriptions.detail": "{count} per week · {price}",
+  "subscriptions.editLabel": "Edit {name}",
+
+  "subscriptionForm.title": "Add subscription",
+  "subscriptionForm.editTitle": "Edit subscription",
+  "subscriptionForm.loading": "Loading the subscription…",
+  "subscriptionForm.offlineTitle": "No connection",
+  "subscriptionForm.name": "Name",
+  "subscriptionForm.sessionsPerWeek": "Sessions per week",
+  "subscriptionForm.price": "Monthly price (€)",
+  "subscriptionForm.submit": "Save subscription",
+  "subscriptionForm.submitting": "Saving…",
+
+  "subscriptionForm.error.name": "Enter a name.",
+  "subscriptionForm.error.nameTaken": "Another subscription already has this name.",
+  "subscriptionForm.error.sessionsPerWeek": "Choose how many sessions per week.",
+  "subscriptionForm.error.price": "Enter a price in euros, for example 45 or 45,50.",
+  "subscriptionForm.error.invalid": "Check this field.",
 } as const;
 
 const errorMessages: Record<ClientErrorCode, string> = {
@@ -209,5 +258,8 @@ export const errorMessage = (code: ClientErrorCode): string => errorMessages[cod
 export const memberFieldErrorKey = (code: MemberFieldError): MessageKey => `memberForm.error.${code}` as const;
 
 export const groupFieldErrorKey = (code: GroupFieldError): MessageKey => `groupForm.error.${code}` as const;
+
+export const subscriptionFieldErrorKey = (code: SubscriptionFieldError): MessageKey =>
+  `subscriptionForm.error.${code}` as const;
 
 export const weekdayKey = (day: Weekday): MessageKey => `weekday.${day}` as const;

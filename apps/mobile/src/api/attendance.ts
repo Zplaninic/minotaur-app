@@ -10,6 +10,8 @@ import {
   keysToInvalidateAfterAttendanceChange,
   markAttendance,
   removeMonthMember,
+  setMonthPaid,
+  setMonthSubscription,
   unmarkAttendance,
 } from "@repo/shared/client";
 import { useMutation, useQueryClient, useQuery, type QueryClient } from "@tanstack/react-query";
@@ -95,3 +97,19 @@ export const useRemoveMonthMember = (groupId: string, month: Month) => {
   });
 };
 
+// null clears the member's subscription for the month.
+export const useSetMonthSubscription = (groupId: string, month: Month, memberId: string) => {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: (subscriptionId: string | null) => setMonthSubscription(api, groupId, month, memberId, subscriptionId),
+    onSuccess: () => invalidateAttendance(queryClient),
+  });
+};
+
+export const useSetMonthPaid = (groupId: string, month: Month, memberId: string) => {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: (paid: boolean) => setMonthPaid(api, groupId, month, memberId, paid),
+    onSuccess: () => invalidateAttendance(queryClient),
+  });
+};

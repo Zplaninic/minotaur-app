@@ -26,7 +26,7 @@ const groupMember = (id: string, name: string, surname: string): GroupMemberResp
 
 const attendance: GroupAttendanceResponse = {
   sessions: [{ id: "11", date: "2026-11-11" }],
-  members: [{ id: "4", name: "Leo", surname: "Perić", attendedSessionIds: [] }],
+  members: [{ id: "4", name: "Leo", surname: "Perić", attendedSessionIds: [], subscription: null, paid: false }],
 };
 
 beforeEach(() => {
