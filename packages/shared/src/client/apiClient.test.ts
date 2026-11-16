@@ -1,6 +1,6 @@
 import { afterEach, describe, expect, it, vi } from "vitest";
 import { z } from "zod";
-import { ApiError, createApiClient, toErrorCode } from "./apiClient.js";
+import { ApiError, createApiClient, shouldRetryQuery, toErrorCode } from "./apiClient.js";
 
 const schema = z.object({ name: z.string() });
 const api = createApiClient("/api");
@@ -46,6 +46,18 @@ describe("createApiClient", () => {
 describe("toErrorCode", () => {
   it("treats anything that is not an ApiError as an unexpected response", () => {
     expect(toErrorCode(new Error("boom"))).toBe("UNEXPECTED_RESPONSE");
+  });
+});
+
+describe("shouldRetryQuery", () => {
+  it("retries a failed connection up to three times", () => {
+    expect(shouldRetryQuery(0, new ApiError("NETWORK_ERROR"))).toBe(true);
+    expect(shouldRetryQuery(3, new ApiError("NETWORK_ERROR"))).toBe(false);
+  });
+
+  it("does not retry an answer from the server", () => {
+    expect(shouldRetryQuery(0, new ApiError("NOT_FOUND", 404))).toBe(false);
+    expect(shouldRetryQuery(0, new ApiError("UNAUTHORIZED", 401))).toBe(false);
   });
 });
 

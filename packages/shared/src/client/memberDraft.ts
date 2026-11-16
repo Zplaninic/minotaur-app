@@ -6,7 +6,7 @@ import {
   type MemberResponse,
   type UpdateMemberBody,
 } from "../types/member.js";
-import { ageOn } from "./age.js";
+import { ageOn, toIsoDate } from "./age.js";
 
 // Form state for the add-member form: every field as the text the user typed.
 export type GuardianDraft = {
@@ -110,7 +110,16 @@ const errorForPath = (path: readonly PropertyKey[]): MemberFieldError => {
   return (typeof field === "string" ? fieldErrors[field] : undefined) ?? "invalid";
 };
 
-export const validateMemberDraft = (draft: MemberDraft, today: Date): MemberDraftValidation => {
+export type MemberDraftRules = {
+  // Set for members who log in: their email is their login name.
+  emailRequired?: boolean;
+};
+
+export const validateMemberDraft = (
+  draft: MemberDraft,
+  today: Date,
+  rules: MemberDraftRules = {},
+): MemberDraftValidation => {
   const result = createMemberBody.safeParse(toCreateMemberInput(draft));
   const errors: MemberFieldErrors = {};
 
@@ -119,6 +128,14 @@ export const validateMemberDraft = (draft: MemberDraft, today: Date): MemberDraf
       const key = issue.path.map(String).join(".");
       errors[key] ??= errorForPath(issue.path);
     }
+  }
+
+  // ISO dates sort like the days they stand for.
+  if (errors["birthday"] === undefined && draft.birthday > toIsoDate(today)) {
+    errors["birthday"] = "birthday";
+  }
+  if (rules.emailRequired && draft.email.trim() === "") {
+    errors["email"] ??= "email";
   }
 
   const birthdayValid = errors["birthday"] === undefined && draft.birthday !== "";

@@ -44,6 +44,26 @@ describe("validateMemberDraft", () => {
     expect(validateMemberDraft({ ...adult, birthday: "2008-11-15" }, today).ok).toBe(true);
   });
 
+  it("rejects a birthday in the future or before 1900", () => {
+    const guardians = [{ ...newGuardianDraft("a"), name: "Iva", surname: "Horvat" }];
+    expect(validateMemberDraft({ ...adult, birthday: "2026-11-16", guardians }, today)).toEqual({
+      ok: false,
+      errors: { birthday: "birthday" },
+    });
+    expect(validateMemberDraft({ ...adult, birthday: "0990-05-01" }, today)).toEqual({
+      ok: false,
+      errors: { birthday: "birthday" },
+    });
+  });
+
+  it("requires an email only for members who log in", () => {
+    expect(validateMemberDraft(adult, today, { emailRequired: true })).toEqual({
+      ok: false,
+      errors: { email: "email" },
+    });
+    expect(validateMemberDraft({ ...adult, email: "marko@example.com" }, today, { emailRequired: true }).ok).toBe(true);
+  });
+
   it("reports guardian fields by their index", () => {
     const guardian = { ...newGuardianDraft("a"), name: "Iva", email: "iva@" };
     const result = validateMemberDraft({ ...adult, guardians: [guardian] }, today);

@@ -18,6 +18,13 @@ export class ApiError extends Error {
 export const toErrorCode = (error: unknown): ClientErrorCode =>
   error instanceof ApiError ? error.code : "UNEXPECTED_RESPONSE";
 
+const MAX_QUERY_RETRIES = 3;
+
+// For TanStack Query's `retry`: only a failed connection is worth another try.
+// An answer from the server (not found, not allowed, logged out) stays the same.
+export const shouldRetryQuery = (failureCount: number, error: unknown): boolean =>
+  toErrorCode(error) === "NETWORK_ERROR" && failureCount < MAX_QUERY_RETRIES;
+
 export type ApiClient = {
   fetch: <Schema extends z.ZodType>(path: string, schema: Schema, init?: RequestInit) => Promise<z.infer<Schema>>;
 };

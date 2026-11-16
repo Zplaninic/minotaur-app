@@ -13,6 +13,15 @@ export type MemberRole = z.infer<typeof memberRole>;
 // Every member created through the API gets this role.
 export const DEFAULT_MEMBER_ROLE: MemberRole = "child";
 
+// Nobody alive was born before this; it also keeps typos like year 0202 out.
+export const MIN_BIRTHDAY = "1900-01-01";
+
+// A calendar date, YYYY-MM-DD. ISO dates sort like the days they stand for.
+// That it is not in the future is checked against today, by the form and the backend.
+export const birthday = z.iso
+  .date()
+  .refine((value) => value >= MIN_BIRTHDAY, { message: `The earliest birthday is ${MIN_BIRTHDAY}` });
+
 // Croatian OIB format: 11 digits. The checksum is not verified.
 export const taxNumber = z.string().trim().regex(/^\d{11}$/);
 
@@ -26,7 +35,7 @@ export const createMemberBody = z.object({
   orgId: id,
   name: personName,
   surname: personName,
-  birthday: z.iso.date(),
+  birthday,
   taxNumber: taxNumber.optional(),
   email: email.optional(),
   phone: phone.optional(),
