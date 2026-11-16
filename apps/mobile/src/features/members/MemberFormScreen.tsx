@@ -26,7 +26,7 @@ import { Screen } from "../../components/Screen";
 import { TextField } from "../../components/TextField";
 import { confirmRemove } from "../../lib/confirmRemove";
 import { formatCalendarDate } from "../../lib/format";
-import { errorMessage, memberFieldErrorKey, t } from "../../lib/messages";
+import { memberFieldErrorKey, useMessages } from "../../lib/messages";
 import { bodyLineHeight, colors, fonts, fontSizes, headingLineHeight, spacing } from "../../theme/tokens";
 import { DeleteMemberButton } from "./DeleteMemberButton";
 import { GuardianFields } from "./GuardianFields";
@@ -40,6 +40,7 @@ type MemberFormScreenProps = {
 };
 
 export const MemberFormScreen = ({ member }: MemberFormScreenProps) => {
+  const { errorMessage, t } = useMessages();
   const router = useRouter();
   const orgs = useOrgs();
   const guardians = useGuardians();

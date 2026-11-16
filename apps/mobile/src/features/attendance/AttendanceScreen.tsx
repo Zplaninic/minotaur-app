@@ -18,7 +18,7 @@ import { useAbility } from "../../api/auth";
 import { useGroup } from "../../api/groups";
 import { Button } from "../../components/Button";
 import { formatMonth, formatNumber, formatSessionDate } from "../../lib/format";
-import { errorMessage, t, weekdayKey } from "../../lib/messages";
+import { useMessages, weekdayKey } from "../../lib/messages";
 import { useManualRefresh } from "../../lib/useManualRefresh";
 import { useToday } from "../../lib/useToday";
 import {
@@ -42,6 +42,7 @@ type AttendanceScreenProps = {
 
 // One session at a time: ‹ date ›, then a row per member to tick.
 export const AttendanceScreen = ({ groupId, now: fixedNow }: AttendanceScreenProps) => {
+  const { errorMessage, t } = useMessages();
   const router = useRouter();
   const ability = useAbility();
   const today = useToday(fixedNow);

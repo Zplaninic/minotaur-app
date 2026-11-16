@@ -8,7 +8,7 @@ import { useAbility } from "../../api/auth";
 import { useMemberPages } from "../../api/members";
 import { Button } from "../../components/Button";
 import { CheckboxList } from "../../components/CheckboxList";
-import { errorMessage, t } from "../../lib/messages";
+import { useMessages } from "../../lib/messages";
 import { useManualRefresh } from "../../lib/useManualRefresh";
 import { bodyLineHeight, borders, colors, fonts, fontSizes, headingLineHeight, spacing } from "../../theme/tokens";
 import { MemberRow } from "./MemberRow";
@@ -18,6 +18,7 @@ type ListStateProps = {
 };
 
 const ListState = ({ unpaidOnly }: ListStateProps) => {
+  const { errorMessage, t } = useMessages();
   const members = useMemberPages(DEFAULT_PAGE_SIZE, unpaidOnly);
 
   if (members.isPending) {
@@ -50,6 +51,7 @@ const ListState = ({ unpaidOnly }: ListStateProps) => {
 };
 
 export const MembersScreen = () => {
+  const { t } = useMessages();
   const router = useRouter();
   const ability = useAbility();
   const [unpaidOnly, setUnpaidOnly] = useState(false);

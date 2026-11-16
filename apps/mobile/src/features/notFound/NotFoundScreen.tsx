@@ -1,19 +1,22 @@
 import { Link } from "expo-router";
 import { StyleSheet, Text } from "react-native";
 import { Screen } from "../../components/Screen";
-import { t } from "../../lib/messages";
+import { useMessages } from "../../lib/messages";
 import { bodyLineHeight, colors, fonts, fontSizes, headingLineHeight, spacing } from "../../theme/tokens";
 
-export const NotFoundScreen = () => (
-  <Screen>
-    <Text accessibilityRole="header" style={styles.title}>
-      {t("notFound.title")}
-    </Text>
-    <Link href="/" accessibilityRole="link" accessibilityLabel={t("notFound.home")} style={styles.link}>
-      {t("notFound.home")}
-    </Link>
-  </Screen>
-);
+export const NotFoundScreen = () => {
+  const { t } = useMessages();
+  return (
+    <Screen>
+      <Text accessibilityRole="header" style={styles.title}>
+        {t("notFound.title")}
+      </Text>
+      <Link href="/" accessibilityRole="link" accessibilityLabel={t("notFound.home")} style={styles.link}>
+        {t("notFound.home")}
+      </Link>
+    </Screen>
+  );
+};
 
 const styles = StyleSheet.create({
   title: {

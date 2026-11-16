@@ -10,7 +10,7 @@ import { fieldStyles } from "../../components/fieldStyles";
 import { OptionList } from "../../components/OptionList";
 import { Screen } from "../../components/Screen";
 import { formatMoney, formatMonth, formatPersonName } from "../../lib/format";
-import { errorMessage, t } from "../../lib/messages";
+import { useMessages } from "../../lib/messages";
 import { bodyLineHeight, colors, fonts, fontSizes, headingLineHeight } from "../../theme/tokens";
 
 type MemberSubscriptionScreenProps = {
@@ -26,6 +26,7 @@ const NONE = "";
 // groups. Picking a
 // subscription saves it and goes back; the paid box saves and stays.
 export const MemberSubscriptionScreen = ({ groupId, month, memberId }: MemberSubscriptionScreenProps) => {
+  const { errorMessage, t } = useMessages();
   const router = useRouter();
   const attendance = useGroupAttendance(groupId, month);
   const subscriptions = useSubscriptions();

@@ -7,7 +7,7 @@ import { useAddMonthMember, useGroupAttendance } from "../../api/attendance";
 import { useGroupMembers } from "../../api/groups";
 import { Button } from "../../components/Button";
 import { formatMonth, formatPersonName } from "../../lib/format";
-import { errorMessage, t } from "../../lib/messages";
+import { useMessages } from "../../lib/messages";
 import { bodyLineHeight, borders, colors, fonts, fontSizes, headingLineHeight, spacing } from "../../theme/tokens";
 import { GroupMemberCandidateRow } from "../groups/GroupMemberCandidateRow";
 
@@ -18,6 +18,7 @@ type AddMonthMemberScreenProps = {
 
 // The group's members who are not on the month's roster; a tap adds one.
 export const AddMonthMemberScreen = ({ groupId, month }: AddMonthMemberScreenProps) => {
+  const { errorMessage, t } = useMessages();
   const router = useRouter();
   const groupMembers = useGroupMembers(groupId);
   const attendance = useGroupAttendance(groupId, month);

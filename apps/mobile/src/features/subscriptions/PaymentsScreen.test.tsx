@@ -2,7 +2,7 @@ import type { OverduePaymentsResponse, SubscriptionSummaryResponse } from "@repo
 import { ApiError } from "@repo/shared/client";
 import { fireEvent, render, screen } from "@testing-library/react-native";
 import { api } from "../../api/client";
-import { t } from "../../lib/messages";
+import { translate as t } from "../../lib/messages";
 import { Providers } from "../members/testUtils";
 import { PaymentsScreen } from "./PaymentsScreen";
 

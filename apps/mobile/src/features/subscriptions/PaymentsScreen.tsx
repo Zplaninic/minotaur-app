@@ -6,7 +6,7 @@ import { SafeAreaView } from "react-native-safe-area-context";
 import { useOverduePayments, useSubscriptionSummary } from "../../api/subscriptions";
 import { Button } from "../../components/Button";
 import { formatMoney, formatMonth, formatNumber, formatSortedName } from "../../lib/format";
-import { errorMessage, t } from "../../lib/messages";
+import { useMessages } from "../../lib/messages";
 import { useManualRefresh } from "../../lib/useManualRefresh";
 import { useToday } from "../../lib/useToday";
 import {
@@ -33,6 +33,7 @@ type PaymentsScreenProps = {
 // One month's money, with ‹ › between months, and the members who have not
 // paid for a past month.
 export const PaymentsScreen = ({ now }: PaymentsScreenProps) => {
+  const { errorMessage, t } = useMessages();
   const today = useToday(now);
   // An ISO date starts with its month.
   const currentMonth = today.slice(0, 7);

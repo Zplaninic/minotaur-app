@@ -5,12 +5,13 @@ import { SafeAreaView } from "react-native-safe-area-context";
 import { useAbility } from "../../api/auth";
 import { useSubscriptions } from "../../api/subscriptions";
 import { Button } from "../../components/Button";
-import { errorMessage, t } from "../../lib/messages";
+import { useMessages } from "../../lib/messages";
 import { useManualRefresh } from "../../lib/useManualRefresh";
 import { bodyLineHeight, borders, colors, fonts, fontSizes, headingLineHeight, spacing } from "../../theme/tokens";
 import { SubscriptionRow } from "./SubscriptionRow";
 
 const ListState = () => {
+  const { errorMessage, t } = useMessages();
   const subscriptions = useSubscriptions();
 
   if (subscriptions.isPending) {
@@ -43,6 +44,7 @@ const ListState = () => {
 };
 
 export const SubscriptionsScreen = () => {
+  const { t } = useMessages();
   const router = useRouter();
   const ability = useAbility();
   const subscriptions = useSubscriptions();

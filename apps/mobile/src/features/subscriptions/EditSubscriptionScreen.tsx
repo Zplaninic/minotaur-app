@@ -4,7 +4,7 @@ import { useSubscriptions } from "../../api/subscriptions";
 import { Button } from "../../components/Button";
 import { fieldStyles } from "../../components/fieldStyles";
 import { Screen } from "../../components/Screen";
-import { errorMessage, t } from "../../lib/messages";
+import { useMessages } from "../../lib/messages";
 import { colors, fonts, fontSizes, headingLineHeight } from "../../theme/tokens";
 import { SubscriptionFormScreen } from "./SubscriptionFormScreen";
 
@@ -15,6 +15,7 @@ type EditSubscriptionScreenProps = {
 // Finds the subscription in the list, which is short and usually cached from
 // the screen before, then shows the form filled in.
 export const EditSubscriptionScreen = ({ subscriptionId }: EditSubscriptionScreenProps) => {
+  const { errorMessage, t } = useMessages();
   const subscriptions = useSubscriptions();
 
   if (subscriptions.isPending) {

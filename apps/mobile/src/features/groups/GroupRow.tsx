@@ -1,7 +1,7 @@
 import type { GroupResponse } from "@repo/shared";
 import { Pressable, StyleSheet, Text } from "react-native";
 import { formatNumber } from "../../lib/format";
-import { t } from "../../lib/messages";
+import { useMessages } from "../../lib/messages";
 import { bodyLineHeight, borders, colors, fonts, fontSizes, minTouchSize, spacing } from "../../theme/tokens";
 import { groupName } from "./groupName";
 
@@ -10,17 +10,20 @@ type GroupRowProps = {
   onPress: () => void;
 };
 
-export const GroupRow = ({ group, onPress }: GroupRowProps) => (
-  <Pressable
-    onPress={onPress}
-    accessibilityRole="button"
-    accessibilityLabel={t("groups.open", { name: groupName(group) })}
-    style={({ pressed }) => [styles.row, pressed && styles.rowPressed]}
-  >
-    <Text style={styles.name}>{groupName(group)}</Text>
-    <Text style={styles.detail}>{t("groups.memberCount", { count: formatNumber(group.memberCount) })}</Text>
-  </Pressable>
-);
+export const GroupRow = ({ group, onPress }: GroupRowProps) => {
+  const { t } = useMessages();
+  return (
+    <Pressable
+      onPress={onPress}
+      accessibilityRole="button"
+      accessibilityLabel={t("groups.open", { name: groupName(group, t) })}
+      style={({ pressed }) => [styles.row, pressed && styles.rowPressed]}
+    >
+      <Text style={styles.name}>{groupName(group, t)}</Text>
+      <Text style={styles.detail}>{t("groups.memberCount", { count: formatNumber(group.memberCount) })}</Text>
+    </Pressable>
+  );
+};
 
 const styles = StyleSheet.create({
   row: {

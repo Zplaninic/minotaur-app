@@ -2,7 +2,7 @@ import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { fireEvent, render, screen, waitFor } from "@testing-library/react-native";
 import { SafeAreaProvider } from "react-native-safe-area-context";
 import { api } from "../../api/client";
-import { t } from "../../lib/messages";
+import { translate as t } from "../../lib/messages";
 import { clearSessionToken } from "../../lib/sessionToken";
 import { admin } from "../members/testUtils";
 import { HomeScreen } from "./HomeScreen";

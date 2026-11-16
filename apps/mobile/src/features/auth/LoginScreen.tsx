@@ -5,10 +5,11 @@ import { Pressable, StyleSheet, Text, View } from "react-native";
 import { useLogin } from "../../api/auth";
 import { Button } from "../../components/Button";
 import { fieldStyles } from "../../components/fieldStyles";
+import { LanguageSwitcher } from "../../components/LanguageSwitcher";
 import { Logo } from "../../components/Logo";
 import { Screen } from "../../components/Screen";
 import { TextField } from "../../components/TextField";
-import { errorMessage, t, type MessageKey } from "../../lib/messages";
+import { type MessageKey, useMessages } from "../../lib/messages";
 import {
   bodyLineHeight,
   borders,
@@ -27,6 +28,7 @@ const fieldErrorKeys: Record<string, MessageKey> = {
 
 // After a successful login the root navigator switches to the app screens on its own.
 export const LoginScreen = () => {
+  const { errorMessage, t } = useMessages();
   const login = useLogin();
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
@@ -109,6 +111,7 @@ export const LoginScreen = () => {
           onPress={submit}
           disabled={login.isPending}
         />
+        <LanguageSwitcher />
       </View>
     </Screen>
   );

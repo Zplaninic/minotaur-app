@@ -2,12 +2,14 @@ import { useRouter } from "expo-router";
 import { StyleSheet, Text, View } from "react-native";
 import { useAbility, useLogout, useMe } from "../../api/auth";
 import { Button } from "../../components/Button";
+import { LanguageSwitcher } from "../../components/LanguageSwitcher";
 import { Logo } from "../../components/Logo";
 import { Screen } from "../../components/Screen";
-import { t } from "../../lib/messages";
+import { useMessages } from "../../lib/messages";
 import { bodyLineHeight, colors, fonts, fontSizes, spacing } from "../../theme/tokens";
 
 export const HomeScreen = () => {
+  const { t } = useMessages();
   const router = useRouter();
   const me = useMe();
   const ability = useAbility();
@@ -29,6 +31,7 @@ export const HomeScreen = () => {
         <Button label={t("home.subscriptions")} onPress={() => router.push("/subscriptions")} />
       ) : null}
       <View style={styles.footer}>
+        <LanguageSwitcher />
         <Button
           label={t("home.logout")}
           variant="secondary"
@@ -48,6 +51,7 @@ const styles = StyleSheet.create({
     lineHeight: bodyLineHeight(fontSizes.md),
   },
   footer: {
+    gap: spacing[4],
     marginTop: "auto",
     paddingTop: spacing[6],
   },

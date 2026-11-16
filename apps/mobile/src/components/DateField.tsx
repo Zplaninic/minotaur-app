@@ -2,7 +2,7 @@ import DateTimePicker, { DateTimePickerAndroid, type DateTimePickerEvent } from 
 import { fromIsoDate, toIsoDate } from "@repo/shared/client";
 import { useState } from "react";
 import { Platform, Pressable, Text, View } from "react-native";
-import { t } from "../lib/messages";
+import { useMessages } from "../lib/messages";
 import { Button } from "./Button";
 import { FieldError } from "./FieldError";
 import { FieldLabel } from "./FieldLabel";
@@ -34,6 +34,7 @@ export const DateField = ({
   error,
   testID,
 }: DateFieldProps) => {
+  const { t } = useMessages();
   const [iosPickerOpen, setIosPickerOpen] = useState(false);
   const date = value ? fromIsoDate(value) : initialDate;
 

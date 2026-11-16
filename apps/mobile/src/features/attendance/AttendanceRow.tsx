@@ -5,7 +5,7 @@ import { useSetAttendance } from "../../api/attendance";
 import { useAbility } from "../../api/auth";
 import { useOverduePayments } from "../../api/subscriptions";
 import { formatMonth, formatPersonName, formatShortMonth, formatSortedName } from "../../lib/format";
-import { t } from "../../lib/messages";
+import { useMessages } from "../../lib/messages";
 import { bodyLineHeight, borders, colors, fonts, fontSizes, minTouchSize, opacity, spacing } from "../../theme/tokens";
 
 type AttendanceRowProps = {
@@ -27,6 +27,7 @@ export const AttendanceRow = ({
   disabled,
   onChangeSubscription,
 }: AttendanceRowProps) => {
+  const { t } = useMessages();
   const setAttendance = useSetAttendance(groupId, month);
   const checked = member.attendedSessionIds.includes(sessionId);
   const inactive = disabled || setAttendance.isPending;

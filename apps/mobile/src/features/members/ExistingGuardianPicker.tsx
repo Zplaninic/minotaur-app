@@ -7,7 +7,7 @@ import { fieldStyles } from "../../components/fieldStyles";
 import { OptionList } from "../../components/OptionList";
 import { TextField } from "../../components/TextField";
 import { formatSortedName } from "../../lib/format";
-import { t } from "../../lib/messages";
+import { useMessages } from "../../lib/messages";
 import { spacing } from "../../theme/tokens";
 
 // Few enough rows to show inside the scrolling form without a FlatList.
@@ -21,6 +21,7 @@ type ExistingGuardianPickerProps = {
 };
 
 export const ExistingGuardianPicker = ({ guardians, selectedId, onSelect, error }: ExistingGuardianPickerProps) => {
+  const { t } = useMessages();
   const [search, setSearch] = useState("");
   const selected = guardians.find((guardian) => guardian.id === selectedId);
 

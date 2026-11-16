@@ -1,7 +1,7 @@
 import type { MemberResponse } from "@repo/shared";
 import { Pressable, StyleSheet, Text, View } from "react-native";
 import { formatCalendarDate, formatPersonName, formatSortedName } from "../../lib/format";
-import { t } from "../../lib/messages";
+import { useMessages } from "../../lib/messages";
 import { bodyLineHeight, borders, colors, fonts, fontSizes, minTouchSize, spacing } from "../../theme/tokens";
 
 type MemberRowProps = {
@@ -11,29 +11,32 @@ type MemberRowProps = {
 };
 
 // Read by screen readers as one item; with onEdit, a tap opens the edit form.
-export const MemberRow = ({ member, onEdit }: MemberRowProps) => (
-  <Pressable
-    onPress={onEdit}
-    disabled={!onEdit}
-    accessible
-    accessibilityRole={onEdit ? "button" : undefined}
-    accessibilityHint={onEdit ? t("members.editLabel", { name: formatPersonName(member) }) : undefined}
-    style={({ pressed }) => [styles.row, pressed && styles.rowPressed]}
-  >
-    <View style={styles.nameLine}>
-      <Text style={styles.name}>{formatSortedName(member)}</Text>
-      {member.role === "trainer" ? <Text style={styles.label}>{t("members.trainerLabel")}</Text> : null}
-    </View>
-    <Text style={styles.detail}>{t("members.birthday", { date: formatCalendarDate(member.birthday) })}</Text>
-    {member.email ? <Text style={styles.detail}>{member.email}</Text> : null}
-    {member.phone ? <Text style={styles.detail}>{member.phone}</Text> : null}
-    {member.guardians.length > 0 ? (
-      <Text style={styles.detail}>
-        {t("members.guardians", { names: member.guardians.map(formatPersonName).join(", ") })}
-      </Text>
-    ) : null}
-  </Pressable>
-);
+export const MemberRow = ({ member, onEdit }: MemberRowProps) => {
+  const { t } = useMessages();
+  return (
+    <Pressable
+      onPress={onEdit}
+      disabled={!onEdit}
+      accessible
+      accessibilityRole={onEdit ? "button" : undefined}
+      accessibilityHint={onEdit ? t("members.editLabel", { name: formatPersonName(member) }) : undefined}
+      style={({ pressed }) => [styles.row, pressed && styles.rowPressed]}
+    >
+      <View style={styles.nameLine}>
+        <Text style={styles.name}>{formatSortedName(member)}</Text>
+        {member.role === "trainer" ? <Text style={styles.label}>{t("members.trainerLabel")}</Text> : null}
+      </View>
+      <Text style={styles.detail}>{t("members.birthday", { date: formatCalendarDate(member.birthday) })}</Text>
+      {member.email ? <Text style={styles.detail}>{member.email}</Text> : null}
+      {member.phone ? <Text style={styles.detail}>{member.phone}</Text> : null}
+      {member.guardians.length > 0 ? (
+        <Text style={styles.detail}>
+          {t("members.guardians", { names: member.guardians.map(formatPersonName).join(", ") })}
+        </Text>
+      ) : null}
+    </Pressable>
+  );
+};
 
 const styles = StyleSheet.create({
   row: {

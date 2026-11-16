@@ -4,7 +4,7 @@ import { useMember } from "../../api/members";
 import { Button } from "../../components/Button";
 import { fieldStyles } from "../../components/fieldStyles";
 import { Screen } from "../../components/Screen";
-import { errorMessage, t } from "../../lib/messages";
+import { useMessages } from "../../lib/messages";
 import { colors, fonts, fontSizes, headingLineHeight } from "../../theme/tokens";
 import { MemberFormScreen } from "./MemberFormScreen";
 
@@ -14,6 +14,7 @@ type EditMemberScreenProps = {
 
 // Loads the member, then shows the member form filled in.
 export const EditMemberScreen = ({ memberId }: EditMemberScreenProps) => {
+  const { errorMessage, t } = useMessages();
   const member = useMember(memberId);
 
   if (member.isPending) {

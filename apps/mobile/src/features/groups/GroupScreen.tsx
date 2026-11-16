@@ -7,7 +7,7 @@ import { useArchiveGroup, useGroup, useGroupMembers, useRemoveGroupMember } from
 import { Button } from "../../components/Button";
 import { confirmRemove } from "../../lib/confirmRemove";
 import { formatPersonName } from "../../lib/format";
-import { errorMessage, t } from "../../lib/messages";
+import { useMessages } from "../../lib/messages";
 import { useManualRefresh } from "../../lib/useManualRefresh";
 import { bodyLineHeight, borders, colors, fonts, fontSizes, headingLineHeight, spacing } from "../../theme/tokens";
 import { GroupMemberRow } from "./GroupMemberRow";
@@ -18,6 +18,7 @@ type GroupScreenProps = {
 };
 
 export const GroupScreen = ({ groupId }: GroupScreenProps) => {
+  const { errorMessage, t } = useMessages();
   const router = useRouter();
   const ability = useAbility();
   const group = useGroup(groupId);
@@ -81,7 +82,7 @@ export const GroupScreen = ({ groupId }: GroupScreenProps) => {
         ListHeaderComponent={
           <View style={styles.header}>
             <Text accessibilityRole="header" style={styles.title}>
-              {groupName(group.data)}
+              {groupName(group.data, t)}
             </Text>
             {ability.can("read", "Attendance") ? (
               <Button

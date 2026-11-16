@@ -7,19 +7,19 @@ import { useArchiveMember } from "../../api/members";
 import { Button } from "../../components/Button";
 import { confirmRemove } from "../../lib/confirmRemove";
 import { formatPersonName } from "../../lib/format";
-import { errorMessage, t } from "../../lib/messages";
+import { useMessages } from "../../lib/messages";
 import { bodyLineHeight, colors, fonts, fontSizes, spacing } from "../../theme/tokens";
 
 type DeleteMemberButtonProps = {
   member: MemberResponse;
 };
 
-// The only CONFLICT here is a trainer who still leads groups.
-const archiveErrorMessage = (code: ClientErrorCode): string =>
-  code === "CONFLICT" ? t("memberForm.deleteOwnerConflict") : errorMessage(code);
-
 // Asks first, then deletes the member and goes back to the list.
 export const DeleteMemberButton = ({ member }: DeleteMemberButtonProps) => {
+  const { errorMessage, t } = useMessages();
+  // The only CONFLICT here is a trainer who still leads groups.
+  const archiveErrorMessage = (code: ClientErrorCode): string =>
+    code === "CONFLICT" ? t("memberForm.deleteOwnerConflict") : errorMessage(code);
   const router = useRouter();
   const ability = useAbility();
   const me = useMe();

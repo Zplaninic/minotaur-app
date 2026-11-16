@@ -5,22 +5,22 @@ import { useMe } from "../../api/auth";
 import { Button } from "../../components/Button";
 import { Logo } from "../../components/Logo";
 import { Screen } from "../../components/Screen";
-import { errorMessage, t } from "../../lib/messages";
+import { useMessages } from "../../lib/messages";
 import { bodyLineHeight, colors, fonts, fontSizes, headingLineHeight, spacing } from "../../theme/tokens";
-
-// Native headers only on the list and form screens; other screens draw their own heading.
-const headerOptions = {
-  headerShown: true,
-  headerTintColor: colors.greenDark,
-  headerStyle: { backgroundColor: colors.greenLight50 },
-  headerTitleStyle: { fontFamily: fonts.displayBlack },
-  headerBackButtonDisplayMode: "minimal",
-  headerRight: () => <Logo variant="app" label={t("app.name")} compact />,
-} as const;
 
 // Shows the login screen when logged out and the app screens when logged in.
 // Protected screens cannot be opened without a login, not even by a link.
 export const RootNavigator = () => {
+  const { errorMessage, t } = useMessages();
+  // Native headers only on the list and form screens; other screens draw their own heading.
+  const headerOptions = {
+    headerShown: true,
+    headerTintColor: colors.greenDark,
+    headerStyle: { backgroundColor: colors.greenLight50 },
+    headerTitleStyle: { fontFamily: fonts.displayBlack },
+    headerBackButtonDisplayMode: "minimal",
+    headerRight: () => <Logo variant="app" label={t("app.name")} compact />,
+  } as const;
   const me = useMe();
 
   if (me.isPending) {

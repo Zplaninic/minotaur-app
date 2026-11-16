@@ -2,7 +2,7 @@ import type { GroupMemberResponse } from "@repo/shared";
 import { StyleSheet, Text, View } from "react-native";
 import { Button } from "../../components/Button";
 import { formatPersonName, formatSortedName } from "../../lib/format";
-import { t } from "../../lib/messages";
+import { useMessages } from "../../lib/messages";
 import { bodyLineHeight, borders, colors, fonts, fontSizes, minTouchSize, spacing } from "../../theme/tokens";
 
 type GroupMemberRowProps = {
@@ -12,20 +12,23 @@ type GroupMemberRowProps = {
   disabled?: boolean;
 };
 
-export const GroupMemberRow = ({ member, onRemove, disabled = false }: GroupMemberRowProps) => (
-  <View style={styles.row}>
-    <Text style={styles.name}>{formatSortedName(member)}</Text>
-    {onRemove ? (
-      <Button
-        label={t("groupMembers.remove")}
-        accessibilityLabel={t("groupMembers.removeLabel", { name: formatPersonName(member) })}
-        variant="secondary"
-        onPress={onRemove}
-        disabled={disabled}
-      />
-    ) : null}
-  </View>
-);
+export const GroupMemberRow = ({ member, onRemove, disabled = false }: GroupMemberRowProps) => {
+  const { t } = useMessages();
+  return (
+    <View style={styles.row}>
+      <Text style={styles.name}>{formatSortedName(member)}</Text>
+      {onRemove ? (
+        <Button
+          label={t("groupMembers.remove")}
+          accessibilityLabel={t("groupMembers.removeLabel", { name: formatPersonName(member) })}
+          variant="secondary"
+          onPress={onRemove}
+          disabled={disabled}
+        />
+      ) : null}
+    </View>
+  );
+};
 
 const styles = StyleSheet.create({
   row: {

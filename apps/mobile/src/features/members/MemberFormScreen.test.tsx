@@ -2,7 +2,7 @@ import { ADULT_AGE } from "@repo/shared";
 import { ApiError } from "@repo/shared/client";
 import { fireEvent, render, screen, waitFor } from "@testing-library/react-native";
 import { api } from "../../api/client";
-import { t } from "../../lib/messages";
+import { translate as t } from "../../lib/messages";
 import { MemberFormScreen } from "./MemberFormScreen";
 import { iva, Providers } from "./testUtils";
 

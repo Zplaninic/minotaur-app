@@ -1,7 +1,7 @@
 import type { SubscriptionResponse } from "@repo/shared";
 import { Pressable, StyleSheet, Text, View } from "react-native";
 import { formatMoney, formatNumber } from "../../lib/format";
-import { t } from "../../lib/messages";
+import { useMessages } from "../../lib/messages";
 import { bodyLineHeight, borders, colors, fonts, fontSizes, minTouchSize, spacing } from "../../theme/tokens";
 
 type SubscriptionRowProps = {
@@ -11,6 +11,7 @@ type SubscriptionRowProps = {
 };
 
 export const SubscriptionRow = ({ subscription, onEdit }: SubscriptionRowProps) => {
+  const { t } = useMessages();
   const content = (
     <>
       <Text style={styles.name}>{subscription.name}</Text>

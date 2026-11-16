@@ -2,7 +2,7 @@ import { ApiError } from "@repo/shared/client";
 import { act, fireEvent, render, screen, waitFor } from "@testing-library/react-native";
 import { Alert } from "react-native";
 import { api } from "../../api/client";
-import { t } from "../../lib/messages";
+import { translate as t } from "../../lib/messages";
 import { EditMemberScreen } from "./EditMemberScreen";
 import { admin, ana, Providers } from "./testUtils";
 

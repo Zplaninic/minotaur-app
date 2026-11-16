@@ -1,7 +1,7 @@
 import type { MemberResponse } from "@repo/shared";
 import { Pressable, StyleSheet, Text } from "react-native";
 import { formatPersonName, formatSortedName } from "../../lib/format";
-import { t } from "../../lib/messages";
+import { useMessages } from "../../lib/messages";
 import { bodyLineHeight, borders, colors, fonts, fontSizes, minTouchSize, opacity, spacing } from "../../theme/tokens";
 
 type GroupMemberCandidateRowProps = {
@@ -12,18 +12,21 @@ type GroupMemberCandidateRowProps = {
   accessibilityLabel?: string;
 };
 
-export const GroupMemberCandidateRow = ({ member, onAdd, disabled, accessibilityLabel }: GroupMemberCandidateRowProps) => (
-  <Pressable
-    onPress={onAdd}
-    disabled={disabled}
-    accessibilityRole="button"
-    accessibilityLabel={accessibilityLabel ?? t("groupMemberForm.addLabel", { name: formatPersonName(member) })}
-    accessibilityState={{ disabled }}
-    style={({ pressed }) => [styles.row, pressed && styles.rowPressed, disabled && styles.disabled]}
-  >
-    <Text style={styles.name}>{formatSortedName(member)}</Text>
-  </Pressable>
-);
+export const GroupMemberCandidateRow = ({ member, onAdd, disabled, accessibilityLabel }: GroupMemberCandidateRowProps) => {
+  const { t } = useMessages();
+  return (
+    <Pressable
+      onPress={onAdd}
+      disabled={disabled}
+      accessibilityRole="button"
+      accessibilityLabel={accessibilityLabel ?? t("groupMemberForm.addLabel", { name: formatPersonName(member) })}
+      accessibilityState={{ disabled }}
+      style={({ pressed }) => [styles.row, pressed && styles.rowPressed, disabled && styles.disabled]}
+    >
+      <Text style={styles.name}>{formatSortedName(member)}</Text>
+    </Pressable>
+  );
+};
 
 const styles = StyleSheet.create({
   row: {

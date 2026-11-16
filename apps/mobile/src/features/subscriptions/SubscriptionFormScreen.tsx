@@ -15,7 +15,7 @@ import { OptionList } from "../../components/OptionList";
 import { Screen } from "../../components/Screen";
 import { TextField } from "../../components/TextField";
 import { formatNumber } from "../../lib/format";
-import { errorMessage, subscriptionFieldErrorKey, t } from "../../lib/messages";
+import { subscriptionFieldErrorKey, useMessages } from "../../lib/messages";
 import { bodyLineHeight, colors, fonts, fontSizes, spacing } from "../../theme/tokens";
 
 const sessionOptions = Array.from({ length: MAX_SESSIONS_PER_WEEK - MIN_SESSIONS_PER_WEEK + 1 }, (_, index) => {
@@ -29,6 +29,7 @@ type SubscriptionFormScreenProps = {
 };
 
 export const SubscriptionFormScreen = ({ subscription }: SubscriptionFormScreenProps) => {
+  const { errorMessage, t } = useMessages();
   const router = useRouter();
   const createSubscription = useCreateSubscription();
   const updateSubscription = useUpdateSubscription(subscription?.id ?? "");

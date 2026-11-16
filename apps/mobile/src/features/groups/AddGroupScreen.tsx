@@ -18,7 +18,7 @@ import { OptionList } from "../../components/OptionList";
 import { Screen } from "../../components/Screen";
 import { TimeField } from "../../components/TimeField";
 import { formatSortedName, formatTimeOfDay } from "../../lib/format";
-import { errorMessage, groupFieldErrorKey, t, weekdayKey } from "../../lib/messages";
+import { groupFieldErrorKey, useMessages, weekdayKey } from "../../lib/messages";
 import { bodyLineHeight, colors, fonts, fontSizes, spacing } from "../../theme/tokens";
 
 // Where the time pickers start: most groups train in the late afternoon.
@@ -26,6 +26,7 @@ const INITIAL_FROM = "17:00";
 const INITIAL_TO = "18:00";
 
 export const AddGroupScreen = () => {
+  const { errorMessage, t } = useMessages();
   const router = useRouter();
   const trainers = useTrainers();
   const createGroup = useCreateGroup();

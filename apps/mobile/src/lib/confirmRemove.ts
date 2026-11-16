@@ -1,5 +1,5 @@
 import { Alert } from "react-native";
-import { t } from "./messages";
+import { translate as t } from "./messages";
 
 type ConfirmRemoveOptions = {
   title: string;
@@ -9,7 +9,8 @@ type ConfirmRemoveOptions = {
   confirmLabel?: string;
 };
 
-// Asks with the platform's own alert before something is removed.
+// Asks with the platform's own alert before something is removed. Texts are
+// read when the alert opens, so they are always in the current language.
 export const confirmRemove = ({
   title,
   message,

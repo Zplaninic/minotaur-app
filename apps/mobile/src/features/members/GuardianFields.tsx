@@ -5,7 +5,7 @@ import { Button } from "../../components/Button";
 import { fieldStyles } from "../../components/fieldStyles";
 import { OptionList } from "../../components/OptionList";
 import { TextField } from "../../components/TextField";
-import { t } from "../../lib/messages";
+import { useMessages } from "../../lib/messages";
 import { borders, colors, fonts, fontSizes, headingLineHeight, spacing } from "../../theme/tokens";
 import { ExistingGuardianPicker } from "./ExistingGuardianPicker";
 
@@ -28,6 +28,7 @@ export const GuardianFields = ({
   existingGuardians,
   existingState,
 }: GuardianFieldsProps) => {
+  const { t } = useMessages();
   const number = index + 1;
   const update = (changes: Partial<GuardianDraft>) => onChange({ ...guardian, ...changes });
 

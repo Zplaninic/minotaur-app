@@ -2,7 +2,7 @@ import DateTimePicker, { DateTimePickerAndroid, type DateTimePickerEvent } from 
 import { fromTimeOfDay, toTimeOfDay } from "@repo/shared/client";
 import { useState } from "react";
 import { Platform, Pressable, Text, View } from "react-native";
-import { t } from "../lib/messages";
+import { useMessages } from "../lib/messages";
 import { Button } from "./Button";
 import { FieldError } from "./FieldError";
 import { FieldLabel } from "./FieldLabel";
@@ -32,6 +32,7 @@ export const TimeField = ({
   error,
   testID,
 }: TimeFieldProps) => {
+  const { t } = useMessages();
   const [iosPickerOpen, setIosPickerOpen] = useState(false);
   const date = fromTimeOfDay(value || initialTime);
 

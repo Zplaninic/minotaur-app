@@ -5,12 +5,13 @@ import { SafeAreaView } from "react-native-safe-area-context";
 import { useAbility } from "../../api/auth";
 import { useGroups } from "../../api/groups";
 import { Button } from "../../components/Button";
-import { errorMessage, t } from "../../lib/messages";
+import { useMessages } from "../../lib/messages";
 import { useManualRefresh } from "../../lib/useManualRefresh";
 import { bodyLineHeight, borders, colors, fonts, fontSizes, headingLineHeight, spacing } from "../../theme/tokens";
 import { GroupRow } from "./GroupRow";
 
 const ListState = () => {
+  const { errorMessage, t } = useMessages();
   const groups = useGroups();
 
   if (groups.isPending) {
@@ -43,6 +44,7 @@ const ListState = () => {
 };
 
 export const GroupsScreen = () => {
+  const { t } = useMessages();
   const router = useRouter();
   const ability = useAbility();
   const groups = useGroups();
