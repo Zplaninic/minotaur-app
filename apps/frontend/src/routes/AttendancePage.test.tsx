@@ -1,4 +1,4 @@
-import type { GroupAttendanceResponse, GroupResponse, MeResponse } from "@repo/shared";
+import type { GroupAttendanceResponse, GroupResponse, MeResponse, SubscriptionResponse } from "@repo/shared";
 import { ApiError } from "@repo/shared/client";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { createMemoryHistory, RouterProvider } from "@tanstack/react-router";
@@ -32,12 +32,38 @@ const november = (): GroupAttendanceResponse => ({
     { id: "18", date: "2026-11-18" },
   ],
   members: [
-    { id: "4", name: "Leo", surname: "Perić", attendedSessionIds: ["11"] },
-    { id: "5", name: "Nora", surname: "Jurić", attendedSessionIds: [] },
+    {
+      id: "4",
+      name: "Leo",
+      surname: "Perić",
+      attendedSessionIds: ["11"],
+      subscription: { id: "1", name: "Kids 1x", sessionsPerWeek: 1, price: 3000 },
+      paid: true,
+    },
+    { id: "5", name: "Nora", surname: "Jurić", attendedSessionIds: [], subscription: null, paid: false },
   ],
 });
 
 let attendance: GroupAttendanceResponse;
+
+const subscriptions: SubscriptionResponse[] = [
+  {
+    id: "1",
+    name: "Kids 1x",
+    sessionsPerWeek: 1,
+    price: 3000,
+    createdAt: "2026-11-01T17:00:00.000Z",
+    updatedAt: "2026-11-01T17:00:00.000Z",
+  },
+  {
+    id: "2",
+    name: "Kids 2x",
+    sessionsPerWeek: 2,
+    price: 4500,
+    createdAt: "2026-11-01T17:00:00.000Z",
+    updatedAt: "2026-11-01T17:00:00.000Z",
+  },
+];
 
 beforeEach(() => {
   vi.useFakeTimers({ toFake: ["Date"] });
@@ -89,6 +115,39 @@ beforeEach(() => {
         ],
       };
     }
+    const monthPaid = /^\/groups\/1\/months\/2026-11\/members\/(\d+)\/paid$/.exec(path);
+    if (monthPaid) {
+      const [, memberId = ""] = monthPaid;
+      const { paid } = JSON.parse(String(init?.body)) as { paid: boolean };
+      attendance = {
+        ...attendance,
+        members: attendance.members.map((member) => (member.id === memberId ? { ...member, paid } : member)),
+      };
+      return undefined;
+    }
+    if (path === "/subscriptions") {
+      return { items: subscriptions };
+    }
+    const monthSubscription = /^\/groups\/1\/months\/2026-11\/members\/(\d+)\/subscription$/.exec(path);
+    if (monthSubscription) {
+      const [, memberId = ""] = monthSubscription;
+      const { subscriptionId } = JSON.parse(String(init?.body)) as { subscriptionId: string | null };
+      const chosen = subscriptions.find((subscription) => subscription.id === subscriptionId);
+      attendance = {
+        ...attendance,
+        members: attendance.members.map((member) =>
+          member.id === memberId
+            ? {
+                ...member,
+                subscription: chosen
+                  ? { id: chosen.id, name: chosen.name, sessionsPerWeek: chosen.sessionsPerWeek, price: chosen.price }
+                  : null,
+              }
+            : member,
+        ),
+      };
+      return undefined;
+    }
     const monthMember = /^\/groups\/1\/months\/2026-11\/members\/(\d+)$/.exec(path);
     if (monthMember) {
       const [, memberId = ""] = monthMember;
@@ -96,7 +155,10 @@ beforeEach(() => {
         ...attendance,
         members:
           init?.method === "PUT"
-            ? [...attendance.members, { id: memberId, name: "Mia", surname: "Novak", attendedSessionIds: [] }]
+            ? [
+                ...attendance.members,
+                { id: memberId, name: "Mia", surname: "Novak", attendedSessionIds: [], subscription: null, paid: false },
+              ]
             : attendance.members.filter((member) => member.id !== memberId),
       };
       return undefined;
@@ -141,6 +203,76 @@ describe("AttendancePage, wide screens", () => {
       expect.anything(),
       expect.objectContaining({ method: "PUT" }),
     );
+  });
+
+  it("shows each member's subscription for the month and changes it", async () => {
+    renderAt("/groups/1/attendance?month=2026-11");
+    const subscriptionOf = (name: string) =>
+      screen.findByRole("combobox", { name: t("attendance.subscriptionLabel", { name, month: "November 2026" }) });
+
+    expect(await subscriptionOf("Leo Perić")).toHaveValue("1");
+    const nora = await subscriptionOf("Nora Jurić");
+    expect(nora).toHaveValue("");
+    await within(nora).findByRole("option", { name: "Kids 2x" });
+
+    fireEvent.change(nora, { target: { value: "2" } });
+
+    await waitFor(() => expect(nora).toHaveValue("2"));
+    expect(fetchMock).toHaveBeenCalledWith(
+      "/groups/1/months/2026-11/members/5/subscription",
+      expect.anything(),
+      expect.objectContaining({ method: "PUT", body: JSON.stringify({ subscriptionId: "2" }) }),
+    );
+
+    // Leo's month is paid, so it cannot go without a subscription; Nora's can.
+    const leo = await subscriptionOf("Leo Perić");
+    expect(within(leo).getByRole("option", { name: t("attendance.noSubscription") })).toBeDisabled();
+    fireEvent.change(nora, { target: { value: "" } });
+    await waitFor(() =>
+      expect(fetchMock).toHaveBeenCalledWith(
+        "/groups/1/months/2026-11/members/5/subscription",
+        expect.anything(),
+        expect.objectContaining({ body: JSON.stringify({ subscriptionId: null }) }),
+      ),
+    );
+    await waitFor(() => expect(nora).toHaveValue(""));
+  });
+
+  it("explains that a paid month keeps its subscription", async () => {
+    const answer = fetchMock.getMockImplementation();
+    fetchMock.mockImplementation(async (path, schema, init) => {
+      if (path === "/groups/1/months/2026-11/members/4/subscription") {
+        throw new ApiError("CONFLICT", 409);
+      }
+      return answer?.(path, schema, init);
+    });
+    renderAt("/groups/1/attendance?month=2026-11");
+    const leo = await screen.findByRole("combobox", {
+      name: t("attendance.subscriptionLabel", { name: "Leo Perić", month: "November 2026" }),
+    });
+    fireEvent.change(leo, { target: { value: "" } });
+    expect(await screen.findByText(t("attendance.paidKeepsSubscription"))).toBeInTheDocument();
+  });
+
+  it("marks a member's month paid only with a subscription", async () => {
+    renderAt("/groups/1/attendance?month=2026-11");
+    const paidBox = (name: string) =>
+      screen.findByRole("checkbox", { name: t("attendance.paidLabel", { name, month: "November 2026" }) });
+
+    const leo = await paidBox("Leo Perić");
+    expect(leo).toBeChecked();
+    // Nora has no subscription, so her month cannot be paid.
+    expect(await paidBox("Nora Jurić")).toBeDisabled();
+
+    fireEvent.click(leo);
+    await waitFor(() =>
+      expect(fetchMock).toHaveBeenCalledWith(
+        "/groups/1/months/2026-11/members/4/paid",
+        expect.anything(),
+        expect.objectContaining({ method: "PUT", body: JSON.stringify({ paid: false }) }),
+      ),
+    );
+    await waitFor(() => expect(leo).not.toBeChecked());
   });
 
   it("disables future sessions", async () => {

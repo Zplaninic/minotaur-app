@@ -7,6 +7,8 @@ import { ConfirmDialog } from "../../components/ConfirmDialog";
 import { formatMonth, formatPersonName, formatSessionDate, formatSortedName } from "../../lib/format";
 import { errorMessage, t } from "../../lib/messages";
 import { AttendanceCheckbox } from "./AttendanceCheckbox";
+import { MonthPaidCheckbox } from "./MonthPaidCheckbox";
+import { MonthSubscriptionSelect } from "./MonthSubscriptionSelect";
 import styles from "./AttendanceGrid.module.css";
 
 type AttendanceGridProps = {
@@ -43,6 +45,12 @@ export const AttendanceGrid = ({ groupId, month, data, today }: AttendanceGridPr
             <tr>
               <th scope="col" className={styles.name}>
                 {t("attendance.table.name")}
+              </th>
+              <th scope="col" className={styles.subscription}>
+                {t("attendance.table.subscription")}
+              </th>
+              <th scope="col" className={styles.paid}>
+                {t("attendance.table.paid")}
               </th>
               {data.sessions.map((session) => (
                 <th key={session.id} scope="col" className={styles.session}>
@@ -82,6 +90,12 @@ export const AttendanceGrid = ({ groupId, month, data, today }: AttendanceGridPr
                     ) : null}
                   </span>
                 </th>
+                <td className={styles.subscription}>
+                  <MonthSubscriptionSelect groupId={groupId} month={month} member={member} disabled={!canTick} />
+                </td>
+                <td className={styles.paid}>
+                  <MonthPaidCheckbox groupId={groupId} month={month} member={member} disabled={!canTick} layout="cell" />
+                </td>
                 {data.sessions.map((session) => (
                   <td key={session.id}>
                     <AttendanceCheckbox

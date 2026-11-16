@@ -1,5 +1,10 @@
 import type { Weekday } from "@repo/shared";
-import type { ClientErrorCode, GroupFieldError, MemberFieldError } from "@repo/shared/client";
+import type {
+  ClientErrorCode,
+  GroupFieldError,
+  MemberFieldError,
+  SubscriptionFieldError,
+} from "@repo/shared/client";
 
 export const locale = "en";
 
@@ -11,6 +16,7 @@ const messages = {
   "nav.label": "Main",
   "nav.members": "Members",
   "nav.groups": "Groups",
+  "nav.subscriptions": "Subscriptions",
   "nav.loggedInAs": "Logged in as {name}",
   "nav.logout": "Log out",
 
@@ -172,6 +178,13 @@ const messages = {
   "attendance.noMembers": "No members on this month's list yet.",
   "attendance.table.caption": "Attendance in {month}: members by surname, sessions by date",
   "attendance.table.name": "Name",
+  "attendance.table.subscription": "Subscription",
+  "attendance.subscriptionLabel": "Subscription of {name} in {month}",
+  "attendance.noSubscription": "No subscription",
+  "attendance.table.paid": "Paid",
+  "attendance.paid": "Paid",
+  "attendance.paidLabel": "{name} paid for {month}",
+  "attendance.paidKeepsSubscription": "Untick Paid before removing the subscription.",
   "attendance.checkboxLabel": "{name} attended on {date}",
   "attendance.futureHint": "Future sessions can be ticked on the day.",
   "attendance.deleteSession": "Delete",
@@ -229,6 +242,33 @@ const messages = {
   "groupForm.error.to": "Enter an end time.",
   "groupForm.error.timeOrder": "The end time must be after the start time.",
   "groupForm.error.invalid": "Check this field.",
+
+  "subscriptions.title": "Subscriptions",
+  "subscriptions.add": "Add subscription",
+  "subscriptions.empty": "No subscriptions yet.",
+  "subscriptions.loading": "Loading subscriptions…",
+  "subscriptions.table.caption": "Subscriptions, sorted by sessions per week",
+  "subscriptions.table.name": "Name",
+  "subscriptions.table.sessionsPerWeek": "Sessions per week",
+  "subscriptions.table.price": "Monthly price",
+  "subscriptions.table.actions": "Actions",
+  "subscriptions.edit": "Edit",
+  "subscriptions.editLabel": "Edit {name}",
+
+  "subscriptionForm.title": "Add subscription",
+  "subscriptionForm.editTitle": "Edit subscription",
+  "subscriptionForm.name": "Name",
+  "subscriptionForm.sessionsPerWeek": "Sessions per week",
+  "subscriptionForm.sessionsPerWeekPlaceholder": "Choose how many",
+  "subscriptionForm.price": "Monthly price (€)",
+  "subscriptionForm.submit": "Save subscription",
+  "subscriptionForm.submitting": "Saving…",
+
+  "subscriptionForm.error.name": "Enter a name.",
+  "subscriptionForm.error.nameTaken": "Another subscription already has this name.",
+  "subscriptionForm.error.sessionsPerWeek": "Choose how many sessions per week.",
+  "subscriptionForm.error.price": "Enter a price in euros, for example 45 or 45,50.",
+  "subscriptionForm.error.invalid": "Check this field.",
 } as const;
 
 const errorMessages: Record<ClientErrorCode, string> = {
@@ -254,5 +294,8 @@ export const errorMessage = (code: ClientErrorCode): string => errorMessages[cod
 export const memberFieldErrorKey = (code: MemberFieldError): MessageKey => `memberForm.error.${code}` as const;
 
 export const groupFieldErrorKey = (code: GroupFieldError): MessageKey => `groupForm.error.${code}` as const;
+
+export const subscriptionFieldErrorKey = (code: SubscriptionFieldError): MessageKey =>
+  `subscriptionForm.error.${code}` as const;
 
 export const weekdayKey = (day: Weekday): MessageKey => `weekday.${day}` as const;

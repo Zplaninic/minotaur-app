@@ -55,6 +55,11 @@ export const AppLayout = () => {
               {t("nav.groups")}
             </Link>
           ) : null}
+          {ability.can("read", "Subscription") ? (
+            <Link to="/subscriptions" className={styles.link} activeProps={{ "aria-current": "page" }}>
+              {t("nav.subscriptions")}
+            </Link>
+          ) : null}
           <div className={styles.account}>
             <span className={styles.name}>{t("nav.loggedInAs", { name: `${me.data.name} ${me.data.surname}` })}</span>
             <button

@@ -1,0 +1,66 @@
+/* Wide tables scroll inside this box, never the page. */
+.scroll {
+  overflow-x: auto;
+  border: var(--border-width) solid var(--color-green-dark-30);
+}
+
+.table {
+  width: 100%;
+  border-collapse: collapse;
+  background-color: var(--color-beige-10);
+}
+
+.caption {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  overflow: hidden;
+  clip-path: inset(50%);
+  white-space: nowrap;
+}
+
+.table th,
+.table td {
+  padding: var(--space-3) var(--space-4);
+  border-bottom: var(--border-width) solid var(--color-green-dark-30);
+  text-align: left;
+  vertical-align: top;
+}
+
+.table thead th {
+  background-color: var(--color-green-dark-10);
+  font-size: var(--text-sm);
+  font-weight: var(--weight-semibold);
+  white-space: nowrap;
+}
+
+.table tbody th {
+  font-weight: var(--weight-semibold);
+}
+
+.table tbody tr:last-child th,
+.table tbody tr:last-child td {
+  border-bottom: none;
+}
+
+.nowrap {
+  white-space: nowrap;
+}
+
+.state {
+  display: grid;
+  gap: var(--space-3);
+  padding: var(--space-6);
+  border: var(--border-width) solid var(--color-green-dark-30);
+  background-color: var(--color-beige-20);
+}
+
+.number {
+  text-align: right;
+  white-space: nowrap;
+}
+
+.actions {
+  width: 1%;
+  white-space: nowrap;
+}

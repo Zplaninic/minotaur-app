@@ -63,6 +63,16 @@
   background-color: var(--color-green-dark-10);
 }
 
+.table .subscription {
+  padding: var(--space-2) var(--space-3);
+  border-right: var(--border-width) solid var(--color-green-dark-30);
+  text-align: left;
+}
+
+.table .paid {
+  border-right: var(--border-width) solid var(--color-green-dark-30);
+}
+
 .session {
   display: table-cell;
 }

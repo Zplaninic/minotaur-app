@@ -4,6 +4,8 @@ import { useAbility } from "../../api/auth";
 import { formatNumber, formatPersonName, formatSessionDate, formatSortedName } from "../../lib/format";
 import { t } from "../../lib/messages";
 import { AttendanceCheckbox } from "./AttendanceCheckbox";
+import { MonthPaidCheckbox } from "./MonthPaidCheckbox";
+import { MonthSubscriptionSelect } from "./MonthSubscriptionSelect";
 import styles from "./SessionChecklist.module.css";
 
 type SessionChecklistProps = {
@@ -17,7 +19,8 @@ type SessionChecklistProps = {
 // One session, one tappable row per member: the phone layout.
 export const SessionChecklist = ({ groupId, month, session, members, today }: SessionChecklistProps) => {
   const ability = useAbility();
-  const disabled = !ability.can("update", "Attendance") || isFutureDate(session.date, today);
+  const canTick = ability.can("update", "Attendance");
+  const disabled = !canTick || isFutureDate(session.date, today);
   const attended = members.filter((member) => member.attendedSessionIds.includes(session.id)).length;
 
   return (
@@ -43,6 +46,10 @@ export const SessionChecklist = ({ groupId, month, session, members, today }: Se
             >
               {formatSortedName(member)}
             </AttendanceCheckbox>
+            <div className={styles.subscription}>
+              <MonthSubscriptionSelect groupId={groupId} month={month} member={member} disabled={!canTick} />
+              <MonthPaidCheckbox groupId={groupId} month={month} member={member} disabled={!canTick} layout="row" />
+            </div>
           </li>
         ))}
       </ul>

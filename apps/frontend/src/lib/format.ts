@@ -1,6 +1,7 @@
 import {
   formatCalendarDate as formatCalendarDateIn,
   formatMonth as formatMonthIn,
+  formatMoney as formatMoneyIn,
   formatSessionDate as formatSessionDateIn,
   formatTimeOfDay as formatTimeOfDayIn,
 } from "@repo/shared/client";
@@ -15,5 +16,7 @@ export const formatTimeOfDay = (time: string): string => formatTimeOfDayIn(time,
 export const formatSessionDate = (isoDate: string): string => formatSessionDateIn(isoDate, locale);
 
 export const formatMonth = (month: string): string => formatMonthIn(month, locale);
+
+export const formatMoney = (cents: number): string => formatMoneyIn(cents, locale);
 
 export const formatNumber = (value: number): string => new Intl.NumberFormat(locale).format(value);
