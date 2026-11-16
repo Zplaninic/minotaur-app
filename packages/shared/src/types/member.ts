@@ -80,6 +80,8 @@ export type MemberResponse = z.infer<typeof memberResponse>;
 export const listMembersQuery = paginationQuery.extend({
   // Only members with this role.
   role: memberRole.optional(),
+  // Only members with a past month that has a subscription and is not paid.
+  unpaid: z.stringbool().optional(),
 });
 export type ListMembersQuery = z.infer<typeof listMembersQuery>;
 

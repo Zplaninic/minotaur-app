@@ -16,15 +16,21 @@ import { guardianKeys } from "./guardians.js";
 
 export const memberKeys = {
   all: ["members"] as const,
-  list: (query: PaginationQuery) => [...memberKeys.all, "list", query] as const,
-  pages: (pageSize: number) => [...memberKeys.all, "pages", pageSize] as const,
+  list: (query: MembersPageQuery) => [...memberKeys.all, "list", query] as const,
+  pages: (pageSize: number, unpaid = false) => [...memberKeys.all, "pages", pageSize, unpaid] as const,
   trainers: () => [...memberKeys.all, "trainers"] as const,
   everyone: () => [...memberKeys.all, "everyone"] as const,
   detail: (memberId: string) => [...memberKeys.all, "detail", memberId] as const,
 };
 
-export const fetchMembersPage = (api: ApiClient, query: PaginationQuery): Promise<ListMembersResponse> =>
-  api.fetch(`/members?page=${query.page}&pageSize=${query.pageSize}`, listMembersResponse);
+// unpaid: only members with an unpaid past month.
+export type MembersPageQuery = PaginationQuery & { unpaid?: boolean };
+
+export const fetchMembersPage = (api: ApiClient, query: MembersPageQuery): Promise<ListMembersResponse> =>
+  api.fetch(
+    `/members?page=${query.page}&pageSize=${query.pageSize}${query.unpaid ? "&unpaid=true" : ""}`,
+    listMembersResponse,
+  );
 
 // The page after `last`, or undefined when `last` was the final page.
 export const nextMembersPage = (last: ListMembersResponse): number | undefined =>
@@ -44,7 +50,7 @@ export const fetchAllMembers = async (api: ApiClient): Promise<MemberResponse[]>
 
 // Query options for TanStack Query: useQuery(memberQueries.list(api, query)).
 export const memberQueries = {
-  list: (api: ApiClient, query: PaginationQuery) => ({
+  list: (api: ApiClient, query: MembersPageQuery) => ({
     queryKey: memberKeys.list(query),
     queryFn: () => fetchMembersPage(api, query),
   }),

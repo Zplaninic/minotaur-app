@@ -1,7 +1,7 @@
 import { describe, expect, it } from "vitest";
 import type { ApiClient } from "./apiClient.js";
 import { formatCalendarDate, formatSortedName } from "./format.js";
-import { archiveMember, fetchAllMembers, memberKeys, nextMembersPage } from "./members.js";
+import { archiveMember, fetchAllMembers, fetchMembersPage, memberKeys, nextMembersPage } from "./members.js";
 
 describe("nextMembersPage", () => {
   it("returns the next page while members remain", () => {
@@ -32,6 +32,25 @@ describe("fetchAllMembers", () => {
     };
     expect(await fetchAllMembers(api)).toEqual([]);
     expect(paths).toEqual(["/members?page=1&pageSize=100", "/members?page=2&pageSize=100"]);
+  });
+});
+
+describe("fetchMembersPage", () => {
+  it("asks only for members with unpaid past months when filtered", async () => {
+    const paths: string[] = [];
+    const api: ApiClient = {
+      fetch: async (path, schema) => {
+        paths.push(path);
+        return schema.parse({ items: [], page: 1, pageSize: 20, total: 0 });
+      },
+    };
+    await fetchMembersPage(api, { page: 1, pageSize: 20 });
+    await fetchMembersPage(api, { page: 2, pageSize: 20, unpaid: true });
+    expect(paths).toEqual(["/members?page=1&pageSize=20", "/members?page=2&pageSize=20&unpaid=true"]);
+  });
+
+  it("keeps filtered and unfiltered pages apart in the cache", () => {
+    expect(memberKeys.pages(20, true)).not.toEqual(memberKeys.pages(20));
   });
 });
 

@@ -23,6 +23,12 @@ export const formatMonth = (month: string, locale: string): string =>
     new Date(`${month}-01T00:00:00.000Z`),
   );
 
+// A YYYY-MM month in short, e.g. "Oct 2026".
+export const formatShortMonth = (month: string, locale: string): string =>
+  new Intl.DateTimeFormat(locale, { month: "short", year: "numeric", timeZone: "UTC" }).format(
+    new Date(`${month}-01T00:00:00.000Z`),
+  );
+
 // The club charges in euros.
 export const CURRENCY = "EUR";
 

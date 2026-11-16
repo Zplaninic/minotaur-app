@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { createMemberBody, memberResponse } from "./member.js";
+import { createMemberBody, listMembersQuery, memberResponse } from "./member.js";
 
 const validBody = {
   orgId: "1",
@@ -77,5 +77,13 @@ describe("memberResponse", () => {
 describe("email", () => {
   it("is trimmed and stored lowercase", () => {
     expect(createMemberBody.parse({ ...validBody, email: " Ana@Example.COM " }).email).toBe("ana@example.com");
+  });
+});
+
+describe("listMembersQuery", () => {
+  it("reads the unpaid filter from the query string", () => {
+    expect(listMembersQuery.parse({ unpaid: "true" }).unpaid).toBe(true);
+    expect(listMembersQuery.parse({}).unpaid).toBeUndefined();
+    expect(listMembersQuery.safeParse({ unpaid: "maybe" }).success).toBe(false);
   });
 });

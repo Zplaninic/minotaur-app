@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { formatMoney } from "./format.js";
+import { formatMoney, formatShortMonth } from "./format.js";
 import {
   centsToEuroInput,
   emptySubscriptionDraft,
@@ -69,5 +69,11 @@ describe("validateSubscriptionDraft", () => {
 describe("formatMoney", () => {
   it("formats cents as euros", () => {
     expect(formatMoney(4550, "en")).toBe("€45.50");
+  });
+});
+
+describe("formatShortMonth", () => {
+  it("names a month in short", () => {
+    expect(formatShortMonth("2026-10", "en")).toBe("Oct 2026");
   });
 });
