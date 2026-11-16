@@ -5,9 +5,12 @@ import {
   type CreateMemberBody,
   type ListMembersResponse,
   type MemberResponse,
+  type UpdateMemberBody,
 } from "../types/member.js";
 import { GROUP_OWNER_ROLE } from "../types/group.js";
 import type { ApiClient } from "./apiClient.js";
+import { attendanceKeys } from "./attendance.js";
+import { groupKeys } from "./groups.js";
 import { guardianKeys } from "./guardians.js";
 
 export const memberKeys = {
@@ -16,6 +19,7 @@ export const memberKeys = {
   pages: (pageSize: number) => [...memberKeys.all, "pages", pageSize] as const,
   trainers: () => [...memberKeys.all, "trainers"] as const,
   everyone: () => [...memberKeys.all, "everyone"] as const,
+  detail: (memberId: string) => [...memberKeys.all, "detail", memberId] as const,
 };
 
 export const fetchMembersPage = (api: ApiClient, query: PaginationQuery): Promise<ListMembersResponse> =>
@@ -43,6 +47,10 @@ export const memberQueries = {
     queryKey: memberKeys.list(query),
     queryFn: () => fetchMembersPage(api, query),
   }),
+  detail: (api: ApiClient, memberId: string) => ({
+    queryKey: memberKeys.detail(memberId),
+    queryFn: () => api.fetch(`/members/${encodeURIComponent(memberId)}`, memberResponse),
+  }),
   everyone: (api: ApiClient) => ({
     queryKey: memberKeys.everyone(),
     queryFn: () => fetchAllMembers(api),
@@ -63,3 +71,19 @@ export const createMember = (api: ApiClient, body: CreateMemberBody): Promise<Me
 
 // A new member can bring new guardians with it, so both lists go stale.
 export const keysToInvalidateAfterCreateMember = [memberKeys.all, guardianKeys.all] as const;
+
+export const updateMember = (api: ApiClient, memberId: string, body: UpdateMemberBody): Promise<MemberResponse> =>
+  api.fetch(`/members/${encodeURIComponent(memberId)}`, memberResponse, {
+    method: "PUT",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify(body),
+  });
+
+// The member's name and details also show in groups and attendance, and the
+// edit can add new guardians.
+export const keysToInvalidateAfterUpdateMember = [
+  memberKeys.all,
+  guardianKeys.all,
+  groupKeys.all,
+  attendanceKeys.all,
+] as const;

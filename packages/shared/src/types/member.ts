@@ -44,6 +44,15 @@ export const createMemberBody = z.object({
 export type CreateMemberBody = z.infer<typeof createMemberBody>;
 export type CreateMemberInput = z.input<typeof createMemberBody>;
 
+// Replaces a member's editable fields: a missing OIB, email or phone is
+// cleared, and the guardian list becomes exactly this one. The org and the
+// role are not editable.
+export const updateMemberBody = createMemberBody.omit({ orgId: true });
+export type UpdateMemberBody = z.infer<typeof updateMemberBody>;
+
+export const memberParams = z.object({ id });
+export type MemberParams = z.infer<typeof memberParams>;
+
 export const memberResponse = z.object({
   id,
   orgId: id,

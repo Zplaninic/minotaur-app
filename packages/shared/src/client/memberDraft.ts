@@ -1,4 +1,11 @@
-import { ADULT_AGE, createMemberBody, type CreateMemberBody, type CreateMemberInput } from "../types/member.js";
+import {
+  ADULT_AGE,
+  createMemberBody,
+  type CreateMemberBody,
+  type CreateMemberInput,
+  type MemberResponse,
+  type UpdateMemberBody,
+} from "../types/member.js";
 import { ageOn } from "./age.js";
 
 // Form state for the add-member form: every field as the text the user typed.
@@ -121,3 +128,22 @@ export const validateMemberDraft = (draft: MemberDraft, today: Date): MemberDraf
 
   return result.success && Object.keys(errors).length === 0 ? { ok: true, body: result.data } : { ok: false, errors };
 };
+
+// The edit form starts from the member as it is; its guardians are existing ones.
+export const memberDraftFrom = (member: MemberResponse): MemberDraft => ({
+  orgId: member.orgId,
+  name: member.name,
+  surname: member.surname,
+  birthday: member.birthday,
+  taxNumber: member.taxNumber ?? "",
+  email: member.email ?? "",
+  phone: member.phone ?? "",
+  guardians: member.guardians.map((guardian) => ({
+    ...newGuardianDraft(guardian.id),
+    kind: "existing",
+    guardianId: guardian.id,
+  })),
+});
+
+// The org is not editable, so the update body leaves it out.
+export const toUpdateMemberBody = ({ orgId: _orgId, ...body }: CreateMemberBody): UpdateMemberBody => body;
