@@ -114,6 +114,20 @@ describe("EditMemberScreen", () => {
     expect(screen.getByRole("button", { name: t("common.retry") })).toBeOnTheScreen();
   });
 
+  it("offers no delete button on the logged-in member's own form", async () => {
+    const base = fetchMock.getMockImplementation();
+    fetchMock.mockImplementation(async (path, schema, init) =>
+      path === "/members/9" ? { ...ana, id: admin.memberId } : base?.(path, schema, init),
+    );
+    await render(
+      <Providers>
+        <EditMemberScreen memberId="9" />
+      </Providers>,
+    );
+    expect(await screen.findByRole("button", { name: t("memberForm.saveChanges") })).toBeOnTheScreen();
+    expect(screen.queryByRole("button", { name: t("memberForm.delete") })).toBeNull();
+  });
+
   it("deletes the member after confirming and goes back", async () => {
     jest.spyOn(Alert, "alert").mockImplementation(() => undefined);
     await renderScreen();

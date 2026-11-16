@@ -75,7 +75,17 @@ export const DateField = ({
             maximumDate={maximumDate}
             onChange={onPicked}
           />
-          <Button label={t("common.done")} variant="secondary" onPress={() => setIosPickerOpen(false)} />
+          <Button
+            label={t("common.done")}
+            variant="secondary"
+            onPress={() => {
+              // The wheel reports only changes; Done on an untouched wheel takes the date it shows.
+              if (!value) {
+                onChange(toIsoDate(date));
+              }
+              setIosPickerOpen(false);
+            }}
+          />
         </>
       ) : null}
       <FieldError error={error} />

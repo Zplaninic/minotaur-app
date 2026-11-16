@@ -7,6 +7,7 @@ import { useAbility } from "../../api/auth";
 import { useMemberPages } from "../../api/members";
 import { Button } from "../../components/Button";
 import { errorMessage, t } from "../../lib/messages";
+import { useManualRefresh } from "../../lib/useManualRefresh";
 import { bodyLineHeight, borders, colors, fonts, fontSizes, headingLineHeight, spacing } from "../../theme/tokens";
 import { MemberRow } from "./MemberRow";
 
@@ -47,6 +48,7 @@ export const MembersScreen = () => {
   const ability = useAbility();
   const members = useMemberPages(DEFAULT_PAGE_SIZE);
   const items = members.data?.pages.flatMap((page) => page.items) ?? [];
+  const { refreshing, onRefresh } = useManualRefresh(members.refetch);
 
   return (
     <SafeAreaView style={styles.safeArea} edges={["right", "bottom", "left"]}>
@@ -84,8 +86,8 @@ export const MembersScreen = () => {
           }
         }}
         onEndReachedThreshold={0.5}
-        refreshing={members.isRefetching && !members.isFetchingNextPage}
-        onRefresh={() => void members.refetch()}
+        refreshing={refreshing}
+        onRefresh={onRefresh}
         contentContainerStyle={styles.content}
       />
     </SafeAreaView>

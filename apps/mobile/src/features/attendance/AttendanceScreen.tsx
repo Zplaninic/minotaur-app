@@ -6,8 +6,6 @@ import {
   resolveSession,
   stepSession,
   toErrorCode,
-  toIsoDate,
-  toMonth,
   type SessionPick,
 } from "@repo/shared/client";
 import { useMutationState } from "@tanstack/react-query";
@@ -15,12 +13,14 @@ import { useRouter } from "expo-router";
 import { useState } from "react";
 import { ActivityIndicator, FlatList, Pressable, StyleSheet, Text, View } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
-import { ATTENDANCE_MUTATION, useCreateMonthSessions, useGroupAttendance } from "../../api/attendance";
+import { attendanceMutationKey, useCreateMonthSessions, useGroupAttendance } from "../../api/attendance";
 import { useAbility } from "../../api/auth";
 import { useGroup } from "../../api/groups";
 import { Button } from "../../components/Button";
 import { formatMonth, formatNumber, formatSessionDate } from "../../lib/format";
 import { errorMessage, t, weekdayKey } from "../../lib/messages";
+import { useManualRefresh } from "../../lib/useManualRefresh";
+import { useToday } from "../../lib/useToday";
 import {
   bodyLineHeight,
   borders,
@@ -44,10 +44,10 @@ type AttendanceScreenProps = {
 export const AttendanceScreen = ({ groupId, now: fixedNow }: AttendanceScreenProps) => {
   const router = useRouter();
   const ability = useAbility();
-  const [now] = useState(() => fixedNow ?? new Date());
-  const today = toIsoDate(now);
+  const today = useToday(fixedNow);
   const [position, setPosition] = useState<{ month: Month; pick: SessionPick }>({
-    month: toMonth(now),
+    // An ISO date starts with its month.
+    month: today.slice(0, 7),
     pick: { kind: "latest" },
   });
   const { month } = position;
@@ -55,7 +55,7 @@ export const AttendanceScreen = ({ groupId, now: fixedNow }: AttendanceScreenPro
   const attendance = useGroupAttendance(groupId, month);
   const createSessions = useCreateMonthSessions(groupId);
   const latestTick = useMutationState({
-    filters: { mutationKey: ATTENDANCE_MUTATION },
+    filters: { mutationKey: attendanceMutationKey(groupId, month) },
     select: (mutation) => mutation.state,
   })
     .toSorted((a, b) => a.submittedAt - b.submittedAt)
@@ -64,7 +64,9 @@ export const AttendanceScreen = ({ groupId, now: fixedNow }: AttendanceScreenPro
   const sessions = attendance.data?.sessions ?? [];
   const session = resolveSession(sessions, position.pick, today);
   const step = (direction: -1 | 1) => setPosition(stepSession(sessions, month, session?.id, direction));
-  const refetch = () => void Promise.all([group.refetch(), attendance.refetch()]);
+  const refetchAll = () => Promise.all([group.refetch(), attendance.refetch()]);
+  const refetch = () => void refetchAll();
+  const { refreshing, onRefresh } = useManualRefresh(refetchAll);
   const canCreate = ability.can("create", "Attendance");
   const addMemberButton = ability.can("update", "Attendance") ? (
     <Button
@@ -188,8 +190,8 @@ export const AttendanceScreen = ({ groupId, now: fixedNow }: AttendanceScreenPro
             <Text style={styles.text}>{t("attendance.noMembers")}</Text>
           </View>
         }
-        refreshing={attendance.isRefetching}
-        onRefresh={refetch}
+        refreshing={refreshing}
+        onRefresh={onRefresh}
         contentContainerStyle={styles.content}
       />
     );

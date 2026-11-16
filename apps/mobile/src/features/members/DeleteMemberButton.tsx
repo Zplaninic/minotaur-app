@@ -2,7 +2,7 @@ import type { MemberResponse } from "@repo/shared";
 import { toErrorCode, type ClientErrorCode } from "@repo/shared/client";
 import { useRouter } from "expo-router";
 import { StyleSheet, Text, View } from "react-native";
-import { useAbility } from "../../api/auth";
+import { useAbility, useMe } from "../../api/auth";
 import { useArchiveMember } from "../../api/members";
 import { Button } from "../../components/Button";
 import { confirmRemove } from "../../lib/confirmRemove";
@@ -22,9 +22,11 @@ const archiveErrorMessage = (code: ClientErrorCode): string =>
 export const DeleteMemberButton = ({ member }: DeleteMemberButtonProps) => {
   const router = useRouter();
   const ability = useAbility();
+  const me = useMe();
   const archiveMember = useArchiveMember(member.id);
 
-  if (!ability.can("delete", "Member")) {
+  // Nobody deletes themselves; the backend refuses it too.
+  if (!ability.can("delete", "Member") || member.id === me.data?.memberId) {
     return null;
   }
 

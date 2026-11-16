@@ -6,6 +6,7 @@ import { useAbility } from "../../api/auth";
 import { useGroups } from "../../api/groups";
 import { Button } from "../../components/Button";
 import { errorMessage, t } from "../../lib/messages";
+import { useManualRefresh } from "../../lib/useManualRefresh";
 import { bodyLineHeight, borders, colors, fonts, fontSizes, headingLineHeight, spacing } from "../../theme/tokens";
 import { GroupRow } from "./GroupRow";
 
@@ -45,6 +46,7 @@ export const GroupsScreen = () => {
   const router = useRouter();
   const ability = useAbility();
   const groups = useGroups();
+  const { refreshing, onRefresh } = useManualRefresh(groups.refetch);
 
   return (
     <SafeAreaView style={styles.safeArea} edges={["right", "bottom", "left"]}>
@@ -62,8 +64,8 @@ export const GroupsScreen = () => {
           ) : undefined
         }
         ListEmptyComponent={<ListState />}
-        refreshing={groups.isRefetching}
-        onRefresh={() => void groups.refetch()}
+        refreshing={refreshing}
+        onRefresh={onRefresh}
         contentContainerStyle={styles.content}
       />
     </SafeAreaView>

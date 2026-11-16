@@ -1,4 +1,4 @@
-import { authKeys, toErrorCode } from "@repo/shared/client";
+import { authKeys, shouldRetryQuery, toErrorCode } from "@repo/shared/client";
 import { MutationCache, QueryCache, QueryClient } from "@tanstack/react-query";
 import { clearSessionToken } from "../lib/sessionToken";
 
@@ -14,4 +14,5 @@ const onError = (error: unknown) => {
 export const queryClient: QueryClient = new QueryClient({
   queryCache: new QueryCache({ onError }),
   mutationCache: new MutationCache({ onError }),
+  defaultOptions: { queries: { retry: shouldRetryQuery } },
 });

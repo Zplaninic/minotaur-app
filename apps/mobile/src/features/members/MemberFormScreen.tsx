@@ -1,4 +1,5 @@
 import { ADULT_AGE, type MemberResponse } from "@repo/shared";
+import { isLoginRole } from "@repo/shared/auth";
 import {
   emptyMemberDraft,
   memberDraftFrom,
@@ -55,7 +56,9 @@ export const MemberFormScreen = ({ member }: MemberFormScreenProps) => {
   // With a single club there is nothing to choose, so it is preselected.
   const onlyOrg = orgs.data?.items.length === 1 ? orgs.data.items[0] : undefined;
   const effectiveDraft: MemberDraft = { ...draft, orgId: draft.orgId || (onlyOrg?.id ?? "") };
-  const validation = validateMemberDraft(effectiveDraft, today);
+  // A trainer or admin logs in with their email, so it cannot be cleared.
+  const emailRequired = member !== undefined && isLoginRole(member.role);
+  const validation = validateMemberDraft(effectiveDraft, today, { emailRequired });
   const errors = submitted && !validation.ok ? validation.errors : {};
   const serverCode = saving.error ? toErrorCode(saving.error) : undefined;
 
@@ -185,7 +188,7 @@ export const MemberFormScreen = ({ member }: MemberFormScreenProps) => {
           error={fieldError("email")}
           keyboardType="email-address"
           autoCapitalize="none"
-          optional
+          optional={!emailRequired}
         />
         <TextField
           label={t("memberForm.phone")}

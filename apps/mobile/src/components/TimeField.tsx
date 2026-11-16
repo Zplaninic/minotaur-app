@@ -66,7 +66,17 @@ export const TimeField = ({
       {Platform.OS === "ios" && iosPickerOpen ? (
         <>
           <DateTimePicker testID={testID} value={date} mode="time" display="spinner" onChange={onPicked} />
-          <Button label={t("common.done")} variant="secondary" onPress={() => setIosPickerOpen(false)} />
+          <Button
+            label={t("common.done")}
+            variant="secondary"
+            onPress={() => {
+              // The wheel reports only changes; Done on an untouched wheel takes the time it shows.
+              if (!value) {
+                onChange(toTimeOfDay(date));
+              }
+              setIosPickerOpen(false);
+            }}
+          />
         </>
       ) : null}
       <FieldError error={error} />

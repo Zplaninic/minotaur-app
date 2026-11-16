@@ -23,7 +23,9 @@ export const useMemberPages = (pageSize: number) =>
     getNextPageParam: nextMembersPage,
   });
 
-export const useMember = (memberId: string) => useQuery(memberQueries.detail(api, memberId));
+// Not kept after the edit form closes: the form starts from what it is given,
+// so it must be the member as it is now, not a copy from an earlier visit.
+export const useMember = (memberId: string) => useQuery({ ...memberQueries.detail(api, memberId), gcTime: 0 });
 
 // Every member of the club, for pickers.
 export const useAllMembers = () => useQuery(memberQueries.everyone(api));

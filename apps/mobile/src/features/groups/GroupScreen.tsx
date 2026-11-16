@@ -8,6 +8,7 @@ import { Button } from "../../components/Button";
 import { confirmRemove } from "../../lib/confirmRemove";
 import { formatPersonName } from "../../lib/format";
 import { errorMessage, t } from "../../lib/messages";
+import { useManualRefresh } from "../../lib/useManualRefresh";
 import { bodyLineHeight, borders, colors, fonts, fontSizes, headingLineHeight, spacing } from "../../theme/tokens";
 import { GroupMemberRow } from "./GroupMemberRow";
 import { groupName } from "./groupName";
@@ -25,7 +26,9 @@ export const GroupScreen = ({ groupId }: GroupScreenProps) => {
   const archiveGroup = useArchiveGroup(groupId);
   const canChange = ability.can("update", "Group");
   const changeError = removeMember.error ?? archiveGroup.error;
-  const refetch = () => void Promise.all([group.refetch(), members.refetch()]);
+  const refetchAll = () => Promise.all([group.refetch(), members.refetch()]);
+  const refetch = () => void refetchAll();
+  const { refreshing, onRefresh } = useManualRefresh(refetchAll);
 
   if (group.isPending || members.isPending) {
     return (
@@ -122,8 +125,8 @@ export const GroupScreen = ({ groupId }: GroupScreenProps) => {
             <Text style={styles.text}>{t("groupMembers.empty")}</Text>
           </View>
         }
-        refreshing={group.isRefetching || members.isRefetching}
-        onRefresh={refetch}
+        refreshing={refreshing}
+        onRefresh={onRefresh}
         contentContainerStyle={styles.content}
       />
     </SafeAreaView>

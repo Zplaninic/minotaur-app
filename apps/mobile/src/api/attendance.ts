@@ -15,8 +15,12 @@ import {
 import { useMutation, useQueryClient, useQuery, type QueryClient } from "@tanstack/react-query";
 import { api } from "./client";
 
-// Every tick and untick, for counting the ones in flight and finding the latest.
-export const ATTENDANCE_MUTATION = ["attendance"] as const;
+// Every tick and untick, for counting the ones in flight.
+const ATTENDANCE_MUTATION = ["attendance"] as const;
+
+// The ticks and unticks of one group's month, for finding its latest one.
+export const attendanceMutationKey = (groupId: string, month: Month) =>
+  [...ATTENDANCE_MUTATION, groupId, month] as const;
 
 const invalidateAttendance = (queryClient: QueryClient) =>
   Promise.all(keysToInvalidateAfterAttendanceChange.map((queryKey) => queryClient.invalidateQueries({ queryKey })));
@@ -56,7 +60,7 @@ export const useSetAttendance = (groupId: string, month: Month) => {
   const queryClient = useQueryClient();
   const queryKey = attendanceKeys.month(groupId, month);
   return useMutation({
-    mutationKey: ATTENDANCE_MUTATION,
+    mutationKey: attendanceMutationKey(groupId, month),
     mutationFn: ({ sessionId, memberId, attended }: AttendanceChange) =>
       attended
         ? markAttendance(api, groupId, sessionId, memberId)
@@ -90,3 +94,4 @@ export const useRemoveMonthMember = (groupId: string, month: Month) => {
     onSuccess: () => invalidateAttendance(queryClient),
   });
 };
+
