@@ -23,3 +23,7 @@ export const formatShortMonth = (month: string): string => formatShortMonthIn(mo
 export const formatMoney = (cents: number): string => formatMoneyIn(cents, currentLanguage());
 
 export const formatNumber = (value: number): string => new Intl.NumberFormat(currentLanguage()).format(value);
+
+// A share from 0 to 1, as a whole percentage.
+export const formatPercent = (share: number): string =>
+  new Intl.NumberFormat(currentLanguage(), { style: "percent", maximumFractionDigits: 0 }).format(share);
