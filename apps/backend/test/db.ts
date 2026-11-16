@@ -6,6 +6,7 @@ import type { Db } from "../src/db/client.js";
 // Empties every table, children first. Only ever runs against the test database.
 export const resetDb = async (db: Db): Promise<void> => {
   await db.$transaction([
+    db.groupMember.deleteMany(),
     db.group.deleteMany(),
     db.session.deleteMany(),
     db.login.deleteMany(),

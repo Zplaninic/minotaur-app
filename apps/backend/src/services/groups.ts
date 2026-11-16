@@ -1,8 +1,10 @@
 import {
   GROUP_OWNER_ROLE,
+  isGroupMemberRole,
   weekday,
   type CreateGroupBody,
   type GroupResponse,
+  type ListGroupMembersResponse,
   type ListGroupsResponse,
   type Weekday,
 } from "@repo/shared";
@@ -19,6 +21,7 @@ const groupSelect = {
   createdAt: true,
   updatedAt: true,
   owner: { select: { id: true, name: true, surname: true } },
+  _count: { select: { members: true } },
 } satisfies Prisma.GroupSelect;
 
 type GroupRow = Prisma.GroupGetPayload<{ select: typeof groupSelect }>;
@@ -35,6 +38,7 @@ const toGroupResponse = (group: GroupRow): GroupResponse => ({
   days: inWeekOrder(group.days),
   from: toTimeOfDay(group.from),
   to: toTimeOfDay(group.to),
+  memberCount: group._count.members,
   createdAt: group.createdAt.toISOString(),
   updatedAt: group.updatedAt.toISOString(),
 });
@@ -68,4 +72,81 @@ export const createGroup = async (db: Db, body: CreateGroupBody): Promise<GroupR
     });
     return toGroupResponse(group);
   });
+};
+
+const groupNotFound = (): AppError => new AppError("NOT_FOUND", 404, "Group not found");
+const memberNotFound = (): AppError => new AppError("NOT_FOUND", 404, "Member not found");
+
+const requireGroupId = (groupId: string): number => {
+  const id = toDbId(groupId);
+  if (id === undefined) {
+    throw groupNotFound();
+  }
+  return id;
+};
+
+export const getGroup = async (db: Db, groupId: string): Promise<GroupResponse> => {
+  const group = await db.group.findUnique({ where: { id: requireGroupId(groupId) }, select: groupSelect });
+  if (!group) {
+    throw groupNotFound();
+  }
+  return toGroupResponse(group);
+};
+
+export const listGroupMembers = async (db: Db, groupId: string): Promise<ListGroupMembersResponse> => {
+  const group = await db.group.findUnique({
+    where: { id: requireGroupId(groupId) },
+    select: {
+      members: {
+        select: { member: { select: { id: true, name: true, surname: true } } },
+        orderBy: [{ member: { surname: "asc" } }, { member: { name: "asc" } }, { memberId: "asc" }],
+      },
+    },
+  });
+  if (!group) {
+    throw groupNotFound();
+  }
+  return {
+    items: group.members.map(({ member }) => ({ id: toApiId(member.id), name: member.name, surname: member.surname })),
+  };
+};
+
+// Adding a member who is already in the group changes nothing.
+export const addGroupMember = async (db: Db, groupId: string, memberId: string): Promise<void> => {
+  const groupDbId = requireGroupId(groupId);
+  const memberDbId = toDbId(memberId);
+  if (memberDbId === undefined) {
+    throw memberNotFound();
+  }
+
+  await db.$transaction(async (tx) => {
+    if (!(await tx.group.findUnique({ where: { id: groupDbId }, select: { id: true } }))) {
+      throw groupNotFound();
+    }
+    const member = await tx.member.findUnique({ where: { id: memberDbId }, select: { role: true } });
+    if (!member) {
+      throw memberNotFound();
+    }
+    if (!isGroupMemberRole(member.role)) {
+      throw new AppError("VALIDATION_ERROR", 400, "Only children and members can be added to a group");
+    }
+
+    await tx.groupMember.upsert({
+      where: { groupId_memberId: { groupId: groupDbId, memberId: memberDbId } },
+      create: { groupId: groupDbId, memberId: memberDbId },
+      update: {},
+    });
+  });
+};
+
+// Removing a member who is not in the group changes nothing.
+export const removeGroupMember = async (db: Db, groupId: string, memberId: string): Promise<void> => {
+  const groupDbId = requireGroupId(groupId);
+  if (!(await db.group.findUnique({ where: { id: groupDbId }, select: { id: true } }))) {
+    throw groupNotFound();
+  }
+  const memberDbId = toDbId(memberId);
+  if (memberDbId !== undefined) {
+    await db.groupMember.deleteMany({ where: { groupId: groupDbId, memberId: memberDbId } });
+  }
 };

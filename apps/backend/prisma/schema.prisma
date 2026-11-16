@@ -57,22 +57,23 @@ model Guardian {
 }
 
 model Member {
-  id        Int              @id @default(autoincrement())
-  orgId     Int
-  name      String
-  surname   String
-  birthday  DateTime         @db.Date
-  role      MemberRole       @default(child)
-  taxNumber String?          @unique
-  email     String?
-  phone     String?
-  createdAt DateTime         @default(now()) @db.Timestamptz
-  updatedAt DateTime         @updatedAt @db.Timestamptz
-  org       Org              @relation(fields: [orgId], references: [id], onDelete: Restrict)
-  guardians MemberGuardian[]
-  login     Login?
-  sessions  Session[]
-  groups    Group[]
+  id               Int              @id @default(autoincrement())
+  orgId            Int
+  name             String
+  surname          String
+  birthday         DateTime         @db.Date
+  role             MemberRole       @default(child)
+  taxNumber        String?          @unique
+  email            String?
+  phone            String?
+  createdAt        DateTime         @default(now()) @db.Timestamptz
+  updatedAt        DateTime         @updatedAt @db.Timestamptz
+  org              Org              @relation(fields: [orgId], references: [id], onDelete: Restrict)
+  guardians        MemberGuardian[]
+  login            Login?
+  sessions         Session[]
+  ownedGroups      Group[]
+  groupMemberships GroupMember[]
 
   // People who can log in never share an email. The roles listed here must
   // match LOGIN_ROLES in @repo/shared/auth. Written the way Postgres stores
@@ -120,16 +121,30 @@ model MemberGuardian {
 // A training group. The owner is a member with the trainer role; the service
 // checks that, the database only knows the member exists.
 model Group {
-  id        Int       @id @default(autoincrement())
+  id        Int           @id @default(autoincrement())
   ownerId   Int
   days      Weekday[]
   // Wall-clock times at the gym, without a date or a time zone.
-  from      DateTime  @db.Time(0)
-  to        DateTime  @db.Time(0)
-  createdAt DateTime  @default(now()) @db.Timestamptz
-  updatedAt DateTime  @updatedAt @db.Timestamptz
-  owner     Member    @relation(fields: [ownerId], references: [id], onDelete: Restrict)
+  from      DateTime      @db.Time(0)
+  to        DateTime      @db.Time(0)
+  createdAt DateTime      @default(now()) @db.Timestamptz
+  updatedAt DateTime      @updatedAt @db.Timestamptz
+  owner     Member        @relation(fields: [ownerId], references: [id], onDelete: Restrict)
+  members   GroupMember[]
 
   @@index([ownerId])
   @@map("group")
+}
+
+// A member who trains in a group. The service checks the member's role.
+model GroupMember {
+  groupId   Int
+  memberId  Int
+  createdAt DateTime @default(now()) @db.Timestamptz
+  group     Group    @relation(fields: [groupId], references: [id], onDelete: Cascade)
+  member    Member   @relation(fields: [memberId], references: [id], onDelete: Cascade)
+
+  @@id([groupId, memberId])
+  @@index([memberId])
+  @@map("group_member")
 }

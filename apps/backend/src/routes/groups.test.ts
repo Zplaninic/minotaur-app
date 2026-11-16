@@ -1,4 +1,10 @@
-import { errorResponse, groupResponse, listGroupsResponse, listMembersResponse } from "@repo/shared";
+import {
+  errorResponse,
+  groupResponse,
+  listGroupMembersResponse,
+  listGroupsResponse,
+  listMembersResponse,
+} from "@repo/shared";
 import type { FastifyInstance } from "fastify";
 import { afterAll, beforeAll, beforeEach, describe, expect, it } from "vitest";
 import { authHeaders, createLoginMember, createOrg, resetDb } from "../../test/db.js";
@@ -8,6 +14,7 @@ let app: FastifyInstance;
 let admin: { authorization: string };
 let trainer: { authorization: string };
 let trainerId: string;
+let childId: string;
 
 beforeAll(async () => {
   app = await buildServer();
@@ -21,6 +28,7 @@ beforeEach(async () => {
   admin = await authHeaders(app.db, adminMember.memberId);
   trainer = await authHeaders(app.db, trainerMember.memberId);
   trainerId = String(trainerMember.memberId);
+  childId = String((await createLoginMember(app.db, orgId, "child")).memberId);
 });
 
 afterAll(async () => {
@@ -87,6 +95,108 @@ describe("GET /groups", () => {
 
   it("answers UNAUTHORIZED without a session", async () => {
     const response = await app.inject({ method: "GET", url: "/groups" });
+    expect(response.statusCode).toBe(401);
+  });
+});
+
+const createdGroupId = async (): Promise<string> => groupResponse.parse((await post(body())).json()).id;
+
+const groupMember = (method: "PUT" | "DELETE", groupId: string, memberId: string, headers = admin) =>
+  app.inject({ method, url: `/groups/${groupId}/members/${memberId}`, headers });
+
+describe("GET /groups/:id", () => {
+  it.each(["admin", "trainer"] as const)("returns the group for a %s", async (role) => {
+    const groupId = await createdGroupId();
+    const response = await app.inject({
+      method: "GET",
+      url: `/groups/${groupId}`,
+      headers: role === "admin" ? admin : trainer,
+    });
+    expect(response.statusCode).toBe(200);
+    expect(groupResponse.parse(response.json())).toMatchObject({ id: groupId, memberCount: 0 });
+  });
+
+  it("answers NOT_FOUND for an unknown group", async () => {
+    const response = await app.inject({ method: "GET", url: "/groups/999999", headers: admin });
+    expect(response.statusCode).toBe(404);
+    expect(errorResponse.parse(response.json()).code).toBe("NOT_FOUND");
+  });
+
+  it("answers UNAUTHORIZED without a session", async () => {
+    const response = await app.inject({ method: "GET", url: "/groups/1" });
+    expect(response.statusCode).toBe(401);
+  });
+});
+
+describe("PUT /groups/:id/members/:memberId", () => {
+  it("lets an admin add a member, and add them again", async () => {
+    const groupId = await createdGroupId();
+    expect((await groupMember("PUT", groupId, childId)).statusCode).toBe(204);
+    expect((await groupMember("PUT", groupId, childId)).statusCode).toBe(204);
+
+    const list = await app.inject({ method: "GET", url: `/groups/${groupId}/members`, headers: trainer });
+    expect(list.statusCode).toBe(200);
+    expect(listGroupMembersResponse.parse(list.json()).items).toEqual([
+      { id: childId, name: "Test", surname: "child" },
+    ]);
+  });
+
+  it("rejects a member who is a trainer", async () => {
+    const response = await groupMember("PUT", await createdGroupId(), trainerId);
+    expect(response.statusCode).toBe(400);
+    expect(errorResponse.parse(response.json()).code).toBe("VALIDATION_ERROR");
+  });
+
+  it("answers FORBIDDEN for a trainer", async () => {
+    const response = await groupMember("PUT", await createdGroupId(), childId, trainer);
+    expect(response.statusCode).toBe(403);
+    expect(errorResponse.parse(response.json()).code).toBe("FORBIDDEN");
+  });
+
+  it("answers NOT_FOUND for an unknown group or member", async () => {
+    expect((await groupMember("PUT", "999999", childId)).statusCode).toBe(404);
+    expect((await groupMember("PUT", await createdGroupId(), "999999")).statusCode).toBe(404);
+  });
+
+  it("answers UNAUTHORIZED without a session", async () => {
+    const response = await app.inject({ method: "PUT", url: "/groups/1/members/1" });
+    expect(response.statusCode).toBe(401);
+  });
+});
+
+describe("DELETE /groups/:id/members/:memberId", () => {
+  it("lets an admin remove a member", async () => {
+    const groupId = await createdGroupId();
+    await groupMember("PUT", groupId, childId);
+    expect((await groupMember("DELETE", groupId, childId)).statusCode).toBe(204);
+
+    const list = await app.inject({ method: "GET", url: `/groups/${groupId}/members`, headers: admin });
+    expect(listGroupMembersResponse.parse(list.json()).items).toEqual([]);
+  });
+
+  it("answers FORBIDDEN for a trainer", async () => {
+    const groupId = await createdGroupId();
+    await groupMember("PUT", groupId, childId);
+    const response = await groupMember("DELETE", groupId, childId, trainer);
+    expect(response.statusCode).toBe(403);
+    expect(errorResponse.parse(response.json()).code).toBe("FORBIDDEN");
+  });
+
+  it("answers NOT_FOUND for an unknown group", async () => {
+    const response = await groupMember("DELETE", "999999", childId);
+    expect(response.statusCode).toBe(404);
+    expect(errorResponse.parse(response.json()).code).toBe("NOT_FOUND");
+  });
+});
+
+describe("GET /groups/:id/members", () => {
+  it("answers NOT_FOUND for an unknown group", async () => {
+    const response = await app.inject({ method: "GET", url: "/groups/999999/members", headers: admin });
+    expect(response.statusCode).toBe(404);
+  });
+
+  it("answers UNAUTHORIZED without a session", async () => {
+    const response = await app.inject({ method: "GET", url: "/groups/1/members" });
     expect(response.statusCode).toBe(401);
   });
 });

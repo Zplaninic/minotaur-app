@@ -1,7 +1,23 @@
-import { createGroupBody, errorResponse, groupResponse, listGroupsResponse } from "@repo/shared";
+import {
+  createGroupBody,
+  errorResponse,
+  groupMemberParams,
+  groupParams,
+  groupResponse,
+  listGroupMembersResponse,
+  listGroupsResponse,
+} from "@repo/shared";
 import type { FastifyPluginAsync } from "fastify";
 import type { ZodTypeProvider } from "fastify-type-provider-zod";
-import { createGroup, listGroups } from "../services/groups.js";
+import { z } from "zod";
+import {
+  addGroupMember,
+  createGroup,
+  getGroup,
+  listGroupMembers,
+  listGroups,
+  removeGroupMember,
+} from "../services/groups.js";
 
 export const groupRoutes: FastifyPluginAsync = async (app) => {
   const routes = app.withTypeProvider<ZodTypeProvider>();
@@ -32,5 +48,72 @@ export const groupRoutes: FastifyPluginAsync = async (app) => {
       },
     },
     async (request, reply) => reply.status(201).send(await createGroup(app.db, request.body)),
+  );
+
+  routes.get(
+    "/:id",
+    {
+      onRequest: app.requireAbility("read", "Group"),
+      schema: {
+        params: groupParams,
+        response: { 200: groupResponse, 401: errorResponse, 403: errorResponse, 404: errorResponse, 500: errorResponse },
+      },
+    },
+    async (request) => getGroup(app.db, request.params.id),
+  );
+
+  routes.get(
+    "/:id/members",
+    {
+      onRequest: app.requireAbility("read", "Group"),
+      schema: {
+        params: groupParams,
+        response: {
+          200: listGroupMembersResponse,
+          401: errorResponse,
+          403: errorResponse,
+          404: errorResponse,
+          500: errorResponse,
+        },
+      },
+    },
+    async (request) => listGroupMembers(app.db, request.params.id),
+  );
+
+  routes.put(
+    "/:id/members/:memberId",
+    {
+      onRequest: app.requireAbility("update", "Group"),
+      schema: {
+        params: groupMemberParams,
+        response: {
+          204: z.undefined(),
+          400: errorResponse,
+          401: errorResponse,
+          403: errorResponse,
+          404: errorResponse,
+          500: errorResponse,
+        },
+      },
+    },
+    async (request, reply) => {
+      await addGroupMember(app.db, request.params.id, request.params.memberId);
+      return reply.status(204).send();
+    },
+  );
+
+  routes.delete(
+    "/:id/members/:memberId",
+    {
+      onRequest: app.requireAbility("update", "Group"),
+      schema: {
+        params: groupMemberParams,
+        response: { 204: z.undefined(), 401: errorResponse, 403: errorResponse, 404: errorResponse, 500: errorResponse },
+      },
+    },
+    async (request, reply) => {
+      await removeGroupMember(app.db, request.params.id, request.params.memberId);
+      return reply.status(204).send();
+    },
   );
 };
