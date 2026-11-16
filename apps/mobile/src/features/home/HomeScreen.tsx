@@ -6,7 +6,7 @@ import { LanguageSwitcher } from "../../components/LanguageSwitcher";
 import { Logo } from "../../components/Logo";
 import { Screen } from "../../components/Screen";
 import { useMessages } from "../../lib/messages";
-import { bodyLineHeight, colors, fonts, fontSizes, spacing } from "../../theme/tokens";
+import { bodyLineHeight, colors, fonts, fontSizes, radii, spacing } from "../../theme/tokens";
 
 export const HomeScreen = () => {
   const { t } = useMessages();
@@ -17,7 +17,9 @@ export const HomeScreen = () => {
 
   return (
     <Screen>
-      <Logo variant="app" label={t("app.name")} isHeader />
+      <View style={styles.hero}>
+        <Logo variant="app" label={t("app.name")} isHeader />
+      </View>
       {me.data ? (
         <Text style={styles.text}>{t("home.loggedInAs", { name: `${me.data.name} ${me.data.surname}` })}</Text>
       ) : null}
@@ -44,6 +46,12 @@ export const HomeScreen = () => {
 };
 
 const styles = StyleSheet.create({
+  // The logo files are made for light backgrounds; green-light is one of them.
+  hero: {
+    paddingVertical: spacing[4],
+    borderRadius: radii.lg,
+    backgroundColor: colors.greenLight30,
+  },
   text: {
     color: colors.greenDark,
     fontFamily: fonts.bodyRegular,

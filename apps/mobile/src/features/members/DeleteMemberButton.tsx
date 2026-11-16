@@ -8,7 +8,7 @@ import { Button } from "../../components/Button";
 import { confirmRemove } from "../../lib/confirmRemove";
 import { formatPersonName } from "../../lib/format";
 import { useMessages } from "../../lib/messages";
-import { bodyLineHeight, colors, fonts, fontSizes, spacing } from "../../theme/tokens";
+import { bodyLineHeight, colors, fonts, fontSizes, radii, spacing } from "../../theme/tokens";
 
 type DeleteMemberButtonProps = {
   member: MemberResponse;
@@ -61,6 +61,8 @@ const styles = StyleSheet.create({
   error: {
     paddingHorizontal: spacing[4],
     paddingVertical: spacing[3],
+    borderRadius: radii.md,
+    overflow: "hidden",
     borderLeftWidth: spacing[1],
     borderLeftColor: colors.red,
     backgroundColor: colors.red10,

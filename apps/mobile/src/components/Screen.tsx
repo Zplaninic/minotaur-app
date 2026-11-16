@@ -27,7 +27,7 @@ export const Screen = ({ children, belowHeader = false }: ScreenProps) => (
 const styles = StyleSheet.create({
   safeArea: {
     flex: 1,
-    backgroundColor: colors.beige10,
+    backgroundColor: colors.beige40,
   },
   fill: {
     flex: 1,

@@ -4,6 +4,7 @@
 }
 
 .select {
+  border-radius: var(--radius-md);
   min-height: var(--space-12);
   padding: var(--space-1) var(--space-2);
   border: var(--border-width) solid var(--color-green-dark-60);
@@ -23,6 +24,7 @@
 }
 
 .error {
+  border-radius: var(--radius-sm);
   padding: var(--space-1) var(--space-2);
   background-color: var(--color-red-10);
   font-size: var(--text-xs);

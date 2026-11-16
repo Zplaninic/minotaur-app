@@ -6,7 +6,7 @@ import { fieldStyles } from "../../components/fieldStyles";
 import { OptionList } from "../../components/OptionList";
 import { TextField } from "../../components/TextField";
 import { useMessages } from "../../lib/messages";
-import { borders, colors, fonts, fontSizes, headingLineHeight, spacing } from "../../theme/tokens";
+import { borders, colors, fonts, fontSizes, headingLineHeight, radii, spacing } from "../../theme/tokens";
 import { ExistingGuardianPicker } from "./ExistingGuardianPicker";
 
 type GuardianFieldsProps = {
@@ -113,8 +113,9 @@ const styles = StyleSheet.create({
     gap: spacing[4],
     padding: spacing[4],
     borderWidth: borders.width,
-    borderColor: colors.greenDark30,
-    backgroundColor: colors.beige20,
+    borderColor: colors.greenDark20,
+    borderRadius: radii.lg,
+    backgroundColor: colors.beige10,
   },
   title: {
     color: colors.greenDark,

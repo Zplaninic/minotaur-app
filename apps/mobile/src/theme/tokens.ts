@@ -79,6 +79,24 @@ export const borders = {
   width: 1,
 } as const;
 
+export const radii = {
+  sm: 8,
+  md: 12,
+  lg: 20,
+  pill: 999,
+} as const;
+
+// A soft green-dark shadow under cards. iOS uses the shadow props, Android elevation.
+export const shadows = {
+  raised: {
+    shadowColor: colors.greenDark,
+    shadowOffset: { width: 0, height: spacing[1] },
+    shadowOpacity: 0.08,
+    shadowRadius: spacing[3],
+    elevation: 2,
+  },
+} as const;
+
 export const opacity = {
   disabled: 0.6,
 } as const;

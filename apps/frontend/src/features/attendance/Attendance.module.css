@@ -2,8 +2,9 @@
   display: grid;
   gap: var(--space-3);
   padding: var(--space-6);
-  border: var(--border-width) solid var(--color-green-dark-30);
-  background-color: var(--color-beige-20);
+  border: var(--border-width) dashed var(--color-green-dark-30);
+  border-radius: var(--radius-lg);
+  background-color: var(--color-beige-10);
 }
 
 .state > div {
@@ -11,6 +12,7 @@
 }
 
 .error {
+  border-radius: var(--radius-md);
   padding: var(--space-3) var(--space-4);
   background-color: var(--color-red-10);
   border-left: var(--space-1) solid var(--color-red);
@@ -36,6 +38,8 @@
 }
 
 .arrow {
+  border-radius: var(--radius-pill);
+  transition: background-color var(--duration-fast) ease;
   display: inline-flex;
   align-items: center;
   justify-content: center;
@@ -53,7 +57,7 @@
 }
 
 .arrow:hover:not(:disabled) {
-  background-color: var(--color-green-dark-10);
+  background-color: var(--color-green-light-30);
 }
 
 .arrow:disabled {

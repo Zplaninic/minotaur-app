@@ -2,7 +2,7 @@ import type { MemberResponse } from "@repo/shared";
 import { Pressable, StyleSheet, Text, View } from "react-native";
 import { formatCalendarDate, formatPersonName, formatSortedName } from "../../lib/format";
 import { useMessages } from "../../lib/messages";
-import { bodyLineHeight, borders, colors, fonts, fontSizes, minTouchSize, spacing } from "../../theme/tokens";
+import { bodyLineHeight, colors, fonts, fontSizes, minTouchSize, radii, shadows, spacing } from "../../theme/tokens";
 
 type MemberRowProps = {
   member: MemberResponse;
@@ -44,12 +44,14 @@ const styles = StyleSheet.create({
     gap: spacing[1],
     paddingHorizontal: spacing[4],
     paddingVertical: spacing[3],
-    borderBottomWidth: borders.width,
-    borderBottomColor: colors.greenDark30,
+    marginHorizontal: spacing[4],
+    marginBottom: spacing[2],
+    borderRadius: radii.lg,
+    ...shadows.raised,
     backgroundColor: colors.beige10,
   },
   rowPressed: {
-    backgroundColor: colors.greenDark10,
+    backgroundColor: colors.greenLight20,
   },
   nameLine: {
     flexDirection: "row",
@@ -59,7 +61,9 @@ const styles = StyleSheet.create({
   },
   // A small tag after the name, e.g. "Trainer".
   label: {
-    paddingHorizontal: spacing[2],
+    paddingHorizontal: spacing[3],
+    borderRadius: radii.pill,
+    overflow: "hidden",
     backgroundColor: colors.greenLight,
     color: colors.greenDark,
     fontFamily: fonts.bodySemibold,

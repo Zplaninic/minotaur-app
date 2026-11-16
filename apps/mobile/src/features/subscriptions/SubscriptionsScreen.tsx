@@ -7,7 +7,7 @@ import { useSubscriptions } from "../../api/subscriptions";
 import { Button } from "../../components/Button";
 import { useMessages } from "../../lib/messages";
 import { useManualRefresh } from "../../lib/useManualRefresh";
-import { bodyLineHeight, borders, colors, fonts, fontSizes, headingLineHeight, spacing } from "../../theme/tokens";
+import { bodyLineHeight, colors, fonts, fontSizes, headingLineHeight, spacing } from "../../theme/tokens";
 import { SubscriptionRow } from "./SubscriptionRow";
 
 const ListState = () => {
@@ -90,22 +90,23 @@ export const SubscriptionsScreen = () => {
 const styles = StyleSheet.create({
   safeArea: {
     flex: 1,
-    backgroundColor: colors.beige10,
+    backgroundColor: colors.beige40,
   },
   content: {
     flexGrow: 1,
+    paddingTop: spacing[4],
     paddingBottom: spacing[6],
   },
   header: {
     gap: spacing[3],
-    padding: spacing[4],
-    borderBottomWidth: borders.width,
-    borderBottomColor: colors.greenDark30,
+    paddingHorizontal: spacing[4],
+    paddingBottom: spacing[4],
   },
   state: {
     gap: spacing[3],
     alignItems: "flex-start",
-    padding: spacing[4],
+    paddingHorizontal: spacing[4],
+    paddingBottom: spacing[4],
   },
   stateTitle: {
     color: colors.greenDark,

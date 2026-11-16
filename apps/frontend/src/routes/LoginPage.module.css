@@ -3,6 +3,7 @@
   min-height: 100vh;
   place-items: center;
   padding: var(--space-6) var(--space-4);
+  background-color: var(--color-green-dark);
 }
 
 .card {
@@ -11,8 +12,9 @@
   width: 100%;
   max-width: var(--width-dialog);
   padding: var(--space-8) var(--space-6);
-  border: var(--border-width) solid var(--color-green-dark-30);
+  border-radius: var(--radius-lg);
   background-color: var(--color-beige-10);
+  box-shadow: var(--shadow-overlay);
 }
 
 .brand {

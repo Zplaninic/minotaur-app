@@ -2,9 +2,13 @@
   min-height: var(--space-12);
   padding: var(--space-2) var(--space-6);
   border: var(--border-width) solid var(--color-green-dark);
+  border-radius: var(--radius-pill);
   font: inherit;
   font-weight: var(--weight-semibold);
   cursor: pointer;
+  transition:
+    background-color var(--duration-fast) ease,
+    box-shadow var(--duration-fast) ease;
 }
 
 .button:disabled {
@@ -19,6 +23,7 @@
 
 .primary:hover:not(:disabled) {
   background-color: var(--color-green-dark-90);
+  box-shadow: var(--shadow-raised);
 }
 
 .secondary {
@@ -27,5 +32,5 @@
 }
 
 .secondary:hover:not(:disabled) {
-  background-color: var(--color-green-dark-10);
+  background-color: var(--color-green-light-30);
 }

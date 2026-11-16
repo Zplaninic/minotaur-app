@@ -3,7 +3,7 @@ import { StyleSheet, Text, View } from "react-native";
 import { Button } from "../../components/Button";
 import { formatPersonName, formatSortedName } from "../../lib/format";
 import { useMessages } from "../../lib/messages";
-import { bodyLineHeight, borders, colors, fonts, fontSizes, minTouchSize, spacing } from "../../theme/tokens";
+import { bodyLineHeight, colors, fonts, fontSizes, minTouchSize, radii, shadows, spacing } from "../../theme/tokens";
 
 type GroupMemberRowProps = {
   member: GroupMemberResponse;
@@ -40,8 +40,10 @@ const styles = StyleSheet.create({
     gap: spacing[3],
     paddingHorizontal: spacing[4],
     paddingVertical: spacing[3],
-    borderBottomWidth: borders.width,
-    borderBottomColor: colors.greenDark30,
+    marginHorizontal: spacing[4],
+    marginBottom: spacing[2],
+    borderRadius: radii.lg,
+    ...shadows.raised,
     backgroundColor: colors.beige10,
   },
   name: {

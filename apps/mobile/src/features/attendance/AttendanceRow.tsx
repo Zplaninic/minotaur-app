@@ -6,7 +6,18 @@ import { useAbility } from "../../api/auth";
 import { useOverduePayments } from "../../api/subscriptions";
 import { formatMonth, formatPersonName, formatShortMonth, formatSortedName } from "../../lib/format";
 import { useMessages } from "../../lib/messages";
-import { bodyLineHeight, borders, colors, fonts, fontSizes, minTouchSize, opacity, spacing } from "../../theme/tokens";
+import {
+  bodyLineHeight,
+  borders,
+  colors,
+  fonts,
+  fontSizes,
+  minTouchSize,
+  opacity,
+  radii,
+  shadows,
+  spacing,
+} from "../../theme/tokens";
 
 type AttendanceRowProps = {
   groupId: string;
@@ -82,15 +93,18 @@ const styles = StyleSheet.create({
   row: {
     flexDirection: "row",
     alignItems: "stretch",
-    borderBottomWidth: borders.width,
-    borderBottomColor: colors.greenDark30,
+    marginHorizontal: spacing[4],
+    marginBottom: spacing[2],
+    borderRadius: radii.lg,
+    ...shadows.raised,
     backgroundColor: colors.beige10,
+    overflow: "hidden",
   },
   rowChecked: {
     backgroundColor: colors.greenLight20,
   },
   pressed: {
-    backgroundColor: colors.greenDark10,
+    backgroundColor: colors.greenLight30,
   },
   check: {
     flex: 1,
@@ -104,6 +118,7 @@ const styles = StyleSheet.create({
   box: {
     width: spacing[6],
     height: spacing[6],
+    borderRadius: spacing[1] + spacing[1] / 2,
     borderWidth: borders.width,
     borderColor: colors.greenDark,
     backgroundColor: colors.beige10,
@@ -132,10 +147,11 @@ const styles = StyleSheet.create({
   },
   unpaid: {
     alignSelf: "flex-start",
-    paddingHorizontal: spacing[2],
-    paddingVertical: spacing[1],
-    borderLeftWidth: spacing[1],
-    borderLeftColor: colors.red,
+    paddingHorizontal: spacing[3],
+    borderWidth: borders.width,
+    borderColor: colors.red50,
+    borderRadius: radii.pill,
+    overflow: "hidden",
     backgroundColor: colors.red10,
     color: colors.greenDark,
     fontFamily: fonts.bodySemibold,
@@ -148,7 +164,7 @@ const styles = StyleSheet.create({
     justifyContent: "center",
     paddingHorizontal: spacing[4],
     borderLeftWidth: borders.width,
-    borderLeftColor: colors.greenDark30,
+    borderLeftColor: colors.greenDark20,
   },
   changeLabel: {
     color: colors.greenDark,

@@ -18,6 +18,8 @@ import {
   fontSizes,
   headingLineHeight,
   minTouchSize,
+  radii,
+  shadows,
   spacing,
 } from "../../theme/tokens";
 
@@ -120,7 +122,11 @@ export const LoginScreen = () => {
 const styles = StyleSheet.create({
   content: {
     gap: spacing[4],
-    paddingTop: spacing[8],
+    marginTop: spacing[4],
+    padding: spacing[6],
+    borderRadius: radii.lg,
+    backgroundColor: colors.beige10,
+    ...shadows.raised,
   },
   title: {
     color: colors.greenDark,
@@ -137,6 +143,7 @@ const styles = StyleSheet.create({
   box: {
     width: spacing[4],
     height: spacing[4],
+    borderRadius: spacing[1],
     borderWidth: borders.width,
     borderColor: colors.greenDark,
   },
@@ -146,6 +153,8 @@ const styles = StyleSheet.create({
   formError: {
     paddingHorizontal: spacing[4],
     paddingVertical: spacing[3],
+    borderRadius: radii.md,
+    overflow: "hidden",
     borderLeftWidth: spacing[1],
     borderLeftColor: colors.red,
     backgroundColor: colors.red10,

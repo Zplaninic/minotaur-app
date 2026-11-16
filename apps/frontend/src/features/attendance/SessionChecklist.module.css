@@ -11,12 +11,15 @@
   margin: 0;
   padding: 0;
   list-style: none;
-  border: var(--border-width) solid var(--color-green-dark-30);
+  overflow: hidden;
+  border: var(--border-width) solid var(--color-green-dark-20);
+  border-radius: var(--radius-lg);
   background-color: var(--color-beige-10);
+  box-shadow: var(--shadow-raised);
 }
 
 .list li + li {
-  border-top: var(--border-width) solid var(--color-green-dark-30);
+  border-top: var(--border-width) solid var(--color-green-dark-20);
 }
 
 .list li:has(:checked) {

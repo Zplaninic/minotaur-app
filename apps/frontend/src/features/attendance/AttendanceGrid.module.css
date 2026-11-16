@@ -6,7 +6,10 @@
 /* Wide months scroll inside this box, never the page. */
 .scroll {
   overflow-x: auto;
-  border: var(--border-width) solid var(--color-green-dark-30);
+  border: var(--border-width) solid var(--color-green-dark-20);
+  border-radius: var(--radius-lg);
+  background-color: var(--color-beige-10);
+  box-shadow: var(--shadow-raised);
 }
 
 .table {
@@ -28,14 +31,14 @@
 .table th,
 .table td {
   padding: 0;
-  border-bottom: var(--border-width) solid var(--color-green-dark-30);
+  border-bottom: var(--border-width) solid var(--color-green-dark-20);
   text-align: center;
   vertical-align: middle;
 }
 
 .table thead th {
   padding: var(--space-2) var(--space-3);
-  background-color: var(--color-green-dark-10);
+  background-color: var(--color-green-light-30);
   font-size: var(--text-sm);
   font-weight: var(--weight-semibold);
   white-space: nowrap;
@@ -52,7 +55,7 @@
   left: 0;
   z-index: 1;
   padding: var(--space-2) var(--space-4);
-  border-right: var(--border-width) solid var(--color-green-dark-30);
+  border-right: var(--border-width) solid var(--color-green-dark-20);
   background-color: var(--color-beige-10);
   font-weight: var(--weight-semibold);
   text-align: left;
@@ -60,17 +63,17 @@
 }
 
 .table thead .name {
-  background-color: var(--color-green-dark-10);
+  background-color: var(--color-green-light-30);
 }
 
 .table .subscription {
   padding: var(--space-2) var(--space-3);
-  border-right: var(--border-width) solid var(--color-green-dark-30);
+  border-right: var(--border-width) solid var(--color-green-dark-20);
   text-align: left;
 }
 
 .table .paid {
-  border-right: var(--border-width) solid var(--color-green-dark-30);
+  border-right: var(--border-width) solid var(--color-green-dark-20);
 }
 
 .session {
@@ -99,8 +102,9 @@
 }
 
 .delete {
+  border-radius: var(--radius-pill);
   margin-top: var(--space-1);
-  padding: var(--space-1) var(--space-2);
+  padding: var(--space-1) var(--space-3);
   border: var(--border-width) solid var(--color-green-dark-60);
   background-color: var(--color-beige-10);
   color: var(--color-green-dark);
@@ -119,7 +123,12 @@
 }
 
 .error {
+  border-radius: var(--radius-md);
   padding: var(--space-3) var(--space-4);
   background-color: var(--color-red-10);
   border-left: var(--space-1) solid var(--color-red);
+}
+
+.table tbody tr:hover > * {
+  background-color: var(--color-green-light-10);
 }

@@ -6,7 +6,10 @@
 /* Wide tables scroll inside this box, never the page. */
 .scroll {
   overflow-x: auto;
-  border: var(--border-width) solid var(--color-green-dark-30);
+  border: var(--border-width) solid var(--color-green-dark-20);
+  border-radius: var(--radius-lg);
+  background-color: var(--color-beige-10);
+  box-shadow: var(--shadow-raised);
 }
 
 .table {
@@ -27,13 +30,13 @@
 .table th,
 .table td {
   padding: var(--space-3) var(--space-4);
-  border-bottom: var(--border-width) solid var(--color-green-dark-30);
+  border-bottom: var(--border-width) solid var(--color-green-dark-20);
   text-align: left;
   vertical-align: top;
 }
 
 .table thead th {
-  background-color: var(--color-green-dark-10);
+  background-color: var(--color-green-light-30);
   font-size: var(--text-sm);
   font-weight: var(--weight-semibold);
   white-space: nowrap;
@@ -57,8 +60,9 @@
   display: grid;
   gap: var(--space-3);
   padding: var(--space-6);
-  border: var(--border-width) solid var(--color-green-dark-30);
-  background-color: var(--color-beige-20);
+  border: var(--border-width) dashed var(--color-green-dark-30);
+  border-radius: var(--radius-lg);
+  background-color: var(--color-beige-10);
 }
 
 .pagination {
@@ -72,7 +76,8 @@
 /* A small tag after the name, e.g. "Trainer". */
 .label {
   margin-left: var(--space-2);
-  padding: 0 var(--space-2);
+  padding: 0 var(--space-3);
+  border-radius: var(--radius-pill);
   background-color: var(--color-green-light);
   color: var(--color-green-dark);
   font-size: var(--text-xs);
@@ -88,4 +93,8 @@
 
 .actions > * + * {
   margin-inline-start: var(--space-2);
+}
+
+.table tbody tr:hover > * {
+  background-color: var(--color-green-light-10);
 }

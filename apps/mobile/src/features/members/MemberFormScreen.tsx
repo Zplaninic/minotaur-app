@@ -27,7 +27,7 @@ import { TextField } from "../../components/TextField";
 import { confirmRemove } from "../../lib/confirmRemove";
 import { formatCalendarDate } from "../../lib/format";
 import { memberFieldErrorKey, useMessages } from "../../lib/messages";
-import { bodyLineHeight, colors, fonts, fontSizes, headingLineHeight, spacing } from "../../theme/tokens";
+import { bodyLineHeight, colors, fonts, fontSizes, headingLineHeight, radii, spacing } from "../../theme/tokens";
 import { DeleteMemberButton } from "./DeleteMemberButton";
 import { GuardianFields } from "./GuardianFields";
 
@@ -262,6 +262,8 @@ const styles = StyleSheet.create({
   formError: {
     paddingHorizontal: spacing[4],
     paddingVertical: spacing[3],
+    borderRadius: radii.md,
+    overflow: "hidden",
     borderLeftWidth: spacing[1],
     borderLeftColor: colors.red,
     backgroundColor: colors.red10,

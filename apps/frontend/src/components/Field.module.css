@@ -22,9 +22,15 @@
   min-height: var(--space-12);
   padding: var(--space-2) var(--space-3);
   border: var(--border-width) solid var(--color-green-dark-60);
+  border-radius: var(--radius-md);
   background-color: var(--color-beige-10);
   color: var(--color-green-dark);
   font: inherit;
+  transition: border-color var(--duration-fast) ease;
+}
+
+.control:hover:not(:disabled) {
+  border-color: var(--color-green-dark);
 }
 
 .control[aria-invalid="true"] {
@@ -33,6 +39,7 @@
 
 .error {
   padding: var(--space-1) var(--space-2);
+  border-radius: var(--radius-sm);
   background-color: var(--color-red-10);
   font-size: var(--text-sm);
 }

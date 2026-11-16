@@ -30,6 +30,7 @@ import {
   headingLineHeight,
   minTouchSize,
   opacity,
+  radii,
   spacing,
 } from "../../theme/tokens";
 import { AttendanceRow } from "./AttendanceRow";
@@ -218,19 +219,19 @@ export const AttendanceScreen = ({ groupId, now: fixedNow }: AttendanceScreenPro
 const styles = StyleSheet.create({
   safeArea: {
     flex: 1,
-    backgroundColor: colors.beige10,
+    backgroundColor: colors.beige40,
   },
   content: {
     flexGrow: 1,
+    paddingTop: spacing[4],
     paddingBottom: spacing[6],
   },
   nav: {
     flexDirection: "row",
     alignItems: "center",
     gap: spacing[2],
-    padding: spacing[4],
-    borderBottomWidth: borders.width,
-    borderBottomColor: colors.greenDark30,
+    paddingHorizontal: spacing[4],
+    paddingBottom: spacing[4],
   },
   arrow: {
     minWidth: minTouchSize,
@@ -239,10 +240,11 @@ const styles = StyleSheet.create({
     justifyContent: "center",
     borderWidth: borders.width,
     borderColor: colors.greenDark,
+    borderRadius: radii.pill,
     backgroundColor: colors.beige10,
   },
   arrowPressed: {
-    backgroundColor: colors.greenDark10,
+    backgroundColor: colors.greenLight30,
   },
   arrowDisabled: {
     opacity: opacity.disabled,
@@ -265,13 +267,12 @@ const styles = StyleSheet.create({
     gap: spacing[2],
     paddingHorizontal: spacing[4],
     paddingVertical: spacing[3],
-    borderBottomWidth: borders.width,
-    borderBottomColor: colors.greenDark30,
   },
   state: {
     gap: spacing[3],
     alignItems: "flex-start",
-    padding: spacing[4],
+    paddingHorizontal: spacing[4],
+    paddingBottom: spacing[4],
   },
   title: {
     color: colors.greenDark,
@@ -289,6 +290,8 @@ const styles = StyleSheet.create({
     alignSelf: "stretch",
     paddingHorizontal: spacing[4],
     paddingVertical: spacing[3],
+    borderRadius: radii.md,
+    overflow: "hidden",
     borderLeftWidth: spacing[1],
     borderLeftColor: colors.red,
     backgroundColor: colors.red10,

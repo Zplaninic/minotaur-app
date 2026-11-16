@@ -18,6 +18,10 @@
   grid-template-columns: repeat(auto-fit, minmax(min(100%, 14rem), 1fr));
   gap: var(--space-4);
   margin: 0;
+  padding: var(--space-6);
+  border-radius: var(--radius-lg);
+  background-color: var(--color-beige-10);
+  box-shadow: var(--shadow-raised);
 }
 
 .facts dt {
@@ -57,12 +61,14 @@
   display: grid;
   gap: var(--space-3);
   padding: var(--space-6);
-  border: var(--border-width) solid var(--color-green-dark-30);
-  background-color: var(--color-beige-20);
+  border: var(--border-width) dashed var(--color-green-dark-30);
+  border-radius: var(--radius-lg);
+  background-color: var(--color-beige-10);
 }
 
 /* A link styled like the primary button. */
 .attendance {
+  border-radius: var(--radius-pill);
   display: inline-flex;
   align-items: center;
   min-height: var(--space-12);

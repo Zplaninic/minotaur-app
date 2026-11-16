@@ -1,5 +1,5 @@
 import { Pressable, StyleSheet, Text, View } from "react-native";
-import { bodyLineHeight, borders, colors, fonts, fontSizes, minTouchSize, spacing } from "../theme/tokens";
+import { bodyLineHeight, borders, colors, fonts, fontSizes, minTouchSize, radii, spacing } from "../theme/tokens";
 import { FieldError } from "./FieldError";
 import { fieldStyles } from "./fieldStyles";
 
@@ -46,8 +46,10 @@ export const OptionList = ({ label, options, selected, onSelect, error }: Option
 
 const styles = StyleSheet.create({
   list: {
+    overflow: "hidden",
     borderWidth: borders.width,
     borderColor: colors.greenDark60,
+    borderRadius: radii.md,
     backgroundColor: colors.beige10,
   },
   row: {
@@ -60,10 +62,10 @@ const styles = StyleSheet.create({
   },
   divider: {
     borderTopWidth: borders.width,
-    borderTopColor: colors.greenDark30,
+    borderTopColor: colors.greenDark20,
   },
   rowActive: {
-    backgroundColor: colors.greenDark10,
+    backgroundColor: colors.greenLight20,
   },
   dot: {
     width: spacing[4],

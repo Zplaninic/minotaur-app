@@ -102,11 +102,22 @@ Logo colors per background:
 | Token               | Value                                     |
 | ------------------- | ----------------------------------------- |
 | `border-width`      | 1px                                       |
-| corner radius       | none, square corners                      |
+| `radius-sm`         | 8px: small tags inside tables, error notes |
+| `radius-md`         | 12px: inputs, selects, notices, figures   |
+| `radius-lg`         | 20px: cards, tables, dialogs              |
+| `radius-pill`       | fully round: buttons, nav links, badges   |
+| `shadow-raised`     | soft `green-dark` shadow (6%) on cards    |
+| `shadow-overlay`    | `green-dark` shadow (24%) on dialogs      |
 | `color-backdrop`    | `green-dark` at 50% alpha                 |
 | `width-dialog`      | 40rem, maximum                            |
 | `width-page`        | 72rem, maximum                            |
 | `breakpoint-narrow` | 48rem; narrower screens get phone layouts |
+
+Pages sit on `beige-40`; cards, tables and the header are `beige-10` surfaces
+with `shadow-raised`. Table headers use `green-light-30`, row hover
+`green-light-10`. The active navigation link is a `green-dark` pill. Page
+titles carry a short `red` accent bar below them. The login page sits on
+`green-dark` with the form on a `beige-10` card.
 
 Borders on inputs use `green-dark-60`; table lines use `green-dark-30`. A
 field with an error has a `red` border and its message in `green-dark` text

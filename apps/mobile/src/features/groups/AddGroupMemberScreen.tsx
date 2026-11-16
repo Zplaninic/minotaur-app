@@ -6,7 +6,7 @@ import { useAddGroupMember, useGroupMembers } from "../../api/groups";
 import { useAllMembers } from "../../api/members";
 import { Button } from "../../components/Button";
 import { useMessages } from "../../lib/messages";
-import { bodyLineHeight, borders, colors, fonts, fontSizes, headingLineHeight, spacing } from "../../theme/tokens";
+import { bodyLineHeight, colors, fonts, fontSizes, headingLineHeight, radii, spacing } from "../../theme/tokens";
 import { GroupMemberCandidateRow } from "./GroupMemberCandidateRow";
 
 type AddGroupMemberScreenProps = {
@@ -91,22 +91,23 @@ export const AddGroupMemberScreen = ({ groupId }: AddGroupMemberScreenProps) => 
 const styles = StyleSheet.create({
   safeArea: {
     flex: 1,
-    backgroundColor: colors.beige10,
+    backgroundColor: colors.beige40,
   },
   content: {
     flexGrow: 1,
+    paddingTop: spacing[4],
     paddingBottom: spacing[6],
   },
   header: {
     gap: spacing[3],
-    padding: spacing[4],
-    borderBottomWidth: borders.width,
-    borderBottomColor: colors.greenDark30,
+    paddingHorizontal: spacing[4],
+    paddingBottom: spacing[4],
   },
   state: {
     gap: spacing[3],
     alignItems: "flex-start",
-    padding: spacing[4],
+    paddingHorizontal: spacing[4],
+    paddingBottom: spacing[4],
   },
   title: {
     color: colors.greenDark,
@@ -123,6 +124,8 @@ const styles = StyleSheet.create({
   error: {
     paddingHorizontal: spacing[4],
     paddingVertical: spacing[3],
+    borderRadius: radii.md,
+    overflow: "hidden",
     borderLeftWidth: spacing[1],
     borderLeftColor: colors.red,
     backgroundColor: colors.red10,

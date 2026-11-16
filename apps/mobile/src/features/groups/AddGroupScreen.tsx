@@ -19,7 +19,7 @@ import { Screen } from "../../components/Screen";
 import { TimeField } from "../../components/TimeField";
 import { formatSortedName, formatTimeOfDay } from "../../lib/format";
 import { groupFieldErrorKey, useMessages, weekdayKey } from "../../lib/messages";
-import { bodyLineHeight, colors, fonts, fontSizes, spacing } from "../../theme/tokens";
+import { bodyLineHeight, colors, fonts, fontSizes, radii, spacing } from "../../theme/tokens";
 
 // Where the time pickers start: most groups train in the late afternoon.
 const INITIAL_FROM = "17:00";
@@ -131,6 +131,8 @@ const styles = StyleSheet.create({
   formError: {
     paddingHorizontal: spacing[4],
     paddingVertical: spacing[3],
+    borderRadius: radii.md,
+    overflow: "hidden",
     borderLeftWidth: spacing[1],
     borderLeftColor: colors.red,
     backgroundColor: colors.red10,

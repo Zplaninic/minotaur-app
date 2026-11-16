@@ -2,7 +2,7 @@ import type { SubscriptionResponse } from "@repo/shared";
 import { Pressable, StyleSheet, Text, View } from "react-native";
 import { formatMoney, formatNumber } from "../../lib/format";
 import { useMessages } from "../../lib/messages";
-import { bodyLineHeight, borders, colors, fonts, fontSizes, minTouchSize, spacing } from "../../theme/tokens";
+import { bodyLineHeight, colors, fonts, fontSizes, minTouchSize, radii, shadows, spacing } from "../../theme/tokens";
 
 type SubscriptionRowProps = {
   subscription: SubscriptionResponse;
@@ -46,12 +46,14 @@ const styles = StyleSheet.create({
     gap: spacing[1],
     paddingHorizontal: spacing[4],
     paddingVertical: spacing[3],
-    borderBottomWidth: borders.width,
-    borderBottomColor: colors.greenDark30,
+    marginHorizontal: spacing[4],
+    marginBottom: spacing[2],
+    borderRadius: radii.lg,
+    ...shadows.raised,
     backgroundColor: colors.beige10,
   },
   rowPressed: {
-    backgroundColor: colors.greenDark10,
+    backgroundColor: colors.greenLight20,
   },
   name: {
     color: colors.greenDark,

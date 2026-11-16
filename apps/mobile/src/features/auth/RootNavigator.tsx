@@ -16,7 +16,7 @@ export const RootNavigator = () => {
   const headerOptions = {
     headerShown: true,
     headerTintColor: colors.greenDark,
-    headerStyle: { backgroundColor: colors.greenLight50 },
+    headerStyle: { backgroundColor: colors.beige10 },
     headerTitleStyle: { fontFamily: fonts.displayBlack },
     headerBackButtonDisplayMode: "minimal",
     headerRight: () => <Logo variant="app" label={t("app.name")} compact />,
@@ -105,7 +105,7 @@ const styles = StyleSheet.create({
     alignItems: "center",
     justifyContent: "center",
     gap: spacing[3],
-    backgroundColor: colors.beige10,
+    backgroundColor: colors.beige40,
   },
   state: {
     gap: spacing[3],

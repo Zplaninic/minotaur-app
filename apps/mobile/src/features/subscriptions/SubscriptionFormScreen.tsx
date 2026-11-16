@@ -16,7 +16,7 @@ import { Screen } from "../../components/Screen";
 import { TextField } from "../../components/TextField";
 import { formatNumber } from "../../lib/format";
 import { subscriptionFieldErrorKey, useMessages } from "../../lib/messages";
-import { bodyLineHeight, colors, fonts, fontSizes, spacing } from "../../theme/tokens";
+import { bodyLineHeight, colors, fonts, fontSizes, radii, spacing } from "../../theme/tokens";
 
 const sessionOptions = Array.from({ length: MAX_SESSIONS_PER_WEEK - MIN_SESSIONS_PER_WEEK + 1 }, (_, index) => {
   const count = MIN_SESSIONS_PER_WEEK + index;
@@ -104,6 +104,8 @@ const styles = StyleSheet.create({
   formError: {
     paddingHorizontal: spacing[4],
     paddingVertical: spacing[3],
+    borderRadius: radii.md,
+    overflow: "hidden",
     borderLeftWidth: spacing[1],
     borderLeftColor: colors.red,
     backgroundColor: colors.red10,

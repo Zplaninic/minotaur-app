@@ -2,7 +2,7 @@ import { useTranslation } from "react-i18next";
 import { Pressable, StyleSheet, Text, View } from "react-native";
 import { currentLanguage, LANGUAGES, setLanguage } from "../lib/i18n";
 import { useMessages } from "../lib/messages";
-import { bodyLineHeight, borders, colors, fonts, fontSizes, minTouchSize, spacing } from "../theme/tokens";
+import { bodyLineHeight, borders, colors, fonts, fontSizes, minTouchSize, radii, spacing } from "../theme/tokens";
 
 // Each language is named in itself, so it can be found whatever is shown now.
 export const LanguageSwitcher = () => {
@@ -12,7 +12,7 @@ export const LanguageSwitcher = () => {
   const active = currentLanguage();
   return (
     <View accessibilityRole="radiogroup" accessibilityLabel={t("language.label")} style={styles.group}>
-      {LANGUAGES.map((language, index) => {
+      {LANGUAGES.map((language) => {
         const checked = language === active;
         return (
           <Pressable
@@ -21,11 +21,7 @@ export const LanguageSwitcher = () => {
             accessibilityRole="radio"
             accessibilityState={{ checked }}
             accessibilityLanguage={language}
-            style={({ pressed }) => [
-              styles.option,
-              index > 0 && styles.next,
-              checked ? styles.checked : pressed && styles.pressed,
-            ]}
+            style={({ pressed }) => [styles.option, checked ? styles.checked : pressed && styles.pressed]}
           >
             <Text style={[styles.label, checked && styles.checkedLabel]}>{t(`language.${language}`)}</Text>
           </Pressable>
@@ -39,6 +35,12 @@ const styles = StyleSheet.create({
   group: {
     flexDirection: "row",
     alignSelf: "center",
+    gap: spacing[1],
+    padding: spacing[1],
+    borderWidth: borders.width,
+    borderColor: colors.greenDark30,
+    borderRadius: radii.pill,
+    backgroundColor: colors.beige10,
   },
   option: {
     minHeight: minTouchSize,
@@ -46,15 +48,10 @@ const styles = StyleSheet.create({
     alignItems: "center",
     justifyContent: "center",
     paddingHorizontal: spacing[4],
-    borderWidth: borders.width,
-    borderColor: colors.greenDark,
-    backgroundColor: colors.beige10,
-  },
-  next: {
-    borderLeftWidth: 0,
+    borderRadius: radii.pill,
   },
   pressed: {
-    backgroundColor: colors.greenDark10,
+    backgroundColor: colors.greenLight30,
   },
   checked: {
     backgroundColor: colors.greenDark,

@@ -2,7 +2,17 @@ import type { MemberResponse } from "@repo/shared";
 import { Pressable, StyleSheet, Text } from "react-native";
 import { formatPersonName, formatSortedName } from "../../lib/format";
 import { useMessages } from "../../lib/messages";
-import { bodyLineHeight, borders, colors, fonts, fontSizes, minTouchSize, opacity, spacing } from "../../theme/tokens";
+import {
+  bodyLineHeight,
+  colors,
+  fonts,
+  fontSizes,
+  minTouchSize,
+  opacity,
+  radii,
+  shadows,
+  spacing,
+} from "../../theme/tokens";
 
 type GroupMemberCandidateRowProps = {
   member: Pick<MemberResponse, "name" | "surname">;
@@ -34,12 +44,14 @@ const styles = StyleSheet.create({
     justifyContent: "center",
     paddingHorizontal: spacing[4],
     paddingVertical: spacing[3],
-    borderBottomWidth: borders.width,
-    borderBottomColor: colors.greenDark30,
+    marginHorizontal: spacing[4],
+    marginBottom: spacing[2],
+    borderRadius: radii.lg,
+    ...shadows.raised,
     backgroundColor: colors.beige10,
   },
   rowPressed: {
-    backgroundColor: colors.greenDark10,
+    backgroundColor: colors.greenLight20,
   },
   disabled: {
     opacity: opacity.disabled,

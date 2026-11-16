@@ -1,5 +1,5 @@
 import { StyleSheet, Text } from "react-native";
-import { bodyLineHeight, colors, fonts, fontSizes, spacing } from "../theme/tokens";
+import { bodyLineHeight, colors, fonts, fontSizes, radii, spacing } from "../theme/tokens";
 
 type FieldErrorProps = {
   error: string | undefined;
@@ -17,6 +17,8 @@ const styles = StyleSheet.create({
   error: {
     paddingHorizontal: spacing[2],
     paddingVertical: spacing[1],
+    borderRadius: radii.sm,
+    overflow: "hidden",
     backgroundColor: colors.red10,
     color: colors.greenDark,
     fontFamily: fonts.bodyRegular,

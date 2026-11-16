@@ -1,5 +1,5 @@
 import { StyleSheet } from "react-native";
-import { bodyLineHeight, borders, colors, fonts, fontSizes, minTouchSize, spacing } from "../theme/tokens";
+import { bodyLineHeight, borders, colors, fonts, fontSizes, minTouchSize, radii, spacing } from "../theme/tokens";
 
 // Shared by the form field components so every field looks the same.
 export const fieldStyles = StyleSheet.create({
@@ -23,6 +23,7 @@ export const fieldStyles = StyleSheet.create({
     paddingVertical: spacing[2],
     borderWidth: borders.width,
     borderColor: colors.greenDark60,
+    borderRadius: radii.md,
     backgroundColor: colors.beige10,
     color: colors.greenDark,
     fontFamily: fonts.bodyRegular,

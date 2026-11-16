@@ -1,5 +1,15 @@
 import { Pressable, StyleSheet, Text } from "react-native";
-import { bodyLineHeight, borders, colors, fonts, fontSizes, minTouchSize, opacity, spacing } from "../theme/tokens";
+import {
+  bodyLineHeight,
+  borders,
+  colors,
+  fonts,
+  fontSizes,
+  minTouchSize,
+  opacity,
+  radii,
+  spacing,
+} from "../theme/tokens";
 
 type ButtonProps = {
   label: string;
@@ -36,6 +46,7 @@ const styles = StyleSheet.create({
     paddingVertical: spacing[2],
     borderWidth: borders.width,
     borderColor: colors.greenDark,
+    borderRadius: radii.pill,
   },
   primary: {
     backgroundColor: colors.greenDark,
@@ -47,7 +58,7 @@ const styles = StyleSheet.create({
     backgroundColor: colors.beige10,
   },
   secondaryPressed: {
-    backgroundColor: colors.greenDark10,
+    backgroundColor: colors.greenLight30,
   },
   disabled: {
     opacity: opacity.disabled,
