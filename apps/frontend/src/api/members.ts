@@ -1,5 +1,11 @@
-import type { CreateMemberBody, PaginationQuery } from "@repo/shared";
-import { createMember, keysToInvalidateAfterCreateMember, memberQueries } from "@repo/shared/client";
+import type { CreateMemberBody, PaginationQuery, UpdateMemberBody } from "@repo/shared";
+import {
+  createMember,
+  keysToInvalidateAfterCreateMember,
+  keysToInvalidateAfterUpdateMember,
+  memberQueries,
+  updateMember,
+} from "@repo/shared/client";
 import { keepPreviousData, useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { api } from "./client";
 
@@ -19,6 +25,18 @@ export const useCreateMember = () => {
     onSuccess: async () => {
       await Promise.all(
         keysToInvalidateAfterCreateMember.map((queryKey) => queryClient.invalidateQueries({ queryKey })),
+      );
+    },
+  });
+};
+
+export const useUpdateMember = (memberId: string) => {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: (body: UpdateMemberBody) => updateMember(api, memberId, body),
+    onSuccess: async () => {
+      await Promise.all(
+        keysToInvalidateAfterUpdateMember.map((queryKey) => queryClient.invalidateQueries({ queryKey })),
       );
     },
   });

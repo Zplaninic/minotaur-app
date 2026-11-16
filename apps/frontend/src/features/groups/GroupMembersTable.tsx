@@ -1,7 +1,10 @@
+import type { GroupMemberResponse } from "@repo/shared";
 import { toErrorCode } from "@repo/shared/client";
+import { useState } from "react";
 import { useAbility } from "../../api/auth";
 import { useGroupMembers, useRemoveGroupMember } from "../../api/groups";
 import { Button } from "../../components/Button";
+import { ConfirmDialog } from "../../components/ConfirmDialog";
 import { formatCalendarDate, formatPersonName, formatSortedName } from "../../lib/format";
 import { errorMessage, t } from "../../lib/messages";
 import styles from "./GroupMembersTable.module.css";
@@ -15,6 +18,11 @@ export const GroupMembersTable = ({ groupId }: GroupMembersTableProps) => {
   const members = useGroupMembers(groupId);
   const removeMember = useRemoveGroupMember(groupId);
   const canChange = ability.can("update", "Group");
+  const [removing, setRemoving] = useState<GroupMemberResponse | undefined>();
+  const closeConfirm = () => {
+    setRemoving(undefined);
+    removeMember.reset();
+  };
 
   if (members.isPending) {
     return <output>{t("groupMembers.loading")}</output>;
@@ -37,11 +45,6 @@ export const GroupMembersTable = ({ groupId }: GroupMembersTableProps) => {
 
   return (
     <div className={styles.wrapper}>
-      {removeMember.error ? (
-        <p role="alert" className={styles.error}>
-          {errorMessage(toErrorCode(removeMember.error))}
-        </p>
-      ) : null}
       <div className={styles.scroll}>
         <table className={styles.table}>
           <caption className={styles.caption}>{t("groupMembers.table.caption")}</caption>
@@ -71,8 +74,7 @@ export const GroupMembersTable = ({ groupId }: GroupMembersTableProps) => {
                   <td className={styles.actions}>
                     <Button
                       variant="secondary"
-                      onClick={() => removeMember.mutate(member.id)}
-                      disabled={removeMember.isPending}
+                      onClick={() => setRemoving(member)}
                       aria-label={t("groupMembers.removeLabel", { name: formatPersonName(member) })}
                     >
                       {t("groupMembers.remove")}
@@ -84,6 +86,17 @@ export const GroupMembersTable = ({ groupId }: GroupMembersTableProps) => {
           </tbody>
         </table>
       </div>
+      <ConfirmDialog
+        open={removing !== undefined}
+        title={removing ? t("groupMembers.confirmTitle", { name: formatPersonName(removing) }) : ""}
+        message={t("groupMembers.confirmText")}
+        confirmLabel={t("common.remove")}
+        pendingLabel={t("common.removing")}
+        pending={removeMember.isPending}
+        error={removeMember.error ? errorMessage(toErrorCode(removeMember.error)) : undefined}
+        onConfirm={() => removing && removeMember.mutate(removing.id, { onSuccess: closeConfirm })}
+        onCancel={closeConfirm}
+      />
     </div>
   );
 };

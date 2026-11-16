@@ -46,6 +46,11 @@ beforeEach(() => {
       members = [marko, ...members];
       return marko;
     }
+    if (path === "/members/1" && init?.method === "PUT") {
+      const edited = { ...ana, ...JSON.parse(String(init.body)) };
+      members = members.map((member) => (member.id === "1" ? { ...edited, guardians: ana.guardians } : member));
+      return members[0];
+    }
     if (path.startsWith("/members?")) {
       return { items: members, page: 1, pageSize: 20, total: members.length };
     }
@@ -76,6 +81,59 @@ describe("MembersPage", () => {
     const row = (await screen.findByRole("rowheader", { name: "Horvat Ana" })).closest("tr");
     expect(row).not.toBeNull();
     expect(within(row as HTMLElement).getByText("Iva Horvat")).toBeInTheDocument();
+    expect(within(row as HTMLElement).queryByText(t("members.trainerLabel"))).not.toBeInTheDocument();
+  });
+
+  it("edits a member", async () => {
+    renderPage();
+    fireEvent.click(await screen.findByRole("button", { name: t("members.editLabel", { name: "Ana Horvat" }) }));
+    const dialog = screen.getByRole("dialog", { name: t("memberForm.editTitle") });
+    const name = await within(dialog).findByLabelText(t("memberForm.name"));
+    expect(name).toHaveValue("Ana");
+
+    fireEvent.change(name, { target: { value: "Anamarija" } });
+    fireEvent.click(within(dialog).getByRole("button", { name: t("memberForm.saveChanges") }));
+
+    expect(await screen.findByRole("rowheader", { name: "Horvat Anamarija" })).toBeInTheDocument();
+    const [, , init] = fetchMock.mock.calls.find(([path, , call]) => path === "/members/1" && call?.method === "PUT") ?? [];
+    expect(JSON.parse(String(init?.body))).toEqual({
+      name: "Anamarija",
+      surname: "Horvat",
+      birthday: "2014-03-12",
+      guardians: [{ kind: "existing", guardianId: "1" }],
+    });
+  });
+
+  it("removes a guardian from the form only after confirming", async () => {
+    renderPage();
+    fireEvent.click(await screen.findByRole("button", { name: t("members.editLabel", { name: "Ana Horvat" }) }));
+    const dialog = screen.getByRole("dialog", { name: t("memberForm.editTitle") });
+    const remove = await within(dialog).findByRole("button", { name: t("memberForm.guardianRemove", { number: 1 }) });
+
+    fireEvent.click(remove);
+    const confirm = screen.getByRole("dialog", { name: t("memberForm.guardianRemoveConfirmTitle", { number: 1 }) });
+    fireEvent.click(within(confirm).getByRole("button", { name: t("common.cancel") }));
+    expect(within(dialog).getByRole("group", { name: t("memberForm.guardianNumber", { number: 1 }) })).toBeInTheDocument();
+
+    fireEvent.click(remove);
+    fireEvent.click(
+      within(screen.getByRole("dialog", { name: t("memberForm.guardianRemoveConfirmTitle", { number: 1 }) })).getByRole(
+        "button",
+        { name: t("common.remove") },
+      ),
+    );
+    await waitFor(() =>
+      expect(
+        within(dialog).queryByRole("group", { name: t("memberForm.guardianNumber", { number: 1 }) }),
+      ).not.toBeInTheDocument(),
+    );
+  });
+
+  it("labels trainers", async () => {
+    members = [{ ...marko, role: "trainer" }];
+    renderPage();
+    const row = (await screen.findByRole("rowheader", { name: /Babić Marko/ })).closest("tr");
+    expect(within(row as HTMLElement).getByText(t("members.trainerLabel"))).toBeInTheDocument();
   });
 
   it("shows the empty state when there are no members", async () => {

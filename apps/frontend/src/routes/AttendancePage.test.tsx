@@ -157,6 +157,10 @@ describe("AttendancePage, wide screens", () => {
     ).not.toBeInTheDocument();
 
     fireEvent.click(screen.getByRole("button", { name: t("attendance.deleteSessionLabel", { date: "Wed, Nov 18" }) }));
+    const confirm = screen.getByRole("dialog", {
+      name: t("attendance.deleteSessionConfirmTitle", { date: "Wed, Nov 18" }),
+    });
+    fireEvent.click(within(confirm).getByRole("button", { name: t("common.delete") }));
     await waitFor(() => expect(screen.queryByRole("columnheader", { name: /Nov 18/ })).not.toBeInTheDocument());
   });
 
@@ -181,6 +185,10 @@ describe("AttendancePage, wide screens", () => {
     fireEvent.click(
       screen.getByRole("button", { name: t("attendance.removeMemberLabel", { name: "Mia Novak", month: "November 2026" }) }),
     );
+    const confirm = screen.getByRole("dialog", {
+      name: t("attendance.removeMemberConfirmTitle", { name: "Mia Novak", month: "November 2026" }),
+    });
+    fireEvent.click(within(confirm).getByRole("button", { name: t("common.remove") }));
     await waitFor(() =>
       expect(
         screen.queryByRole("checkbox", { name: t("attendance.checkboxLabel", { name: "Mia Novak", date: "Wed, Nov 11" }) }),

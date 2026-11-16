@@ -153,9 +153,11 @@ describe("GroupPage", () => {
     expect(fetchMock).not.toHaveBeenCalledWith(expect.anything(), expect.anything(), expect.objectContaining({ method: "PUT" }));
   });
 
-  it("removes a member", async () => {
+  it("removes a member after confirming", async () => {
     renderAt("/groups/1");
     fireEvent.click(await screen.findByRole("button", { name: t("groupMembers.removeLabel", { name: "Ana Horvat" }) }));
+    const confirm = screen.getByRole("dialog", { name: t("groupMembers.confirmTitle", { name: "Ana Horvat" }) });
+    fireEvent.click(within(confirm).getByRole("button", { name: t("common.remove") }));
 
     expect(await screen.findByText(t("groupMembers.empty"))).toBeInTheDocument();
     expect(fetchMock).toHaveBeenCalledWith(
@@ -163,6 +165,17 @@ describe("GroupPage", () => {
       expect.anything(),
       expect.objectContaining({ method: "DELETE" }),
     );
+  });
+
+  it("keeps the member when the removal is cancelled", async () => {
+    renderAt("/groups/1");
+    fireEvent.click(await screen.findByRole("button", { name: t("groupMembers.removeLabel", { name: "Ana Horvat" }) }));
+    const confirm = screen.getByRole("dialog", { name: t("groupMembers.confirmTitle", { name: "Ana Horvat" }) });
+    fireEvent.click(within(confirm).getByRole("button", { name: t("common.cancel") }));
+
+    await waitFor(() => expect(screen.queryByRole("dialog")).not.toBeInTheDocument());
+    expect(screen.getByRole("rowheader", { name: "Horvat Ana" })).toBeInTheDocument();
+    expect(fetchMock).not.toHaveBeenCalledWith(expect.anything(), expect.anything(), expect.objectContaining({ method: "DELETE" }));
   });
 
   it("shows a trainer the members without the add and remove buttons", async () => {

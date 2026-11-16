@@ -1,8 +1,10 @@
-import { ADULT_AGE } from "@repo/shared";
+import { ADULT_AGE, type MemberResponse } from "@repo/shared";
 import {
   emptyMemberDraft,
+  memberDraftFrom,
   newGuardianDraft,
   toErrorCode,
+  toUpdateMemberBody,
   validateMemberDraft,
   type GuardianDraft,
   type MemberDraft,
@@ -10,9 +12,10 @@ import {
 } from "@repo/shared/client";
 import { useState, type FormEvent } from "react";
 import { useGuardians } from "../../api/guardians";
-import { useCreateMember } from "../../api/members";
+import { useCreateMember, useUpdateMember } from "../../api/members";
 import { useOrgs } from "../../api/orgs";
 import { Button } from "../../components/Button";
+import { ConfirmDialog } from "../../components/ConfirmDialog";
 import { FieldMessage } from "../../components/FieldMessage";
 import { SelectField } from "../../components/SelectField";
 import { TextField } from "../../components/TextField";
@@ -21,15 +24,19 @@ import { GuardianFieldset } from "./GuardianFieldset";
 import styles from "./MemberForm.module.css";
 
 type MemberFormProps = {
+  // Set to edit this member; without it the form adds a new one.
+  member?: MemberResponse;
   onCancel: () => void;
   onSaved: () => void;
 };
 
-export const MemberForm = ({ onCancel, onSaved }: MemberFormProps) => {
+export const MemberForm = ({ member, onCancel, onSaved }: MemberFormProps) => {
   const orgs = useOrgs();
   const guardians = useGuardians();
   const createMember = useCreateMember();
-  const [draft, setDraft] = useState<MemberDraft>(emptyMemberDraft);
+  const updateMember = useUpdateMember(member?.id ?? "");
+  const save = member ? updateMember : createMember;
+  const [draft, setDraft] = useState<MemberDraft>(() => (member ? memberDraftFrom(member) : emptyMemberDraft));
   const [submitted, setSubmitted] = useState(false);
   // Fixed for the life of the form, so the minor check does not change while typing.
   const [today] = useState(() => new Date());
@@ -39,20 +46,34 @@ export const MemberForm = ({ onCancel, onSaved }: MemberFormProps) => {
   const effectiveDraft: MemberDraft = { ...draft, orgId: draft.orgId || (onlyOrg?.id ?? "") };
   const validation = validateMemberDraft(effectiveDraft, today);
   const errors = submitted && !validation.ok ? validation.errors : {};
-  const serverCode = createMember.error ? toErrorCode(createMember.error) : undefined;
+  const serverCode = save.error ? toErrorCode(save.error) : undefined;
 
   const message = (code: MemberFieldError | undefined) =>
     code ? t(memberFieldErrorKey(code), { age: ADULT_AGE }) : undefined;
   const fieldError = (path: string) => message(errors[path]);
+  // A new member has no login, so a conflict is the tax number. An edited one
+  // may be a trainer whose login email is taken.
   const taxNumberError =
-    fieldError("taxNumber") ?? (serverCode === "CONFLICT" ? t("memberForm.error.taxNumberTaken") : undefined);
-  const formError = serverCode && serverCode !== "CONFLICT" ? errorMessage(serverCode) : undefined;
+    fieldError("taxNumber") ??
+    (serverCode === "CONFLICT" && !member ? t("memberForm.error.taxNumberTaken") : undefined);
+  const formError =
+    serverCode === "CONFLICT"
+      ? member
+        ? t("memberForm.error.taken")
+        : undefined
+      : serverCode
+        ? errorMessage(serverCode)
+        : undefined;
 
   const update = (changes: Partial<MemberDraft>) => setDraft((current) => ({ ...current, ...changes }));
   const updateGuardian = (index: number, guardian: GuardianDraft) =>
     setDraft((current) => ({ ...current, guardians: current.guardians.with(index, guardian) }));
-  const removeGuardian = (index: number) =>
+  // The guardian waiting for "Remove" to be confirmed, by index.
+  const [removingGuardian, setRemovingGuardian] = useState<number | undefined>();
+  const removeGuardian = (index: number) => {
     setDraft((current) => ({ ...current, guardians: current.guardians.filter((_, i) => i !== index) }));
+    setRemovingGuardian(undefined);
+  };
   const addGuardian = () => {
     setDraft((current) => ({ ...current, guardians: [...current.guardians, newGuardianDraft(crypto.randomUUID())] }));
     // An empty guardian should not open with errors; they show again on the next save.
@@ -62,7 +83,12 @@ export const MemberForm = ({ onCancel, onSaved }: MemberFormProps) => {
   const onSubmit = (event: FormEvent<HTMLFormElement>) => {
     event.preventDefault();
     setSubmitted(true);
-    if (validation.ok) {
+    if (!validation.ok) {
+      return;
+    }
+    if (member) {
+      updateMember.mutate(toUpdateMemberBody(validation.body), { onSuccess: onSaved });
+    } else {
       createMember.mutate(validation.body, { onSuccess: onSaved });
     }
   };
@@ -93,7 +119,7 @@ export const MemberForm = ({ onCancel, onSaved }: MemberFormProps) => {
     <form className={styles.form} onSubmit={onSubmit} noValidate>
       <fieldset className={styles.section}>
         <legend className={styles.sectionLegend}>{t("memberForm.member")}</legend>
-        {onlyOrg ? null : (
+        {onlyOrg || member ? null : (
           <SelectField
             label={t("memberForm.org")}
             placeholder={t("memberForm.orgPlaceholder")}
@@ -136,7 +162,7 @@ export const MemberForm = ({ onCancel, onSaved }: MemberFormProps) => {
             value={draft.taxNumber}
             onChange={(taxNumber) => {
               update({ taxNumber });
-              createMember.reset();
+              save.reset();
             }}
             error={taxNumberError}
             autoComplete="off"
@@ -178,7 +204,7 @@ export const MemberForm = ({ onCancel, onSaved }: MemberFormProps) => {
             index={index}
             guardian={guardian}
             onChange={(changed) => updateGuardian(index, changed)}
-            onRemove={() => removeGuardian(index)}
+            onRemove={() => setRemovingGuardian(index)}
             errorFor={(field) => fieldError(`guardians.${index}.${field}`)}
             existingGuardians={guardians.data?.items}
             existingState={guardiansState}
@@ -192,6 +218,15 @@ export const MemberForm = ({ onCancel, onSaved }: MemberFormProps) => {
         </div>
       </fieldset>
 
+      <ConfirmDialog
+        open={removingGuardian !== undefined}
+        title={t("memberForm.guardianRemoveConfirmTitle", { number: (removingGuardian ?? 0) + 1 })}
+        message={t("memberForm.guardianRemoveConfirmText")}
+        confirmLabel={t("common.remove")}
+        onConfirm={() => removingGuardian !== undefined && removeGuardian(removingGuardian)}
+        onCancel={() => setRemovingGuardian(undefined)}
+      />
+
       {formError ? (
         <p role="alert" className={styles.formError}>
           {formError}
@@ -202,8 +237,8 @@ export const MemberForm = ({ onCancel, onSaved }: MemberFormProps) => {
         <Button variant="secondary" onClick={onCancel}>
           {t("common.cancel")}
         </Button>
-        <Button type="submit" disabled={createMember.isPending}>
-          {createMember.isPending ? t("memberForm.submitting") : t("memberForm.submit")}
+        <Button type="submit" disabled={save.isPending}>
+          {save.isPending ? t("memberForm.submitting") : t(member ? "memberForm.saveChanges" : "memberForm.submit")}
         </Button>
       </div>
     </form>

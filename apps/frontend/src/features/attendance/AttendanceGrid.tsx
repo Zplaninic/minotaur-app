@@ -1,7 +1,9 @@
-import type { GroupAttendanceResponse, Month } from "@repo/shared";
+import type { AttendanceMemberResponse, GroupAttendanceResponse, Month, TrainingSessionResponse } from "@repo/shared";
 import { isFutureDate, memberHasAttendance, sessionHasAttendance, toErrorCode } from "@repo/shared/client";
+import { useState } from "react";
 import { useAbility } from "../../api/auth";
 import { useDeleteTrainingSession, useRemoveMonthMember } from "../../api/attendance";
+import { ConfirmDialog } from "../../components/ConfirmDialog";
 import { formatMonth, formatPersonName, formatSessionDate, formatSortedName } from "../../lib/format";
 import { errorMessage, t } from "../../lib/messages";
 import { AttendanceCheckbox } from "./AttendanceCheckbox";
@@ -21,14 +23,19 @@ export const AttendanceGrid = ({ groupId, month, data, today }: AttendanceGridPr
   const removeMember = useRemoveMonthMember(groupId, month);
   const canTick = ability.can("update", "Attendance");
   const canDelete = ability.can("delete", "Attendance");
+  // What the open confirmation is about.
+  const [confirming, setConfirming] = useState<
+    { kind: "session"; session: TrainingSessionResponse } | { kind: "member"; member: AttendanceMemberResponse } | undefined
+  >();
+  const closeConfirm = () => {
+    setConfirming(undefined);
+    deleteSession.reset();
+    removeMember.reset();
+  };
+  const confirmError = deleteSession.error ?? removeMember.error;
 
   return (
     <div className={styles.wrapper}>
-      {deleteSession.error ?? removeMember.error ? (
-        <p role="alert" className={styles.error}>
-          {errorMessage(toErrorCode(deleteSession.error ?? removeMember.error))}
-        </p>
-      ) : null}
       <div className={styles.scroll}>
         <table className={styles.table}>
           <caption className={styles.caption}>{t("attendance.table.caption", { month: formatMonth(month) })}</caption>
@@ -44,8 +51,7 @@ export const AttendanceGrid = ({ groupId, month, data, today }: AttendanceGridPr
                     <button
                       type="button"
                       className={styles.delete}
-                      onClick={() => deleteSession.mutate(session.id)}
-                      disabled={deleteSession.isPending}
+                      onClick={() => setConfirming({ kind: "session", session })}
                       aria-label={t("attendance.deleteSessionLabel", { date: formatSessionDate(session.date) })}
                     >
                       {t("attendance.deleteSession")}
@@ -65,8 +71,7 @@ export const AttendanceGrid = ({ groupId, month, data, today }: AttendanceGridPr
                       <button
                         type="button"
                         className={styles.delete}
-                        onClick={() => removeMember.mutate(member.id)}
-                        disabled={removeMember.isPending}
+                        onClick={() => setConfirming({ kind: "member", member })}
                         aria-label={t("attendance.removeMemberLabel", {
                           name: formatPersonName(member),
                           month: formatMonth(month),
@@ -99,6 +104,36 @@ export const AttendanceGrid = ({ groupId, month, data, today }: AttendanceGridPr
           </tbody>
         </table>
       </div>
+      <ConfirmDialog
+        open={confirming !== undefined}
+        title={
+          confirming?.kind === "session"
+            ? t("attendance.deleteSessionConfirmTitle", { date: formatSessionDate(confirming.session.date) })
+            : confirming?.kind === "member"
+              ? t("attendance.removeMemberConfirmTitle", {
+                  name: formatPersonName(confirming.member),
+                  month: formatMonth(month),
+                })
+              : ""
+        }
+        message={
+          confirming?.kind === "session"
+            ? t("attendance.deleteSessionConfirmText")
+            : t("attendance.removeMemberConfirmText")
+        }
+        confirmLabel={confirming?.kind === "session" ? t("common.delete") : t("common.remove")}
+        pendingLabel={confirming?.kind === "session" ? t("common.deleting") : t("common.removing")}
+        pending={deleteSession.isPending || removeMember.isPending}
+        error={confirmError ? errorMessage(toErrorCode(confirmError)) : undefined}
+        onConfirm={() => {
+          if (confirming?.kind === "session") {
+            deleteSession.mutate(confirming.session.id, { onSuccess: closeConfirm });
+          } else if (confirming?.kind === "member") {
+            removeMember.mutate(confirming.member.id, { onSuccess: closeConfirm });
+          }
+        }}
+        onCancel={closeConfirm}
+      />
     </div>
   );
 };
