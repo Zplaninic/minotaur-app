@@ -14,6 +14,7 @@
     "login:create": "tsx --env-file=.env src/cli/loginCreate.ts",
     "login:set-password": "tsx --env-file=.env src/cli/loginSetPassword.ts",
     "member:set-role": "tsx --env-file=.env src/cli/memberSetRole.ts",
+    "db:seed": "tsx --env-file=.env src/cli/seed.ts",
     "postinstall": "prisma generate"
   },
   "dependencies": {
