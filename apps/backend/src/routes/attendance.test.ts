@@ -4,7 +4,7 @@ import { afterAll, beforeAll, beforeEach, describe, expect, it } from "vitest";
 import { authHeaders, createLoginMember, createOrg, resetDb } from "../../test/db.js";
 import { config } from "../config.js";
 import { buildServer } from "../server.js";
-import { isoDateIn, monthOf, trainingDates } from "../services/attendance.js";
+import { isoDateIn, monthOf, trainingDates } from "../services/dates.js";
 import { addGroupMember, createGroup } from "../services/groups.js";
 import { createSubscription } from "../services/subscriptions.js";
 

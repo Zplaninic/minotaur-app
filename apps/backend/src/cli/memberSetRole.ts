@@ -1,6 +1,6 @@
 import { memberRole } from "@repo/shared";
 import { config } from "../config.js";
-import { isoDateIn } from "../services/attendance.js";
+import { isoDateIn } from "../services/dates.js";
 import { setMemberRole } from "../services/logins.js";
 import { required, requiredId, runCommand } from "./run.js";
 

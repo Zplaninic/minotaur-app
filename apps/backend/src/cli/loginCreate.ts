@@ -1,7 +1,7 @@
 import { email as emailSchema } from "@repo/shared";
 import { LOGIN_ROLES, type LoginRole } from "@repo/shared/auth";
 import { config } from "../config.js";
-import { isoDateIn } from "../services/attendance.js";
+import { isoDateIn } from "../services/dates.js";
 import { createLoginForMember, createMemberWithLogin } from "../services/logins.js";
 import { readNewPassword } from "./readPassword.js";
 import { required, requiredId, runCommand } from "./run.js";

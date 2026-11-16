@@ -1,6 +1,5 @@
 import {
   createMemberBody,
-  errorResponse,
   listMembersQuery,
   listMembersResponse,
   memberParams,
@@ -12,8 +11,9 @@ import type { ZodTypeProvider } from "fastify-type-provider-zod";
 import { z } from "zod";
 import { config } from "../config.js";
 import { AppError } from "../errors.js";
-import { isoDateIn } from "../services/attendance.js";
+import { isoDateIn } from "../services/dates.js";
 import { archiveMember, createMember, getMember, listMembers, updateMember } from "../services/members.js";
+import { guardedErrorResponses } from "./responses.js";
 
 const todayAtGym = (): string => isoDateIn(new Date(), config.GYM_TIME_ZONE);
 
@@ -26,7 +26,7 @@ export const memberRoutes: FastifyPluginAsync = async (app) => {
       onRequest: app.requireAbility("read", "Member"),
       schema: {
         querystring: listMembersQuery,
-        response: { 200: listMembersResponse, 400: errorResponse, 401: errorResponse, 403: errorResponse, 500: errorResponse },
+        response: { 200: listMembersResponse, ...guardedErrorResponses(400) },
       },
     },
     async (request) => listMembers(app.db, request.query, todayAtGym()),
@@ -39,15 +39,7 @@ export const memberRoutes: FastifyPluginAsync = async (app) => {
       onRequest: [app.requireAbility("create", "Member"), app.requireAbility("create", "Guardian")],
       schema: {
         body: createMemberBody,
-        response: {
-          201: memberResponse,
-          400: errorResponse,
-          401: errorResponse,
-          403: errorResponse,
-          404: errorResponse,
-          409: errorResponse,
-          500: errorResponse,
-        },
+        response: { 201: memberResponse, ...guardedErrorResponses(400, 404, 409) },
       },
     },
     async (request, reply) => reply.status(201).send(await createMember(app.db, request.body, todayAtGym())),
@@ -59,7 +51,7 @@ export const memberRoutes: FastifyPluginAsync = async (app) => {
       onRequest: app.requireAbility("read", "Member"),
       schema: {
         params: memberParams,
-        response: { 200: memberResponse, 401: errorResponse, 403: errorResponse, 404: errorResponse, 500: errorResponse },
+        response: { 200: memberResponse, ...guardedErrorResponses(404) },
       },
     },
     async (request) => getMember(app.db, request.params.id),
@@ -73,15 +65,7 @@ export const memberRoutes: FastifyPluginAsync = async (app) => {
       schema: {
         params: memberParams,
         body: updateMemberBody,
-        response: {
-          200: memberResponse,
-          400: errorResponse,
-          401: errorResponse,
-          403: errorResponse,
-          404: errorResponse,
-          409: errorResponse,
-          500: errorResponse,
-        },
+        response: { 200: memberResponse, ...guardedErrorResponses(400, 404, 409) },
       },
     },
     async (request) => updateMember(app.db, request.params.id, request.body, todayAtGym()),
@@ -93,15 +77,7 @@ export const memberRoutes: FastifyPluginAsync = async (app) => {
       onRequest: app.requireAbility("delete", "Member"),
       schema: {
         params: memberParams,
-        response: {
-          204: z.undefined(),
-          400: errorResponse,
-          401: errorResponse,
-          403: errorResponse,
-          404: errorResponse,
-          409: errorResponse,
-          500: errorResponse,
-        },
+        response: { 204: z.undefined(), ...guardedErrorResponses(400, 404, 409) },
       },
     },
     async (request, reply) => {

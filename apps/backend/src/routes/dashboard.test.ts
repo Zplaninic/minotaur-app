@@ -4,7 +4,7 @@ import { afterAll, beforeAll, beforeEach, describe, expect, it } from "vitest";
 import { createOrg, loggedInAs, resetDb } from "../../test/db.js";
 import { config } from "../config.js";
 import { buildServer } from "../server.js";
-import { isoDateIn } from "../services/attendance.js";
+import { isoDateIn } from "../services/dates.js";
 
 let app: FastifyInstance;
 let orgId: string;

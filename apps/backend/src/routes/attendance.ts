@@ -2,7 +2,6 @@ import {
   attendanceParams,
   createMonthSessionsBody,
   createTrainingSessionBody,
-  errorResponse,
   groupAttendanceResponse,
   groupParams,
   monthMemberParams,
@@ -22,13 +21,14 @@ import {
   createMonthSessions,
   deleteTrainingSession,
   getGroupAttendance,
-  isoDateIn,
   markAttendance,
   removeMonthMember,
   setMonthPaid,
   setMonthSubscription,
   unmarkAttendance,
 } from "../services/attendance.js";
+import { isoDateIn } from "../services/dates.js";
+import { guardedErrorResponses } from "./responses.js";
 
 // Registered under /groups, next to the group routes.
 export const attendanceRoutes: FastifyPluginAsync = async (app) => {
@@ -41,14 +41,7 @@ export const attendanceRoutes: FastifyPluginAsync = async (app) => {
       schema: {
         params: groupParams,
         querystring: monthQuery,
-        response: {
-          200: groupAttendanceResponse,
-          400: errorResponse,
-          401: errorResponse,
-          403: errorResponse,
-          404: errorResponse,
-          500: errorResponse,
-        },
+        response: { 200: groupAttendanceResponse, ...guardedErrorResponses(400, 404) },
       },
     },
     async (request) => getGroupAttendance(app.db, request.params.id, request.query.month),
@@ -61,14 +54,7 @@ export const attendanceRoutes: FastifyPluginAsync = async (app) => {
       schema: {
         params: groupParams,
         body: createMonthSessionsBody,
-        response: {
-          204: z.undefined(),
-          400: errorResponse,
-          401: errorResponse,
-          403: errorResponse,
-          404: errorResponse,
-          500: errorResponse,
-        },
+        response: { 204: z.undefined(), ...guardedErrorResponses(400, 404) },
       },
     },
     async (request, reply) => {
@@ -89,15 +75,7 @@ export const attendanceRoutes: FastifyPluginAsync = async (app) => {
       schema: {
         params: groupParams,
         body: createTrainingSessionBody,
-        response: {
-          201: trainingSessionResponse,
-          400: errorResponse,
-          401: errorResponse,
-          403: errorResponse,
-          404: errorResponse,
-          409: errorResponse,
-          500: errorResponse,
-        },
+        response: { 201: trainingSessionResponse, ...guardedErrorResponses(400, 404, 409) },
       },
     },
     async (request, reply) =>
@@ -119,14 +97,7 @@ export const attendanceRoutes: FastifyPluginAsync = async (app) => {
       onRequest: app.requireAbility("delete", "Attendance"),
       schema: {
         params: trainingSessionParams,
-        response: {
-          204: z.undefined(),
-          401: errorResponse,
-          403: errorResponse,
-          404: errorResponse,
-          409: errorResponse,
-          500: errorResponse,
-        },
+        response: { 204: z.undefined(), ...guardedErrorResponses(404, 409) },
       },
     },
     async (request, reply) => {
@@ -141,14 +112,7 @@ export const attendanceRoutes: FastifyPluginAsync = async (app) => {
       onRequest: app.requireAbility("update", "Attendance"),
       schema: {
         params: attendanceParams,
-        response: {
-          204: z.undefined(),
-          400: errorResponse,
-          401: errorResponse,
-          403: errorResponse,
-          404: errorResponse,
-          500: errorResponse,
-        },
+        response: { 204: z.undefined(), ...guardedErrorResponses(400, 404) },
       },
     },
     async (request, reply) => {
@@ -164,7 +128,7 @@ export const attendanceRoutes: FastifyPluginAsync = async (app) => {
       onRequest: app.requireAbility("update", "Attendance"),
       schema: {
         params: attendanceParams,
-        response: { 204: z.undefined(), 401: errorResponse, 403: errorResponse, 404: errorResponse, 500: errorResponse },
+        response: { 204: z.undefined(), ...guardedErrorResponses(404) },
       },
     },
     async (request, reply) => {
@@ -180,14 +144,7 @@ export const attendanceRoutes: FastifyPluginAsync = async (app) => {
       onRequest: app.requireAbility("update", "Attendance"),
       schema: {
         params: monthMemberParams,
-        response: {
-          204: z.undefined(),
-          400: errorResponse,
-          401: errorResponse,
-          403: errorResponse,
-          404: errorResponse,
-          500: errorResponse,
-        },
+        response: { 204: z.undefined(), ...guardedErrorResponses(400, 404) },
       },
     },
     async (request, reply) => {
@@ -204,14 +161,7 @@ export const attendanceRoutes: FastifyPluginAsync = async (app) => {
       schema: {
         params: monthMemberParams,
         body: setMonthSubscriptionBody,
-        response: {
-          204: z.undefined(),
-          400: errorResponse,
-          401: errorResponse,
-          403: errorResponse,
-          404: errorResponse,
-          500: errorResponse,
-        },
+        response: { 204: z.undefined(), ...guardedErrorResponses(400, 404) },
       },
     },
     async (request, reply) => {
@@ -228,14 +178,7 @@ export const attendanceRoutes: FastifyPluginAsync = async (app) => {
       schema: {
         params: monthMemberParams,
         body: setMonthPaidBody,
-        response: {
-          204: z.undefined(),
-          400: errorResponse,
-          401: errorResponse,
-          403: errorResponse,
-          404: errorResponse,
-          500: errorResponse,
-        },
+        response: { 204: z.undefined(), ...guardedErrorResponses(400, 404) },
       },
     },
     async (request, reply) => {
@@ -251,15 +194,7 @@ export const attendanceRoutes: FastifyPluginAsync = async (app) => {
       onRequest: app.requireAbility("update", "Attendance"),
       schema: {
         params: monthMemberParams,
-        response: {
-          204: z.undefined(),
-          400: errorResponse,
-          401: errorResponse,
-          403: errorResponse,
-          404: errorResponse,
-          409: errorResponse,
-          500: errorResponse,
-        },
+        response: { 204: z.undefined(), ...guardedErrorResponses(400, 404, 409) },
       },
     },
     async (request, reply) => {

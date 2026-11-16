@@ -1,6 +1,5 @@
 import {
   createGroupBody,
-  errorResponse,
   groupMemberParams,
   groupParams,
   groupResponse,
@@ -11,7 +10,7 @@ import type { FastifyPluginAsync } from "fastify";
 import type { ZodTypeProvider } from "fastify-type-provider-zod";
 import { z } from "zod";
 import { config } from "../config.js";
-import { isoDateIn } from "../services/attendance.js";
+import { isoDateIn } from "../services/dates.js";
 import {
   addGroupMember,
   archiveGroup,
@@ -21,6 +20,7 @@ import {
   listGroups,
   removeGroupMember,
 } from "../services/groups.js";
+import { guardedErrorResponses } from "./responses.js";
 
 export const groupRoutes: FastifyPluginAsync = async (app) => {
   const routes = app.withTypeProvider<ZodTypeProvider>();
@@ -29,7 +29,7 @@ export const groupRoutes: FastifyPluginAsync = async (app) => {
     "/",
     {
       onRequest: app.requireAbility("read", "Group"),
-      schema: { response: { 200: listGroupsResponse, 401: errorResponse, 403: errorResponse, 500: errorResponse } },
+      schema: { response: { 200: listGroupsResponse, ...guardedErrorResponses() } },
     },
     async () => listGroups(app.db),
   );
@@ -40,14 +40,7 @@ export const groupRoutes: FastifyPluginAsync = async (app) => {
       onRequest: app.requireAbility("create", "Group"),
       schema: {
         body: createGroupBody,
-        response: {
-          201: groupResponse,
-          400: errorResponse,
-          401: errorResponse,
-          403: errorResponse,
-          404: errorResponse,
-          500: errorResponse,
-        },
+        response: { 201: groupResponse, ...guardedErrorResponses(400, 404) },
       },
     },
     async (request, reply) => reply.status(201).send(await createGroup(app.db, request.body)),
@@ -59,7 +52,7 @@ export const groupRoutes: FastifyPluginAsync = async (app) => {
       onRequest: app.requireAbility("read", "Group"),
       schema: {
         params: groupParams,
-        response: { 200: groupResponse, 401: errorResponse, 403: errorResponse, 404: errorResponse, 500: errorResponse },
+        response: { 200: groupResponse, ...guardedErrorResponses(404) },
       },
     },
     async (request) => getGroup(app.db, request.params.id),
@@ -71,14 +64,7 @@ export const groupRoutes: FastifyPluginAsync = async (app) => {
       onRequest: app.requireAbility("delete", "Group"),
       schema: {
         params: groupParams,
-        response: {
-          204: z.undefined(),
-          400: errorResponse,
-          401: errorResponse,
-          403: errorResponse,
-          404: errorResponse,
-          500: errorResponse,
-        },
+        response: { 204: z.undefined(), ...guardedErrorResponses(400, 404) },
       },
     },
     async (request, reply) => {
@@ -93,13 +79,7 @@ export const groupRoutes: FastifyPluginAsync = async (app) => {
       onRequest: app.requireAbility("read", "Group"),
       schema: {
         params: groupParams,
-        response: {
-          200: listGroupMembersResponse,
-          401: errorResponse,
-          403: errorResponse,
-          404: errorResponse,
-          500: errorResponse,
-        },
+        response: { 200: listGroupMembersResponse, ...guardedErrorResponses(404) },
       },
     },
     async (request) => listGroupMembers(app.db, request.params.id),
@@ -111,14 +91,7 @@ export const groupRoutes: FastifyPluginAsync = async (app) => {
       onRequest: app.requireAbility("update", "Group"),
       schema: {
         params: groupMemberParams,
-        response: {
-          204: z.undefined(),
-          400: errorResponse,
-          401: errorResponse,
-          403: errorResponse,
-          404: errorResponse,
-          500: errorResponse,
-        },
+        response: { 204: z.undefined(), ...guardedErrorResponses(400, 404) },
       },
     },
     async (request, reply) => {
@@ -138,7 +111,7 @@ export const groupRoutes: FastifyPluginAsync = async (app) => {
       onRequest: app.requireAbility("update", "Group"),
       schema: {
         params: groupMemberParams,
-        response: { 204: z.undefined(), 401: errorResponse, 403: errorResponse, 404: errorResponse, 500: errorResponse },
+        response: { 204: z.undefined(), ...guardedErrorResponses(404) },
       },
     },
     async (request, reply) => {
