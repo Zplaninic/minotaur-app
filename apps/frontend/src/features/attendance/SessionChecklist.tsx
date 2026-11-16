@@ -6,6 +6,7 @@ import { t } from "../../lib/messages";
 import { AttendanceCheckbox } from "./AttendanceCheckbox";
 import { MonthPaidCheckbox } from "./MonthPaidCheckbox";
 import { MonthSubscriptionSelect } from "./MonthSubscriptionSelect";
+import { UnpaidBadge } from "./UnpaidBadge";
 import styles from "./SessionChecklist.module.css";
 
 type SessionChecklistProps = {
@@ -49,6 +50,7 @@ export const SessionChecklist = ({ groupId, month, session, members, today }: Se
             <div className={styles.subscription}>
               <MonthSubscriptionSelect groupId={groupId} month={month} member={member} disabled={!canTick} />
               <MonthPaidCheckbox groupId={groupId} month={month} member={member} disabled={!canTick} layout="row" />
+              <UnpaidBadge memberId={member.id} />
             </div>
           </li>
         ))}

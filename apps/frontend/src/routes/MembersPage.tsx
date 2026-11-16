@@ -12,6 +12,7 @@ export const MembersPage = () => {
   const ability = useAbility();
   const [adding, setAdding] = useState(false);
   const [editing, setEditing] = useState<MemberResponse | undefined>();
+  const [unpaidOnly, setUnpaidOnly] = useState(false);
   const close = () => setAdding(false);
   const closeEdit = () => setEditing(undefined);
 
@@ -25,7 +26,14 @@ export const MembersPage = () => {
         <h1>{t("members.title")}</h1>
         {ability.can("create", "Member") ? <Button onClick={() => setAdding(true)}>{t("members.add")}</Button> : null}
       </div>
-      <MembersTable onEdit={setEditing} />
+      {ability.can("read", "Subscription") ? (
+        <label className={styles.filter}>
+          <input type="checkbox" checked={unpaidOnly} onChange={(event) => setUnpaidOnly(event.target.checked)} />
+          {t("members.unpaidOnly")}
+        </label>
+      ) : null}
+      {/* Keyed by the filter, so switching it starts again from the first page. */}
+      <MembersTable key={String(unpaidOnly)} onEdit={setEditing} unpaidOnly={unpaidOnly} />
       <Dialog open={adding} onClose={close} title={t("memberForm.title")}>
         <MemberForm onCancel={close} onSaved={close} />
       </Dialog>

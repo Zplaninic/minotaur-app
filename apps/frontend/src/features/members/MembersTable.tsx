@@ -17,15 +17,17 @@ const archiveErrorMessage = (code: ClientErrorCode): string =>
 
 type MembersTableProps = {
   onEdit: (member: MemberResponse) => void;
+  // Only members with a past month that has a subscription and is not paid.
+  unpaidOnly: boolean;
 };
 
-export const MembersTable = ({ onEdit }: MembersTableProps) => {
+export const MembersTable = ({ onEdit, unpaidOnly }: MembersTableProps) => {
   const ability = useAbility();
   const me = useMe();
   const canEdit = ability.can("update", "Member");
   const canDelete = ability.can("delete", "Member");
   const [page, setPage] = useState(1);
-  const members = useMembers({ page, pageSize: DEFAULT_PAGE_SIZE });
+  const members = useMembers({ page, pageSize: DEFAULT_PAGE_SIZE, unpaid: unpaidOnly });
   const archiveMember = useArchiveMember();
   const [deleting, setDeleting] = useState<MemberResponse | undefined>();
   const closeConfirm = () => {
@@ -51,7 +53,7 @@ export const MembersTable = ({ onEdit }: MembersTableProps) => {
 
   const { items, total, pageSize } = members.data;
   if (total === 0) {
-    return <p className={styles.state}>{t("members.empty")}</p>;
+    return <p className={styles.state}>{unpaidOnly ? t("members.unpaidEmpty") : t("members.empty")}</p>;
   }
   const pages = Math.max(1, Math.ceil(total / pageSize));
   // The last page can empty out, e.g. after its only member is deleted.

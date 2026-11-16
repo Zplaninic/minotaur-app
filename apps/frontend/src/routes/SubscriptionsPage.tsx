@@ -3,6 +3,8 @@ import { useState } from "react";
 import { useAbility } from "../api/auth";
 import { Button } from "../components/Button";
 import { Dialog } from "../components/Dialog";
+import { OverduePayments } from "../features/subscriptions/OverduePayments";
+import { PaymentSummary } from "../features/subscriptions/PaymentSummary";
 import { SubscriptionForm } from "../features/subscriptions/SubscriptionForm";
 import { SubscriptionsTable } from "../features/subscriptions/SubscriptionsTable";
 import { t } from "../lib/messages";
@@ -28,6 +30,8 @@ export const SubscriptionsPage = () => {
         ) : null}
       </div>
       <SubscriptionsTable onEdit={setEditing} />
+      <PaymentSummary />
+      <OverduePayments />
       <Dialog open={adding} onClose={close} title={t("subscriptionForm.title")}>
         {adding ? <SubscriptionForm onCancel={close} onSaved={close} /> : null}
       </Dialog>

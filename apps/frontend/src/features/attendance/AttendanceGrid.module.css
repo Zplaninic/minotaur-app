@@ -88,6 +88,12 @@
   gap: var(--space-3);
 }
 
+.nameAndBadge {
+  display: grid;
+  gap: var(--space-1);
+  justify-items: start;
+}
+
 .memberName .delete {
   margin-top: 0;
 }

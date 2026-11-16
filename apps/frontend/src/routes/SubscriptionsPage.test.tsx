@@ -1,9 +1,15 @@
-import type { MeResponse, SubscriptionBody, SubscriptionResponse } from "@repo/shared";
+import type {
+  MeResponse,
+  OverduePaymentsResponse,
+  SubscriptionBody,
+  SubscriptionResponse,
+  SubscriptionSummaryResponse,
+} from "@repo/shared";
 import { ApiError } from "@repo/shared/client";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { createMemoryHistory, RouterProvider } from "@tanstack/react-router";
 import { fireEvent, render, screen, waitFor, within } from "@testing-library/react";
-import { beforeEach, describe, expect, it, vi } from "vitest";
+import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import { api } from "../api/client";
 import { t } from "../lib/messages";
 import { createAppRouter } from "./router";
@@ -26,6 +32,21 @@ const kids: SubscriptionResponse = {
 let me: MeResponse;
 let subscriptions: SubscriptionResponse[];
 let conflict: boolean;
+let overdue: OverduePaymentsResponse;
+
+const summaryFor = (month: string): SubscriptionSummaryResponse =>
+  month === "2026-10"
+    ? {
+        month,
+        members: 3,
+        paid: 1,
+        unpaid: 2,
+        expected: 13500,
+        collected: 4500,
+        open: 9000,
+        bySubscription: [{ id: "1", name: "Kids 2x", members: 3, paid: 1, expected: 13500, collected: 4500 }],
+      }
+    : { month, members: 0, paid: 0, unpaid: 0, expected: 0, collected: 0, open: 0, bySubscription: [] };
 
 const saved = (id: string, init: RequestInit | undefined): SubscriptionResponse => ({
   ...kids,
@@ -33,7 +54,14 @@ const saved = (id: string, init: RequestInit | undefined): SubscriptionResponse 
   id,
 });
 
+afterEach(() => {
+  vi.useRealTimers();
+});
+
 beforeEach(() => {
+  vi.useFakeTimers({ toFake: ["Date"] });
+  vi.setSystemTime(new Date(2026, 10, 16, 18, 30));
+  overdue = { items: [], total: 0 };
   me = admin;
   subscriptions = [kids];
   conflict = false;
@@ -54,6 +82,13 @@ beforeEach(() => {
       const updated = saved("1", init);
       subscriptions = subscriptions.map((item) => (item.id === "1" ? updated : item));
       return updated;
+    }
+    const summary = /^\/subscriptions\/summary\?month=(\d{4}-\d{2})$/.exec(path);
+    if (summary) {
+      return summaryFor(summary[1] ?? "");
+    }
+    if (path === "/subscriptions/overdue") {
+      return overdue;
     }
     if (path === "/subscriptions") {
       return { items: subscriptions };
@@ -170,5 +205,62 @@ describe("SubscriptionsPage", () => {
     save(dialog);
 
     expect(await within(dialog).findByText(t("subscriptionForm.error.nameTaken"))).toBeInTheDocument();
+  });
+});
+
+describe("SubscriptionsPage, payments", () => {
+  it("shows a month's totals and steps between months", async () => {
+    renderPage();
+    expect(await screen.findByText(t("payments.empty", { month: "November 2026" }))).toBeInTheDocument();
+    expect(screen.getByRole("button", { name: t("payments.nextMonth") })).toBeEnabled();
+
+    fireEvent.click(screen.getByRole("button", { name: t("payments.previousMonth") }));
+
+    const figure = async (label: Parameters<typeof t>[0]) =>
+      (await screen.findByText(t(label), { selector: "dt" })).nextElementSibling;
+    expect(await figure("payments.expected")).toHaveTextContent("€135.00");
+    expect(await figure("payments.collected")).toHaveTextContent("€45.00");
+    expect(await figure("payments.open")).toHaveTextContent("€90.00");
+    const payments = screen.getByRole("region", { name: t("payments.title") });
+    const row = within(payments).getByRole("rowheader", { name: "Kids 2x" }).closest("tr") as HTMLElement;
+    expect(within(row).getByText("€45.00 of €135.00")).toBeInTheDocument();
+  });
+
+  it("does not go back before September 2026", async () => {
+    renderPage();
+    const previous = await screen.findByRole("button", { name: t("payments.previousMonth") });
+    fireEvent.click(previous);
+    fireEvent.click(previous);
+    expect(await screen.findByText("September 2026")).toBeInTheDocument();
+    expect(previous).toBeDisabled();
+  });
+
+  it("lists members who have not paid a past month", async () => {
+    overdue = {
+      items: [
+        {
+          id: "4",
+          name: "Leo",
+          surname: "Perić",
+          months: [
+            { month: "2026-09", subscription: { id: "1", name: "Kids 2x" }, price: 4500 },
+            { month: "2026-10", subscription: { id: "1", name: "Kids 2x" }, price: 4500 },
+          ],
+          total: 9000,
+        },
+      ],
+      total: 9000,
+    };
+    renderPage();
+    const row = (await screen.findByRole("rowheader", { name: "Perić Leo" })).closest("tr") as HTMLElement;
+    expect(within(row).getByText("September 2026: Kids 2x, €45.00")).toBeInTheDocument();
+    expect(within(row).getByText("October 2026: Kids 2x, €45.00")).toBeInTheDocument();
+    expect(within(row).getByText("€90.00")).toBeInTheDocument();
+    expect(screen.getByText(t("overdue.total", { total: "€90.00" }))).toBeInTheDocument();
+  });
+
+  it("says when everyone has paid", async () => {
+    renderPage();
+    expect(await screen.findByText(t("overdue.empty"))).toBeInTheDocument();
   });
 });

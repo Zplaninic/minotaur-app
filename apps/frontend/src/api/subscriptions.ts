@@ -1,4 +1,4 @@
-import type { SubscriptionBody } from "@repo/shared";
+import type { Month, SubscriptionBody } from "@repo/shared";
 import {
   createSubscription,
   keysToInvalidateAfterSubscriptionChange,
@@ -9,6 +9,10 @@ import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { api } from "./client";
 
 export const useSubscriptions = () => useQuery(subscriptionQueries.list(api));
+
+export const useSubscriptionSummary = (month: Month) => useQuery(subscriptionQueries.summary(api, month));
+
+export const useOverduePayments = () => useQuery(subscriptionQueries.overdue(api));
 
 const useSubscriptionChange = (save: (body: SubscriptionBody) => Promise<unknown>) => {
   const queryClient = useQueryClient();

@@ -8,6 +8,7 @@ import {
   createMonthSessions,
   deleteTrainingSession,
   keysToInvalidateAfterAttendanceChange,
+  keysToInvalidateAfterMonthPaymentChange,
   markAttendance,
   removeMonthMember,
   setMonthPaid,
@@ -97,12 +98,16 @@ export const useRemoveMonthMember = (groupId: string, month: Month) => {
   });
 };
 
+// The sheets, the summary and the overdue list all show a month's payment.
+const invalidateMonthPayment = (queryClient: QueryClient) =>
+  Promise.all(keysToInvalidateAfterMonthPaymentChange.map((queryKey) => queryClient.invalidateQueries({ queryKey })));
+
 // null clears the member's subscription for the month.
 export const useSetMonthSubscription = (groupId: string, month: Month, memberId: string) => {
   const queryClient = useQueryClient();
   return useMutation({
     mutationFn: (subscriptionId: string | null) => setMonthSubscription(api, groupId, month, memberId, subscriptionId),
-    onSuccess: () => invalidateAttendance(queryClient),
+    onSuccess: () => invalidateMonthPayment(queryClient),
   });
 };
 
@@ -110,6 +115,6 @@ export const useSetMonthPaid = (groupId: string, month: Month, memberId: string)
   const queryClient = useQueryClient();
   return useMutation({
     mutationFn: (paid: boolean) => setMonthPaid(api, groupId, month, memberId, paid),
-    onSuccess: () => invalidateAttendance(queryClient),
+    onSuccess: () => invalidateMonthPayment(queryClient),
   });
 };

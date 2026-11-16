@@ -125,6 +125,20 @@ beforeEach(() => {
       };
       return undefined;
     }
+    if (path === "/subscriptions/overdue") {
+      return {
+        items: [
+          {
+            id: "4",
+            name: "Leo",
+            surname: "Perić",
+            months: [{ month: "2026-10", subscription: { id: "1", name: "Kids 1x" }, price: 3000 }],
+            total: 3000,
+          },
+        ],
+        total: 3000,
+      };
+    }
     if (path === "/subscriptions") {
       return { items: subscriptions };
     }
@@ -273,6 +287,14 @@ describe("AttendancePage, wide screens", () => {
       ),
     );
     await waitFor(() => expect(leo).not.toBeChecked());
+  });
+
+  it("marks members who have not paid a past month", async () => {
+    renderAt("/groups/1/attendance?month=2026-11");
+    const leo = (await screen.findByRole("rowheader", { name: /Perić Leo/ })) as HTMLElement;
+    expect(await within(leo).findByText(t("overdue.badge", { months: "Oct 2026" }))).toBeInTheDocument();
+    const nora = screen.getByRole("rowheader", { name: /Jurić Nora/ });
+    expect(within(nora).queryByText(/Unpaid/)).not.toBeInTheDocument();
   });
 
   it("disables future sessions", async () => {

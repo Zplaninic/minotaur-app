@@ -9,6 +9,7 @@ import { errorMessage, t } from "../../lib/messages";
 import { AttendanceCheckbox } from "./AttendanceCheckbox";
 import { MonthPaidCheckbox } from "./MonthPaidCheckbox";
 import { MonthSubscriptionSelect } from "./MonthSubscriptionSelect";
+import { UnpaidBadge } from "./UnpaidBadge";
 import styles from "./AttendanceGrid.module.css";
 
 type AttendanceGridProps = {
@@ -74,7 +75,10 @@ export const AttendanceGrid = ({ groupId, month, data, today }: AttendanceGridPr
               <tr key={member.id}>
                 <th scope="row" className={styles.name}>
                   <span className={styles.memberName}>
-                    {formatSortedName(member)}
+                    <span className={styles.nameAndBadge}>
+                      {formatSortedName(member)}
+                      <UnpaidBadge memberId={member.id} />
+                    </span>
                     {canTick && !memberHasAttendance(member) ? (
                       <button
                         type="button"

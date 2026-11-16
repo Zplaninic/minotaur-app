@@ -59,8 +59,11 @@ beforeEach(() => {
       throw new ApiError("CONFLICT", 409);
     }
     if (path.startsWith("/members?")) {
-      const page = Number(new URLSearchParams(path.split("?")[1]).get("page"));
-      return { items: members.slice((page - 1) * 20, page * 20), page, pageSize: 20, total: members.length };
+      const params = new URLSearchParams(path.split("?")[1]);
+      const page = Number(params.get("page"));
+      // Ana is the only one with an unpaid past month.
+      const listed = params.get("unpaid") === "true" ? members.filter((member) => member.id === ana.id) : members;
+      return { items: listed.slice((page - 1) * 20, page * 20), page, pageSize: 20, total: listed.length };
     }
     throw new ApiError("NOT_FOUND", 404);
   });
@@ -135,6 +138,25 @@ describe("MembersPage", () => {
         within(dialog).queryByRole("group", { name: t("memberForm.guardianNumber", { number: 1 }) }),
       ).not.toBeInTheDocument(),
     );
+  });
+
+  it("filters to members with unpaid past months", async () => {
+    members = [marko, ana];
+    renderPage();
+    expect(await screen.findByRole("rowheader", { name: "Babić Marko" })).toBeInTheDocument();
+
+    fireEvent.click(screen.getByRole("checkbox", { name: t("members.unpaidOnly") }));
+
+    expect(await screen.findByRole("rowheader", { name: "Horvat Ana" })).toBeInTheDocument();
+    expect(screen.queryByRole("rowheader", { name: "Babić Marko" })).not.toBeInTheDocument();
+    expect(fetchMock).toHaveBeenCalledWith("/members?page=1&pageSize=20&unpaid=true", expect.anything());
+  });
+
+  it("says when nobody has an unpaid past month", async () => {
+    members = [marko];
+    renderPage();
+    fireEvent.click(await screen.findByRole("checkbox", { name: t("members.unpaidOnly") }));
+    expect(await screen.findByText(t("members.unpaidEmpty"))).toBeInTheDocument();
   });
 
   it("labels trainers", async () => {

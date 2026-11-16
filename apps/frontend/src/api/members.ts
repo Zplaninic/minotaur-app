@@ -1,4 +1,4 @@
-import type { CreateMemberBody, PaginationQuery, UpdateMemberBody } from "@repo/shared";
+import type { CreateMemberBody, UpdateMemberBody } from "@repo/shared";
 import {
   archiveMember,
   createMember,
@@ -7,11 +7,12 @@ import {
   keysToInvalidateAfterUpdateMember,
   memberQueries,
   updateMember,
+  type MembersPageQuery,
 } from "@repo/shared/client";
 import { keepPreviousData, useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { api } from "./client";
 
-export const useMembers = (query: PaginationQuery) =>
+export const useMembers = (query: MembersPageQuery) =>
   useQuery({ ...memberQueries.list(api, query), placeholderData: keepPreviousData });
 
 // Every member of the club, for pickers.
