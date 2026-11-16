@@ -10,9 +10,13 @@ import { api } from "./client";
 
 export const useSubscriptions = () => useQuery(subscriptionQueries.list(api));
 
-export const useSubscriptionSummary = (month: Month) => useQuery(subscriptionQueries.summary(api, month));
+type QueryToggle = { enabled?: boolean };
 
-export const useOverduePayments = () => useQuery(subscriptionQueries.overdue(api));
+export const useSubscriptionSummary = (month: Month, options: QueryToggle = {}) =>
+  useQuery({ ...subscriptionQueries.summary(api, month), ...options });
+
+export const useOverduePayments = (options: QueryToggle = {}) =>
+  useQuery({ ...subscriptionQueries.overdue(api), ...options });
 
 const useSubscriptionChange = (save: (body: SubscriptionBody) => Promise<unknown>) => {
   const queryClient = useQueryClient();

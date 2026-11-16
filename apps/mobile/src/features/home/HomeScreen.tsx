@@ -6,6 +6,9 @@ import { LanguageSwitcher } from "../../components/LanguageSwitcher";
 import { Logo } from "../../components/Logo";
 import { Screen } from "../../components/Screen";
 import { useMessages } from "../../lib/messages";
+import { MonthOverview } from "./MonthOverview";
+import { NeedsAttention } from "./NeedsAttention";
+import { TodayTrainings } from "./TodayTrainings";
 import { bodyLineHeight, colors, fonts, fontSizes, radii, spacing } from "../../theme/tokens";
 
 export const HomeScreen = () => {
@@ -22,6 +25,13 @@ export const HomeScreen = () => {
       </View>
       {me.data ? (
         <Text style={styles.text}>{t("home.loggedInAs", { name: `${me.data.name} ${me.data.surname}` })}</Text>
+      ) : null}
+      {ability.can("read", "Attendance") ? (
+        <>
+          {ability.can("read", "Group") ? <TodayTrainings /> : null}
+          <NeedsAttention />
+          <MonthOverview />
+        </>
       ) : null}
       {ability.can("read", "Member") ? (
         <Button label={t("home.members")} onPress={() => router.push("/members")} />
