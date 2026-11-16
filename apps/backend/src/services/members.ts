@@ -5,7 +5,9 @@ import {
   type CreateMemberBody,
   type ListMembersQuery,
   type ListMembersResponse,
+  type MemberGuardianInput,
   type MemberResponse,
+  type UpdateMemberBody,
 } from "@repo/shared";
 import type { Db } from "../db/client.js";
 import { AppError } from "../errors.js";
@@ -84,28 +86,60 @@ const requireDbId = (value: string, notFoundMessage: string): number => {
   return dbId;
 };
 
-export const createMember = async (db: Db, body: CreateMemberBody, today: Date): Promise<MemberResponse> => {
+type DbClient = Db | Prisma.TransactionClient;
+
+const requireGuardianForMinor = (body: { birthday: string; guardians: readonly unknown[] }, today: Date): void => {
   if (body.guardians.length === 0 && ageOn(body.birthday, today) < ADULT_AGE) {
     throw new AppError("VALIDATION_ERROR", 400, `A member younger than ${ADULT_AGE} needs at least one guardian`);
   }
+};
 
-  const orgId = requireDbId(body.orgId, "Org not found");
-  const guardians = body.guardians.map(
-    (guardian): ResolvedGuardian =>
-      guardian.kind === "existing"
-        ? { kind: "existing", id: requireDbId(guardian.guardianId, "Guardian not found") }
-        : guardian,
+const resolveGuardians = (guardians: readonly MemberGuardianInput[]): ResolvedGuardian[] =>
+  guardians.map((guardian) =>
+    guardian.kind === "existing"
+      ? { kind: "existing", id: requireDbId(guardian.guardianId, "Guardian not found") }
+      : guardian,
   );
+
+const requireExistingGuardians = async (db: DbClient, guardians: readonly ResolvedGuardian[]): Promise<void> => {
   const existingIds = guardians.flatMap((guardian) => (guardian.kind === "existing" ? [guardian.id] : []));
+  if ((await db.guardian.count({ where: { id: { in: existingIds } } })) !== existingIds.length) {
+    throw new AppError("NOT_FOUND", 404, "Guardian not found");
+  }
+};
+
+// Creates the new guardians and links every guardian to the member.
+const linkGuardians = async (db: DbClient, memberId: number, guardians: readonly ResolvedGuardian[]): Promise<void> => {
+  for (const guardian of guardians) {
+    const guardianId =
+      guardian.kind === "existing"
+        ? guardian.id
+        : (
+            await db.guardian.create({
+              data: {
+                name: guardian.name,
+                surname: guardian.surname,
+                email: guardian.email ?? null,
+                phone: guardian.phone ?? null,
+              },
+              select: { id: true },
+            })
+          ).id;
+    await db.memberGuardian.create({ data: { memberId, guardianId } });
+  }
+};
+
+export const createMember = async (db: Db, body: CreateMemberBody, today: Date): Promise<MemberResponse> => {
+  requireGuardianForMinor(body, today);
+  const orgId = requireDbId(body.orgId, "Org not found");
+  const guardians = resolveGuardians(body.guardians);
 
   return db.$transaction(async (tx) => {
     const org = await tx.org.findUnique({ where: { id: orgId }, select: { id: true } });
     if (!org) {
       throw new AppError("NOT_FOUND", 404, "Org not found");
     }
-    if ((await tx.guardian.count({ where: { id: { in: existingIds } } })) !== existingIds.length) {
-      throw new AppError("NOT_FOUND", 404, "Guardian not found");
-    }
+    await requireExistingGuardians(tx, guardians);
 
     const member = await tx.member.create({
       data: {
@@ -120,25 +154,55 @@ export const createMember = async (db: Db, body: CreateMemberBody, today: Date):
       },
       select: { id: true },
     });
-
-    for (const guardian of guardians) {
-      const guardianId =
-        guardian.kind === "existing"
-          ? guardian.id
-          : (
-              await tx.guardian.create({
-                data: {
-                  name: guardian.name,
-                  surname: guardian.surname,
-                  email: guardian.email ?? null,
-                  phone: guardian.phone ?? null,
-                },
-                select: { id: true },
-              })
-            ).id;
-      await tx.memberGuardian.create({ data: { memberId: member.id, guardianId } });
-    }
+    await linkGuardians(tx, member.id, guardians);
 
     return toMemberResponse(await tx.member.findUniqueOrThrow({ where: { id: member.id }, select: memberSelect }));
+  });
+};
+
+export const getMember = async (db: Db, memberId: string): Promise<MemberResponse> => {
+  const member = await db.member.findUnique({
+    where: { id: requireDbId(memberId, "Member not found") },
+    select: memberSelect,
+  });
+  if (!member) {
+    throw new AppError("NOT_FOUND", 404, "Member not found");
+  }
+  return toMemberResponse(member);
+};
+
+// Replaces the editable fields. A taken OIB or login email is a unique
+// constraint error, answered as CONFLICT. Unlinked guardians are kept.
+export const updateMember = async (
+  db: Db,
+  memberId: string,
+  body: UpdateMemberBody,
+  today: Date,
+): Promise<MemberResponse> => {
+  requireGuardianForMinor(body, today);
+  const memberDbId = requireDbId(memberId, "Member not found");
+  const guardians = resolveGuardians(body.guardians);
+
+  return db.$transaction(async (tx) => {
+    if (!(await tx.member.findUnique({ where: { id: memberDbId }, select: { id: true } }))) {
+      throw new AppError("NOT_FOUND", 404, "Member not found");
+    }
+    await requireExistingGuardians(tx, guardians);
+
+    await tx.member.update({
+      where: { id: memberDbId },
+      data: {
+        name: body.name,
+        surname: body.surname,
+        birthday: toDbDate(body.birthday),
+        taxNumber: body.taxNumber ?? null,
+        email: body.email ?? null,
+        phone: body.phone ?? null,
+      },
+    });
+    await tx.memberGuardian.deleteMany({ where: { memberId: memberDbId } });
+    await linkGuardians(tx, memberDbId, guardians);
+
+    return toMemberResponse(await tx.member.findUniqueOrThrow({ where: { id: memberDbId }, select: memberSelect }));
   });
 };

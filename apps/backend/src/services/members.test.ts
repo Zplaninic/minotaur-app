@@ -1,8 +1,8 @@
 import { afterAll, beforeEach, describe, expect, it } from "vitest";
-import { createGuardian, createOrg, resetDb } from "../../test/db.js";
+import { createGuardian, createLoginMember, createOrg, resetDb } from "../../test/db.js";
 import { prisma } from "../db/client.js";
 import { AppError } from "../errors.js";
-import { ageOn, createMember, listMembers } from "./members.js";
+import { ageOn, createMember, getMember, listMembers, updateMember } from "./members.js";
 
 const today = new Date("2026-11-15T12:00:00.000Z");
 
@@ -112,5 +112,77 @@ describe("listMembers", () => {
 
     const second = await listMembers(prisma, { page: 2, pageSize: 2 });
     expect(second.items.map((member) => member.name)).toEqual(["Luka"]);
+  });
+});
+
+describe("updateMember", () => {
+  const edit: Parameters<typeof updateMember>[2] = {
+    name: "Marko",
+    surname: "Babić",
+    birthday: "1990-05-01",
+    guardians: [],
+  };
+
+  it("replaces the fields and clears the ones left out", async () => {
+    const created = await createMember(prisma, adult({ taxNumber: "12345678901", phone: "+385 91 111 2222" }), today);
+    const updated = await updateMember(
+      prisma,
+      created.id,
+      { ...edit, name: "Mario", email: "mario@example.com" },
+      today,
+    );
+    expect(updated).toMatchObject({ name: "Mario", email: "mario@example.com", taxNumber: null, phone: null });
+    expect(await getMember(prisma, created.id)).toEqual(updated);
+  });
+
+  it("replaces the guardians and keeps the unlinked guardian", async () => {
+    const first = await createGuardian(prisma, "Iva", "Horvat");
+    const created = await createMember(
+      prisma,
+      adult({ birthday: "2016-04-02", guardians: [{ kind: "existing", guardianId: first }] }),
+      today,
+    );
+    const updated = await updateMember(
+      prisma,
+      created.id,
+      { ...edit, birthday: "2016-04-02", guardians: [{ kind: "new", name: "Goran", surname: "Babić" }] },
+      today,
+    );
+    expect(updated.guardians.map((guardian) => guardian.name)).toEqual(["Goran"]);
+    expect(await prisma.guardian.count()).toBe(2);
+  });
+
+  it("keeps at least one guardian for a member under 18", async () => {
+    const guardianId = await createGuardian(prisma);
+    const created = await createMember(
+      prisma,
+      adult({ birthday: "2016-04-02", guardians: [{ kind: "existing", guardianId }] }),
+      today,
+    );
+    await expect(updateMember(prisma, created.id, { ...edit, birthday: "2016-04-02" }, today)).rejects.toMatchObject({
+      code: "VALIDATION_ERROR",
+    });
+  });
+
+  it("refuses an OIB or login email another member has", async () => {
+    await createMember(prisma, adult({ taxNumber: "12345678901" }), today);
+    const other = await createMember(prisma, adult({ name: "Ana" }), today);
+    await expect(updateMember(prisma, other.id, { ...edit, taxNumber: "12345678901" }, today)).rejects.toMatchObject({
+      code: "P2002",
+    });
+
+    await createLoginMember(prisma, orgId, "trainer", "trainer@example.com");
+    const { memberId } = await createLoginMember(prisma, orgId, "admin", "admin@example.com");
+    await expect(
+      updateMember(prisma, String(memberId), { ...edit, email: "trainer@example.com" }, today),
+    ).rejects.toMatchObject({ code: "P2002" });
+  });
+
+  it("answers NOT_FOUND for an unknown member or guardian", async () => {
+    await expect(updateMember(prisma, "999999", edit, today)).rejects.toMatchObject({ code: "NOT_FOUND" });
+    const created = await createMember(prisma, adult(), today);
+    await expect(
+      updateMember(prisma, created.id, { ...edit, guardians: [{ kind: "existing", guardianId: "999999" }] }, today),
+    ).rejects.toMatchObject({ code: "NOT_FOUND" });
   });
 });

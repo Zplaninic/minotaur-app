@@ -103,3 +103,37 @@ describe("logged out", () => {
     expect(response.statusCode).toBe(401);
   });
 });
+
+describe("PUT /members/:id and GET /members/:id", () => {
+  it("edits a member and returns it", async () => {
+    const created = memberResponse.parse((await post(body())).json());
+    const response = await app.inject({
+      method: "PUT",
+      url: `/members/${created.id}`,
+      payload: { name: "Mario", surname: "Babić", birthday: "1990-05-01", phone: "+385 91 111 2222" },
+      headers,
+    });
+    expect(response.statusCode).toBe(200);
+    expect(memberResponse.parse(response.json())).toMatchObject({ name: "Mario", phone: "+385 91 111 2222" });
+
+    const fetched = await app.inject({ method: "GET", url: `/members/${created.id}`, headers });
+    expect(memberResponse.parse(fetched.json()).name).toBe("Mario");
+  });
+
+  it("rejects an invalid edit", async () => {
+    const created = memberResponse.parse((await post(body())).json());
+    const response = await app.inject({
+      method: "PUT",
+      url: `/members/${created.id}`,
+      payload: { name: "", surname: "Babić", birthday: "1990-05-01" },
+      headers,
+    });
+    expect(response.statusCode).toBe(400);
+    expect(errorResponse.parse(response.json()).code).toBe("VALIDATION_ERROR");
+  });
+
+  it("answers NOT_FOUND for an unknown member", async () => {
+    const response = await app.inject({ method: "GET", url: "/members/999999", headers });
+    expect(response.statusCode).toBe(404);
+  });
+});

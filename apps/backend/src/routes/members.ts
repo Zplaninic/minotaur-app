@@ -1,7 +1,15 @@
-import { createMemberBody, errorResponse, listMembersQuery, listMembersResponse, memberResponse } from "@repo/shared";
+import {
+  createMemberBody,
+  errorResponse,
+  listMembersQuery,
+  listMembersResponse,
+  memberParams,
+  memberResponse,
+  updateMemberBody,
+} from "@repo/shared";
 import type { FastifyPluginAsync } from "fastify";
 import type { ZodTypeProvider } from "fastify-type-provider-zod";
-import { createMember, listMembers } from "../services/members.js";
+import { createMember, getMember, listMembers, updateMember } from "../services/members.js";
 
 export const memberRoutes: FastifyPluginAsync = async (app) => {
   const routes = app.withTypeProvider<ZodTypeProvider>();
@@ -37,5 +45,39 @@ export const memberRoutes: FastifyPluginAsync = async (app) => {
       },
     },
     async (request, reply) => reply.status(201).send(await createMember(app.db, request.body, new Date())),
+  );
+
+  routes.get(
+    "/:id",
+    {
+      onRequest: app.requireAbility("read", "Member"),
+      schema: {
+        params: memberParams,
+        response: { 200: memberResponse, 401: errorResponse, 403: errorResponse, 404: errorResponse, 500: errorResponse },
+      },
+    },
+    async (request) => getMember(app.db, request.params.id),
+  );
+
+  routes.put(
+    "/:id",
+    {
+      // The edit may bring new guardians, so both abilities are needed.
+      onRequest: [app.requireAbility("update", "Member"), app.requireAbility("create", "Guardian")],
+      schema: {
+        params: memberParams,
+        body: updateMemberBody,
+        response: {
+          200: memberResponse,
+          400: errorResponse,
+          401: errorResponse,
+          403: errorResponse,
+          404: errorResponse,
+          409: errorResponse,
+          500: errorResponse,
+        },
+      },
+    },
+    async (request) => updateMember(app.db, request.params.id, request.body, new Date()),
   );
 };
