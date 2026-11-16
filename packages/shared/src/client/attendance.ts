@@ -68,6 +68,28 @@ export const addMonthMember = (api: ApiClient, groupId: string, month: Month, me
 export const removeMonthMember = (api: ApiClient, groupId: string, month: Month, memberId: string) =>
   api.fetch(monthMemberPath(groupId, month, memberId), z.undefined(), { method: "DELETE" });
 
+// The server answers 204 with no body. null clears the subscription.
+export const setMonthSubscription = (
+  api: ApiClient,
+  groupId: string,
+  month: Month,
+  memberId: string,
+  subscriptionId: string | null,
+) =>
+  api.fetch(`${monthMemberPath(groupId, month, memberId)}/subscription`, z.undefined(), {
+    method: "PUT",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({ subscriptionId }),
+  });
+
+// The server answers 204 with no body.
+export const setMonthPaid = (api: ApiClient, groupId: string, month: Month, memberId: string, paid: boolean) =>
+  api.fetch(`${monthMemberPath(groupId, month, memberId)}/paid`, z.undefined(), {
+    method: "PUT",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({ paid }),
+  });
+
 // The group's members who are not on the month's roster yet.
 export const monthRosterCandidates = <Member extends { id: string }>(
   groupMembers: readonly Member[],

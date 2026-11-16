@@ -6,3 +6,4 @@ export * from "./guardian.js";
 export * from "./member.js";
 export * from "./org.js";
 export * from "./person.js";
+export * from "./subscription.js";

@@ -2,7 +2,7 @@ import { AbilityBuilder, createMongoAbility, type MongoAbility } from "@casl/abi
 import type { MemberRole } from "../types/member.js";
 
 export type Action = "manage" | "read" | "create" | "update" | "delete";
-export type Subject = "Org" | "Guardian" | "Member" | "Group" | "Attendance" | "all";
+export type Subject = "Org" | "Guardian" | "Member" | "Group" | "Attendance" | "Subscription" | "all";
 export type AppAbility = MongoAbility<[Action, Subject]>;
 
 export type AbilityUser = { memberId: string; role: MemberRole };
@@ -18,8 +18,8 @@ export const defineAbilityFor = (user: AbilityUser): AppAbility => {
       break;
     case "trainer":
       can("manage", "all");
-      // Trainers see the groups; only admins set them up.
-      cannot(["create", "update", "delete"], "Group");
+      // Trainers see groups and subscriptions; only admins set them up.
+      cannot(["create", "update", "delete"], ["Group", "Subscription"]);
       break;
     case "member":
     case "child":

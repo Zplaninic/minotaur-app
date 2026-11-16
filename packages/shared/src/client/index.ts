@@ -9,4 +9,6 @@ export * from "./guardians.js";
 export * from "./memberDraft.js";
 export * from "./members.js";
 export * from "./orgs.js";
+export * from "./subscriptionDraft.js";
+export * from "./subscriptions.js";
 export * from "./timeOfDay.js";

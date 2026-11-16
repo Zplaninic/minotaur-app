@@ -87,8 +87,8 @@ describe("applyAttendanceChange", () => {
   const data = {
     sessions,
     members: [
-      { id: "7", name: "Leo", surname: "Perić", attendedSessionIds: ["1"] },
-      { id: "8", name: "Nora", surname: "Jurić", attendedSessionIds: [] },
+      { id: "7", name: "Leo", surname: "Perić", attendedSessionIds: ["1"], subscription: null, paid: false },
+      { id: "8", name: "Nora", surname: "Jurić", attendedSessionIds: [], subscription: null, paid: false },
     ],
   };
 

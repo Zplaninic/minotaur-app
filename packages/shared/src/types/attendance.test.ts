@@ -1,5 +1,12 @@
 import { describe, expect, it } from "vitest";
-import { createTrainingSessionBody, groupAttendanceResponse, monthMemberParams, monthQuery } from "./attendance.js";
+import {
+  createTrainingSessionBody,
+  groupAttendanceResponse,
+  monthMemberParams,
+  monthQuery,
+  setMonthPaidBody,
+  setMonthSubscriptionBody,
+} from "./attendance.js";
 
 describe("monthQuery", () => {
   it("accepts YYYY-MM", () => {
@@ -26,9 +33,28 @@ describe("groupAttendanceResponse", () => {
         { id: "1", date: "2026-11-02" },
         { id: "2", date: "2026-11-04" },
       ],
-      members: [{ id: "7", name: "Leo", surname: "Perić", attendedSessionIds: ["1"] }],
+      members: [
+        { id: "7", name: "Leo", surname: "Perić", attendedSessionIds: ["1"], subscription: null, paid: false },
+        {
+          id: "8",
+          name: "Nora",
+          surname: "Jurić",
+          attendedSessionIds: [],
+          subscription: { id: "3", name: "Kids 2x", sessionsPerWeek: 2, price: 4500 },
+          paid: true,
+        },
+      ],
     };
     expect(groupAttendanceResponse.parse(value)).toEqual(value);
+  });
+});
+
+describe("setMonthSubscriptionBody", () => {
+  it("takes a subscription id or null", () => {
+    expect(setMonthSubscriptionBody.parse({ subscriptionId: "3" })).toEqual({ subscriptionId: "3" });
+    expect(setMonthSubscriptionBody.parse({ subscriptionId: null })).toEqual({ subscriptionId: null });
+    expect(setMonthSubscriptionBody.safeParse({}).success).toBe(false);
+    expect(setMonthSubscriptionBody.safeParse({ subscriptionId: "" }).success).toBe(false);
   });
 });
 
@@ -36,5 +62,13 @@ describe("monthMemberParams", () => {
   it("requires a YYYY-MM month", () => {
     expect(monthMemberParams.safeParse({ id: "1", month: "2026-11", memberId: "4" }).success).toBe(true);
     expect(monthMemberParams.safeParse({ id: "1", month: "2026-11-01", memberId: "4" }).success).toBe(false);
+  });
+});
+
+describe("setMonthPaidBody", () => {
+  it("takes a boolean", () => {
+    expect(setMonthPaidBody.parse({ paid: true })).toEqual({ paid: true });
+    expect(setMonthPaidBody.safeParse({ paid: "yes" }).success).toBe(false);
+    expect(setMonthPaidBody.safeParse({}).success).toBe(false);
   });
 });

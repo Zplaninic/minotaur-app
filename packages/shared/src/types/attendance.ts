@@ -1,5 +1,6 @@
 import { z } from "zod";
 import { id } from "./common.js";
+import { priceCents, sessionsPerWeek } from "./subscription.js";
 
 // Attendance starts with this month; there is nothing before it.
 export const FIRST_MONTH = "2026-09";
@@ -27,11 +28,24 @@ export const trainingSessionResponse = z.object({
 });
 export type TrainingSessionResponse = z.infer<typeof trainingSessionResponse>;
 
+// A member's subscription for one month in one group. sessionsPerWeek and
+// price are as they were when it was set; name is the subscription's current name.
+export const monthMemberSubscription = z.object({
+  id,
+  name: z.string(),
+  sessionsPerWeek,
+  price: priceCents,
+});
+export type MonthMemberSubscription = z.infer<typeof monthMemberSubscription>;
+
 export const attendanceMemberResponse = z.object({
   id,
   name: z.string(),
   surname: z.string(),
   attendedSessionIds: z.array(id),
+  subscription: monthMemberSubscription.nullable(),
+  // Whether the member paid for this month.
+  paid: z.boolean(),
 });
 export type AttendanceMemberResponse = z.infer<typeof attendanceMemberResponse>;
 
@@ -50,3 +64,10 @@ export type AttendanceParams = z.infer<typeof attendanceParams>;
 
 export const monthMemberParams = z.object({ id, month, memberId: id });
 export type MonthMemberParams = z.infer<typeof monthMemberParams>;
+
+// null clears the member's subscription for the month.
+export const setMonthSubscriptionBody = z.object({ subscriptionId: id.nullable() });
+export type SetMonthSubscriptionBody = z.infer<typeof setMonthSubscriptionBody>;
+
+export const setMonthPaidBody = z.object({ paid: z.boolean() });
+export type SetMonthPaidBody = z.infer<typeof setMonthPaidBody>;

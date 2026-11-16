@@ -22,3 +22,10 @@ export const formatMonth = (month: string, locale: string): string =>
   new Intl.DateTimeFormat(locale, { month: "long", year: "numeric", timeZone: "UTC" }).format(
     new Date(`${month}-01T00:00:00.000Z`),
   );
+
+// The club charges in euros.
+export const CURRENCY = "EUR";
+
+// A price in euro cents, e.g. "€45.50".
+export const formatMoney = (cents: number, locale: string): string =>
+  new Intl.NumberFormat(locale, { style: "currency", currency: CURRENCY }).format(cents / 100);
