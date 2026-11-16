@@ -1,3 +1,4 @@
+import { z } from "zod";
 import { MAX_PAGE_SIZE, type PaginationQuery } from "../types/common.js";
 import {
   listMembersResponse,
@@ -87,3 +88,10 @@ export const keysToInvalidateAfterUpdateMember = [
   groupKeys.all,
   attendanceKeys.all,
 ] as const;
+
+// The server answers 204 with no body.
+export const archiveMember = (api: ApiClient, memberId: string): Promise<undefined> =>
+  api.fetch(`/members/${encodeURIComponent(memberId)}`, z.undefined(), { method: "DELETE" });
+
+// An archived member leaves every list, their groups, and the future month rosters.
+export const keysToInvalidateAfterArchiveMember = [memberKeys.all, groupKeys.all, attendanceKeys.all] as const;

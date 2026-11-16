@@ -1,7 +1,7 @@
 import { describe, expect, it } from "vitest";
 import type { ApiClient } from "./apiClient.js";
 import { formatCalendarDate, formatSortedName } from "./format.js";
-import { fetchAllMembers, memberKeys, nextMembersPage } from "./members.js";
+import { archiveMember, fetchAllMembers, memberKeys, nextMembersPage } from "./members.js";
 
 describe("nextMembersPage", () => {
   it("returns the next page while members remain", () => {
@@ -32,6 +32,20 @@ describe("fetchAllMembers", () => {
     };
     expect(await fetchAllMembers(api)).toEqual([]);
     expect(paths).toEqual(["/members?page=1&pageSize=100", "/members?page=2&pageSize=100"]);
+  });
+});
+
+describe("archiveMember", () => {
+  it("sends DELETE to the member and accepts an empty answer", async () => {
+    const calls: { path: string; method: string | undefined }[] = [];
+    const api: ApiClient = {
+      fetch: async (path, schema, init) => {
+        calls.push({ path, method: init?.method });
+        return schema.parse(undefined);
+      },
+    };
+    expect(await archiveMember(api, "7")).toBeUndefined();
+    expect(calls).toEqual([{ path: "/members/7", method: "DELETE" }]);
   });
 });
 

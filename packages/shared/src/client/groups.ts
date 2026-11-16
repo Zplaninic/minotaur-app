@@ -49,6 +49,12 @@ export const createGroup = (api: ApiClient, body: CreateGroupBody): Promise<Grou
 export const keysToInvalidateAfterCreateGroup = [groupKeys.all] as const;
 
 // The server answers 204 with no body.
+export const archiveGroup = (api: ApiClient, groupId: string): Promise<undefined> =>
+  api.fetch(groupPath(groupId), z.undefined(), { method: "DELETE" });
+
+export const keysToInvalidateAfterArchiveGroup = [groupKeys.all, attendanceKeys.all] as const;
+
+// The server answers 204 with no body.
 export const addGroupMember = (api: ApiClient, groupId: string, memberId: string): Promise<undefined> =>
   api.fetch(groupMemberPath(groupId, memberId), z.undefined(), { method: "PUT" });
 
