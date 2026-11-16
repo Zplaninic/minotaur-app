@@ -11,6 +11,7 @@ import { guardianRoutes } from "./routes/guardians.js";
 import { memberRoutes } from "./routes/members.js";
 import { meRoutes } from "./routes/me.js";
 import { orgRoutes } from "./routes/orgs.js";
+import { subscriptionRoutes } from "./routes/subscriptions.js";
 
 export const buildServer = async (): Promise<FastifyInstance> => {
   const app = Fastify({
@@ -38,6 +39,7 @@ export const buildServer = async (): Promise<FastifyInstance> => {
   await app.register(memberRoutes, { prefix: "/members" });
   await app.register(groupRoutes, { prefix: "/groups" });
   await app.register(attendanceRoutes, { prefix: "/groups" });
+  await app.register(subscriptionRoutes, { prefix: "/subscriptions" });
 
   return app;
 };

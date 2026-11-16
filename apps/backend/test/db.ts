@@ -9,6 +9,7 @@ export const resetDb = async (db: Db): Promise<void> => {
     db.attendance.deleteMany(),
     db.trainingSession.deleteMany(),
     db.groupMonthMember.deleteMany(),
+    db.memberMonth.deleteMany(),
     db.groupMember.deleteMany(),
     db.group.deleteMany(),
     db.session.deleteMany(),
@@ -17,6 +18,7 @@ export const resetDb = async (db: Db): Promise<void> => {
     db.member.deleteMany(),
     db.guardian.deleteMany(),
     db.org.deleteMany(),
+    db.subscription.deleteMany(),
   ]);
 };
 

@@ -78,6 +78,7 @@ model Member {
   groupMemberships GroupMember[]
   attendance       Attendance[]
   monthMemberships GroupMonthMember[]
+  months           MemberMonth[]
 
   // Active people who can log in never share an email. The roles listed here must
   // match LOGIN_ROLES in @repo/shared/auth. Written the way Postgres stores
@@ -188,15 +189,57 @@ model Attendance {
 // The members shown and tickable in one month of a group. Copied from the
 // group's members when the month gets its first session, then edited per month.
 model GroupMonthMember {
-  groupId   Int
+  groupId     Int
   // The first day of the month.
-  month     DateTime @db.Date
-  memberId  Int
-  createdAt DateTime @default(now()) @db.Timestamptz
-  group     Group    @relation(fields: [groupId], references: [id], onDelete: Cascade)
-  member    Member   @relation(fields: [memberId], references: [id], onDelete: Cascade)
+  month       DateTime    @db.Date
+  memberId    Int
+  createdAt   DateTime    @default(now()) @db.Timestamptz
+  group       Group       @relation(fields: [groupId], references: [id], onDelete: Cascade)
+  member      Member      @relation(fields: [memberId], references: [id], onDelete: Cascade)
+  // The member's subscription and payment for the month, shared by all their groups.
+  memberMonth MemberMonth @relation(fields: [memberId, month], references: [memberId, month], onDelete: Restrict)
 
   @@id([groupId, month, memberId])
-  @@index([memberId])
+  @@index([memberId, month])
   @@map("group_month_member")
+}
+
+// One member's subscription and payment for one month, whatever groups they
+// train in. Created when the member first joins a roster that month.
+model MemberMonth {
+  memberId                    Int
+  // The first day of the month.
+  month                       DateTime           @db.Date
+  // The three subscription fields are set or cleared together; price and
+  // sessions are copied when it is set, so later edits to the subscription
+  // leave this month as it was.
+  subscriptionId              Int?
+  // Euro cents.
+  subscriptionPrice           Int?
+  subscriptionSessionsPerWeek Int?
+  // Only a month with a subscription can be paid.
+  paid                        Boolean            @default(false)
+  createdAt                   DateTime           @default(now()) @db.Timestamptz
+  updatedAt                   DateTime           @updatedAt @db.Timestamptz
+  member                      Member             @relation(fields: [memberId], references: [id], onDelete: Cascade)
+  subscription                Subscription?      @relation(fields: [subscriptionId], references: [id], onDelete: Restrict)
+  rosters                     GroupMonthMember[]
+
+  @@id([memberId, month])
+  @@index([subscriptionId])
+  @@map("member_month")
+}
+
+// A subscription the club offers, e.g. "Kids 2x": sessions per week and a monthly price.
+model Subscription {
+  id              Int           @id @default(autoincrement())
+  name            String        @unique
+  sessionsPerWeek Int
+  // Euro cents.
+  price           Int
+  createdAt       DateTime      @default(now()) @db.Timestamptz
+  updatedAt       DateTime      @updatedAt @db.Timestamptz
+  memberMonths    MemberMonth[]
+
+  @@map("subscription")
 }

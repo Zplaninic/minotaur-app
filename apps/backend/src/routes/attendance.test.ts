@@ -6,6 +6,7 @@ import { config } from "../config.js";
 import { buildServer } from "../server.js";
 import { isoDateIn, monthOf, trainingDates } from "../services/attendance.js";
 import { addGroupMember, createGroup } from "../services/groups.js";
+import { createSubscription } from "../services/subscriptions.js";
 
 
 // Routes use the real clock, so the dates follow the gym's current month.
@@ -175,5 +176,94 @@ describe("PUT and DELETE /groups/:id/months/:month/members/:memberId", () => {
     });
     expect(response.statusCode).toBe(400);
     expect(errorResponse.parse(response.json()).code).toBe("VALIDATION_ERROR");
+  });
+});
+
+describe("PUT /groups/:id/months/:month/members/:memberId/subscription", () => {
+  const url = () => `/groups/${groupId}/months/${thisMonth}/members/${childId}/subscription`;
+  const put = (payload: object, headers: Record<string, string> = trainer) =>
+    app.inject({ method: "PUT", url: url(), payload, headers });
+
+  it("lets a trainer set and clear a member's subscription", async () => {
+    await addSession(firstOfThisMonth);
+    const subscription = await createSubscription(app.db, { name: "Kids 2x", sessionsPerWeek: 2, price: 4500 });
+
+    expect((await put({ subscriptionId: subscription.id })).statusCode).toBe(204);
+    expect(groupAttendanceResponse.parse((await getMonth(thisMonth)).json()).members[0]?.subscription).toEqual({
+      id: subscription.id,
+      name: "Kids 2x",
+      sessionsPerWeek: 2,
+      price: 4500,
+    });
+
+    expect((await put({ subscriptionId: null })).statusCode).toBe(204);
+    expect(groupAttendanceResponse.parse((await getMonth(thisMonth)).json()).members[0]?.subscription).toBeNull();
+  });
+
+  it.each([
+    ["no body field", {}],
+    ["an empty id", { subscriptionId: "" }],
+  ])("rejects %s", async (_label, payload) => {
+    await addSession(firstOfThisMonth);
+    const response = await put(payload);
+    expect(response.statusCode).toBe(400);
+    expect(errorResponse.parse(response.json()).code).toBe("VALIDATION_ERROR");
+  });
+
+  it("answers NOT_FOUND for an unknown subscription", async () => {
+    await addSession(firstOfThisMonth);
+    const response = await put({ subscriptionId: "999999" });
+    expect(response.statusCode).toBe(404);
+  });
+
+  it("answers UNAUTHORIZED without a session", async () => {
+    const response = await put({ subscriptionId: null }, {});
+    expect(response.statusCode).toBe(401);
+  });
+});
+
+describe("PUT /groups/:id/months/:month/members/:memberId/paid", () => {
+  const put = (payload: object, headers: Record<string, string> = trainer) =>
+    app.inject({
+      method: "PUT",
+      url: `/groups/${groupId}/months/${thisMonth}/members/${childId}/paid`,
+      payload,
+      headers,
+    });
+
+  it("marks a member's month paid", async () => {
+    await addSession(firstOfThisMonth);
+    const subscription = await createSubscription(app.db, { name: "Kids 2x", sessionsPerWeek: 2, price: 4500 });
+    await app.inject({
+      method: "PUT",
+      url: `/groups/${groupId}/months/${thisMonth}/members/${childId}/subscription`,
+      payload: { subscriptionId: subscription.id },
+      headers: trainer,
+    });
+    expect((await put({ paid: true })).statusCode).toBe(204);
+    expect(groupAttendanceResponse.parse((await getMonth(thisMonth)).json()).members[0]?.paid).toBe(true);
+  });
+
+  it("rejects a body without a boolean", async () => {
+    await addSession(firstOfThisMonth);
+    const response = await put({ paid: "yes" });
+    expect(response.statusCode).toBe(400);
+    expect(errorResponse.parse(response.json()).code).toBe("VALIDATION_ERROR");
+  });
+
+  it("rejects a member who is not on the month's roster", async () => {
+    const response = await put({ paid: true });
+    expect(response.statusCode).toBe(400);
+  });
+
+  it("rejects paid without a subscription", async () => {
+    await addSession(firstOfThisMonth);
+    const response = await put({ paid: true });
+    expect(response.statusCode).toBe(400);
+    expect(errorResponse.parse(response.json()).code).toBe("VALIDATION_ERROR");
+  });
+
+  it("answers UNAUTHORIZED without a session", async () => {
+    expect((await put({ paid: true }, {})).statusCode).toBe(401);
   });
 });

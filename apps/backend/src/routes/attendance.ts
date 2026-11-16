@@ -7,6 +7,8 @@ import {
   groupParams,
   monthMemberParams,
   monthQuery,
+  setMonthPaidBody,
+  setMonthSubscriptionBody,
   trainingSessionParams,
   trainingSessionResponse,
 } from "@repo/shared";
@@ -23,6 +25,8 @@ import {
   isoDateIn,
   markAttendance,
   removeMonthMember,
+  setMonthPaid,
+  setMonthSubscription,
   unmarkAttendance,
 } from "../services/attendance.js";
 
@@ -189,6 +193,54 @@ export const attendanceRoutes: FastifyPluginAsync = async (app) => {
     async (request, reply) => {
       const { id, month, memberId } = request.params;
       await addMonthMember(app.db, { groupId: id, month, memberId });
+      return reply.status(204).send();
+    },
+  );
+
+  routes.put(
+    "/:id/months/:month/members/:memberId/subscription",
+    {
+      onRequest: app.requireAbility("update", "Attendance"),
+      schema: {
+        params: monthMemberParams,
+        body: setMonthSubscriptionBody,
+        response: {
+          204: z.undefined(),
+          400: errorResponse,
+          401: errorResponse,
+          403: errorResponse,
+          404: errorResponse,
+          500: errorResponse,
+        },
+      },
+    },
+    async (request, reply) => {
+      const { id, month, memberId } = request.params;
+      await setMonthSubscription(app.db, { groupId: id, month, memberId }, request.body.subscriptionId);
+      return reply.status(204).send();
+    },
+  );
+
+  routes.put(
+    "/:id/months/:month/members/:memberId/paid",
+    {
+      onRequest: app.requireAbility("update", "Attendance"),
+      schema: {
+        params: monthMemberParams,
+        body: setMonthPaidBody,
+        response: {
+          204: z.undefined(),
+          400: errorResponse,
+          401: errorResponse,
+          403: errorResponse,
+          404: errorResponse,
+          500: errorResponse,
+        },
+      },
+    },
+    async (request, reply) => {
+      const { id, month, memberId } = request.params;
+      await setMonthPaid(app.db, { groupId: id, month, memberId }, request.body.paid);
       return reply.status(204).send();
     },
   );

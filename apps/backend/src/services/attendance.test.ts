@@ -10,10 +10,13 @@ import {
   isoDateIn,
   markAttendance,
   removeMonthMember,
+  setMonthPaid,
+  setMonthSubscription,
   trainingDates,
   unmarkAttendance,
 } from "./attendance.js";
 import { addGroupMember, archiveGroup, createGroup, removeGroupMember } from "./groups.js";
+import { createSubscription, updateSubscription } from "./subscriptions.js";
 
 let orgId: string;
 let groupId: string;
@@ -123,7 +126,7 @@ describe("getGroupAttendance", () => {
       { id: second, date: "2026-11-04" },
     ]);
     expect(attendance.members).toEqual([
-      { id: childId, name: "Test", surname: "child", attendedSessionIds: [second] },
+      { id: childId, name: "Test", surname: "child", attendedSessionIds: [second], subscription: null, paid: false },
     ]);
   });
 });
@@ -283,5 +286,160 @@ describe("month rosters", () => {
     await expect(markAttendance(prisma, { groupId, sessionId, memberId: childId }, TODAY)).rejects.toMatchObject({
       code: "VALIDATION_ERROR",
     });
+  });
+});
+
+describe("month subscriptions", () => {
+  const kids = { name: "Kids 2x", sessionsPerWeek: 2, price: 4500 };
+  const target = (month: string) => ({ groupId, month, memberId: childId });
+  const subscriptionIn = async (month: string) =>
+    (await getGroupAttendance(prisma, groupId, month)).members.find((member) => member.id === childId)?.subscription;
+
+  it("sets a subscription with its price and sessions as they are now", async () => {
+    await createMonthSessions(prisma, groupId, "2026-11", TODAY);
+    const subscription = await createSubscription(prisma, kids);
+    await setMonthSubscription(prisma, target("2026-11"), subscription.id);
+    await updateSubscription(prisma, subscription.id, { name: "Kids", sessionsPerWeek: 3, price: 6000 });
+
+    expect(await subscriptionIn("2026-11")).toEqual({ id: subscription.id, name: "Kids", sessionsPerWeek: 2, price: 4500 });
+  });
+
+  it("clears a subscription", async () => {
+    await createMonthSessions(prisma, groupId, "2026-11", TODAY);
+    const subscription = await createSubscription(prisma, kids);
+    await setMonthSubscription(prisma, target("2026-11"), subscription.id);
+    await setMonthSubscription(prisma, target("2026-11"), null);
+
+    expect(await subscriptionIn("2026-11")).toBeNull();
+  });
+
+  it("carries the latest earlier month's subscription into a new month, at today's price", async () => {
+    await createMonthSessions(prisma, groupId, "2026-10", "2026-10-01");
+    const subscription = await createSubscription(prisma, kids);
+    await setMonthSubscription(prisma, target("2026-10"), subscription.id);
+    await updateSubscription(prisma, subscription.id, { ...kids, price: 5000 });
+    // November is skipped: December carries over from October.
+    await createMonthSessions(prisma, groupId, "2026-12", TODAY);
+
+    expect(await subscriptionIn("2026-12")).toEqual({ id: subscription.id, name: "Kids 2x", sessionsPerWeek: 2, price: 5000 });
+  });
+
+  it("carries a cleared subscription as none", async () => {
+    const subscription = await createSubscription(prisma, kids);
+    await createMonthSessions(prisma, groupId, "2026-10", "2026-10-01");
+    await setMonthSubscription(prisma, target("2026-10"), subscription.id);
+    await createMonthSessions(prisma, groupId, "2026-11", TODAY);
+    await setMonthSubscription(prisma, target("2026-11"), null);
+    await createMonthSessions(prisma, groupId, "2026-12", TODAY);
+
+    expect(await subscriptionIn("2026-12")).toBeNull();
+  });
+
+  it("carries the subscription when a member is added back to a month", async () => {
+    await createMonthSessions(prisma, groupId, "2026-10", "2026-10-01");
+    const subscription = await createSubscription(prisma, kids);
+    await setMonthSubscription(prisma, target("2026-10"), subscription.id);
+    await createMonthSessions(prisma, groupId, "2026-11", TODAY);
+    await removeMonthMember(prisma, target("2026-11"));
+    await addMonthMember(prisma, target("2026-11"));
+
+    expect((await subscriptionIn("2026-11"))?.id).toBe(subscription.id);
+  });
+
+  it("only sets a subscription for a member on the month's roster", async () => {
+    const subscription = await createSubscription(prisma, kids);
+    await expect(setMonthSubscription(prisma, target("2026-11"), subscription.id)).rejects.toMatchObject({
+      code: "VALIDATION_ERROR",
+    });
+  });
+
+  it("answers NOT_FOUND for an unknown subscription", async () => {
+    await createMonthSessions(prisma, groupId, "2026-11", TODAY);
+    await expect(setMonthSubscription(prisma, target("2026-11"), "999999")).rejects.toMatchObject({
+      code: "NOT_FOUND",
+    });
+  });
+});
+
+describe("month paid", () => {
+  const target = (month: string) => ({ groupId, month, memberId: childId });
+  const monthOfChild = async (month: string) =>
+    (await getGroupAttendance(prisma, groupId, month)).members.find((member) => member.id === childId);
+  const withSubscription = async (month: string) => {
+    const subscription = await createSubscription(prisma, { name: "Kids 2x", sessionsPerWeek: 2, price: 4500 });
+    await setMonthSubscription(prisma, target(month), subscription.id);
+    return subscription;
+  };
+
+  it("marks a month with a subscription paid and unpaid", async () => {
+    await createMonthSessions(prisma, groupId, "2026-11", TODAY);
+    await withSubscription("2026-11");
+    expect((await monthOfChild("2026-11"))?.paid).toBe(false);
+    await setMonthPaid(prisma, target("2026-11"), true);
+    expect((await monthOfChild("2026-11"))?.paid).toBe(true);
+    await setMonthPaid(prisma, target("2026-11"), false);
+    expect((await monthOfChild("2026-11"))?.paid).toBe(false);
+  });
+
+  it("refuses to mark a month without a subscription paid", async () => {
+    await createMonthSessions(prisma, groupId, "2026-11", TODAY);
+    await expect(setMonthPaid(prisma, target("2026-11"), true)).rejects.toMatchObject({ code: "VALIDATION_ERROR" });
+  });
+
+  it("refuses to clear the subscription of a paid month, but allows switching it", async () => {
+    await createMonthSessions(prisma, groupId, "2026-11", TODAY);
+    await withSubscription("2026-11");
+    await setMonthPaid(prisma, target("2026-11"), true);
+    await expect(setMonthSubscription(prisma, target("2026-11"), null)).rejects.toMatchObject({ code: "CONFLICT" });
+
+    const other = await createSubscription(prisma, { name: "Kids 1x", sessionsPerWeek: 1, price: 3000 });
+    await setMonthSubscription(prisma, target("2026-11"), other.id);
+    expect(await monthOfChild("2026-11")).toMatchObject({ subscription: { id: other.id }, paid: true });
+  });
+
+  it("starts every new month unpaid", async () => {
+    await createMonthSessions(prisma, groupId, "2026-11", TODAY);
+    await withSubscription("2026-11");
+    await setMonthPaid(prisma, target("2026-11"), true);
+    await createMonthSessions(prisma, groupId, "2026-12", TODAY);
+    expect(await monthOfChild("2026-12")).toMatchObject({ subscription: { name: "Kids 2x" }, paid: false });
+  });
+
+  it("only marks members on the month's roster", async () => {
+    await expect(setMonthPaid(prisma, target("2026-11"), false)).rejects.toMatchObject({ code: "VALIDATION_ERROR" });
+  });
+});
+
+describe("one subscription and payment per member per month", () => {
+  let otherGroupId: string;
+
+  beforeEach(async () => {
+    const trainerId = String((await createLoginMember(prisma, orgId, "trainer", "other@example.com")).memberId);
+    otherGroupId = (await createGroup(prisma, { ownerId: trainerId, days: ["friday"], from: "17:00", to: "18:00" })).id;
+    await addGroupMember(prisma, otherGroupId, childId, TODAY);
+  });
+
+  const inGroup = async (id: string, month: string) =>
+    (await getGroupAttendance(prisma, id, month)).members.find((member) => member.id === childId);
+
+  it("shows a subscription and payment set in one group in every group", async () => {
+    await createMonthSessions(prisma, groupId, "2026-11", TODAY);
+    await createMonthSessions(prisma, otherGroupId, "2026-11", TODAY);
+    const subscription = await createSubscription(prisma, { name: "Kids 3x", sessionsPerWeek: 3, price: 6000 });
+    await setMonthSubscription(prisma, { groupId, month: "2026-11", memberId: childId }, subscription.id);
+    await setMonthPaid(prisma, { groupId: otherGroupId, month: "2026-11", memberId: childId }, true);
+
+    for (const id of [groupId, otherGroupId]) {
+      expect(await inGroup(id, "2026-11")).toMatchObject({ subscription: { id: subscription.id }, paid: true });
+    }
+  });
+
+  it("carries the subscription from another group's earlier month", async () => {
+    await createMonthSessions(prisma, groupId, "2026-10", "2026-10-01");
+    const subscription = await createSubscription(prisma, { name: "Kids 3x", sessionsPerWeek: 3, price: 6000 });
+    await setMonthSubscription(prisma, { groupId, month: "2026-10", memberId: childId }, subscription.id);
+    await createMonthSessions(prisma, otherGroupId, "2026-11", TODAY);
+
+    expect((await inGroup(otherGroupId, "2026-11"))?.subscription?.id).toBe(subscription.id);
   });
 });

@@ -11,7 +11,7 @@ import {
 import type { Db } from "../db/client.js";
 import { AppError } from "../errors.js";
 import type { Prisma } from "../generated/prisma/client.js";
-import { monthOf, monthStart, monthsFrom } from "./attendance.js";
+import { ensureMemberMonths, monthOf, monthStart, monthsFrom } from "./attendance.js";
 import { guardianSelect, toGuardianResponse } from "./guardians.js";
 import { toApiId, toDbId } from "./ids.js";
 
@@ -166,6 +166,9 @@ export const addGroupMember = async (db: Db, groupId: string, memberId: string, 
       update: {},
     });
     const months = await monthsFrom(tx, groupDbId, monthOf(today));
+    for (const month of months) {
+      await ensureMemberMonths(tx, month, [memberDbId]);
+    }
     await tx.groupMonthMember.createMany({
       data: months.map((month) => ({ groupId: groupDbId, month: monthStart(month), memberId: memberDbId })),
       skipDuplicates: true,
