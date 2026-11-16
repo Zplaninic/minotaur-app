@@ -67,6 +67,12 @@ export const GroupScreen = ({ groupId }: GroupScreenProps) => {
             <Text accessibilityRole="header" style={styles.title}>
               {groupName(group.data)}
             </Text>
+            {ability.can("read", "Attendance") ? (
+              <Button
+                label={t("group.attendance")}
+                onPress={() => router.push({ pathname: "/groups/[id]/attendance", params: { id: groupId } })}
+              />
+            ) : null}
             <Text accessibilityRole="header" style={styles.subtitle}>
               {t("groupMembers.title")}
             </Text>

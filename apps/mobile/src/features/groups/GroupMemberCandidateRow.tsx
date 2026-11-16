@@ -5,17 +5,19 @@ import { t } from "../../lib/messages";
 import { bodyLineHeight, borders, colors, fonts, fontSizes, minTouchSize, opacity, spacing } from "../../theme/tokens";
 
 type GroupMemberCandidateRowProps = {
-  member: MemberResponse;
+  member: Pick<MemberResponse, "name" | "surname">;
   onAdd: () => void;
   disabled: boolean;
+  // Defaults to "Add {name} to the group".
+  accessibilityLabel?: string;
 };
 
-export const GroupMemberCandidateRow = ({ member, onAdd, disabled }: GroupMemberCandidateRowProps) => (
+export const GroupMemberCandidateRow = ({ member, onAdd, disabled, accessibilityLabel }: GroupMemberCandidateRowProps) => (
   <Pressable
     onPress={onAdd}
     disabled={disabled}
     accessibilityRole="button"
-    accessibilityLabel={t("groupMemberForm.addLabel", { name: formatPersonName(member) })}
+    accessibilityLabel={accessibilityLabel ?? t("groupMemberForm.addLabel", { name: formatPersonName(member) })}
     accessibilityState={{ disabled }}
     style={({ pressed }) => [styles.row, pressed && styles.rowPressed, disabled && styles.disabled]}
   >
