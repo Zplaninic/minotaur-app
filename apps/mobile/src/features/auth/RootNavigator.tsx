@@ -58,6 +58,10 @@ export const RootNavigator = () => {
           name="members/new"
           options={{ ...headerOptions, title: t("memberForm.title"), presentation: "modal" }}
         />
+        <Stack.Screen
+          name="members/[id]/edit"
+          options={{ ...headerOptions, title: t("memberForm.editTitle"), presentation: "modal" }}
+        />
         <Stack.Screen name="groups/index" options={{ ...headerOptions, title: t("groups.title") }} />
         <Stack.Screen
           name="groups/new"

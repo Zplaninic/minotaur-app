@@ -38,6 +38,13 @@ describe("MembersScreen", () => {
     expect(fetchMock).toHaveBeenCalledWith("/members?page=1&pageSize=20", expect.anything());
   });
 
+  it("labels trainers", async () => {
+    membersAnswer(async () => ({ items: [ana, { ...ana, id: "2", name: "Marko", role: "trainer" }], page: 1, pageSize: 20, total: 2 }));
+    await renderScreen();
+    expect(await screen.findByText("Horvat Marko")).toBeOnTheScreen();
+    expect(screen.getAllByText(t("members.trainerLabel"))).toHaveLength(1);
+  });
+
   it("shows the empty state when there are no members", async () => {
     membersAnswer(async () => ({ items: [], page: 1, pageSize: 20, total: 0 }));
     await renderScreen();
@@ -58,6 +65,13 @@ describe("MembersScreen", () => {
     online = true;
     await fireEvent.press(screen.getByRole("button", { name: t("common.retry") }));
     expect(await screen.findByText("Horvat Ana")).toBeOnTheScreen();
+  });
+
+  it("opens a member's edit screen on tap", async () => {
+    membersAnswer(async () => ({ items: [ana], page: 1, pageSize: 20, total: 1 }));
+    await renderScreen();
+    await fireEvent.press(await screen.findByText("Horvat Ana"));
+    expect(mockPush).toHaveBeenCalledWith({ pathname: "/members/[id]/edit", params: { id: "1" } });
   });
 
   it("opens the add-member screen", async () => {

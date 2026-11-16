@@ -1,6 +1,7 @@
 import type { GroupMemberResponse, GroupResponse } from "@repo/shared";
 import { ApiError } from "@repo/shared/client";
-import { fireEvent, render, screen } from "@testing-library/react-native";
+import { act, fireEvent, render, screen } from "@testing-library/react-native";
+import { Alert } from "react-native";
 import { api } from "../../api/client";
 import { t } from "../../lib/messages";
 import { admin, Providers } from "../members/testUtils";
@@ -13,6 +14,17 @@ const mockPush = jest.fn();
 jest.mock("expo-router", () => ({ useRouter: () => ({ push: mockPush, back: jest.fn() }) }));
 
 const fetchMock = jest.mocked(api.fetch);
+
+afterEach(() => {
+  jest.restoreAllMocks();
+});
+
+// Presses one of the buttons of the last Alert.alert, by its text.
+const pressAlertButton = async (text: string) => {
+  const buttons = jest.mocked(Alert.alert).mock.calls.at(-1)?.[2] ?? [];
+  await act(() => buttons.find((button) => button.text === text)?.onPress?.());
+};
+
 
 const group: GroupResponse = {
   id: "1",
@@ -95,17 +107,35 @@ describe("GroupScreen", () => {
     expect(await screen.findByText(groupName)).toBeOnTheScreen();
   });
 
-  it("removes a member", async () => {
+  it("removes a member after confirming", async () => {
+    jest.spyOn(Alert, "alert").mockImplementation(() => undefined);
     await renderScreen();
     await fireEvent.press(
       await screen.findByRole("button", { name: t("groupMembers.removeLabel", { name: "Ana Horvat" }) }),
     );
+    expect(Alert.alert).toHaveBeenCalledWith(
+      t("groupMembers.confirmTitle", { name: "Ana Horvat" }),
+      t("groupMembers.confirmText"),
+      expect.anything(),
+    );
+    await pressAlertButton(t("common.remove"));
     expect(await screen.findByText(t("groupMembers.empty"))).toBeOnTheScreen();
     expect(fetchMock).toHaveBeenCalledWith(
       "/groups/1/members/4",
       expect.anything(),
       expect.objectContaining({ method: "DELETE" }),
     );
+  });
+
+  it("keeps the member when the removal is cancelled", async () => {
+    jest.spyOn(Alert, "alert").mockImplementation(() => undefined);
+    await renderScreen();
+    await fireEvent.press(
+      await screen.findByRole("button", { name: t("groupMembers.removeLabel", { name: "Ana Horvat" }) }),
+    );
+    await pressAlertButton(t("common.cancel"));
+    expect(screen.getByText("Horvat Ana")).toBeOnTheScreen();
+    expect(fetchMock).not.toHaveBeenCalledWith(expect.anything(), expect.anything(), expect.objectContaining({ method: "DELETE" }));
   });
 
   it("opens the add-member screen for an admin", async () => {

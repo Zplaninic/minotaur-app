@@ -53,7 +53,16 @@ export const MembersScreen = () => {
       <FlatList
         data={items}
         keyExtractor={(member) => member.id}
-        renderItem={({ item }) => <MemberRow member={item} />}
+        renderItem={({ item }) => (
+          <MemberRow
+            member={item}
+            onEdit={
+              ability.can("update", "Member")
+                ? () => router.push({ pathname: "/members/[id]/edit", params: { id: item.id } })
+                : undefined
+            }
+          />
+        )}
         ListHeaderComponent={
           ability.can("create", "Member") ? (
             <View style={styles.header}>

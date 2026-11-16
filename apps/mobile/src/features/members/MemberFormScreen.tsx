@@ -1,8 +1,10 @@
-import { ADULT_AGE } from "@repo/shared";
+import { ADULT_AGE, type MemberResponse } from "@repo/shared";
 import {
   emptyMemberDraft,
+  memberDraftFrom,
   newGuardianDraft,
   toErrorCode,
+  toUpdateMemberBody,
   validateMemberDraft,
   type GuardianDraft,
   type MemberDraft,
@@ -12,7 +14,7 @@ import { useRouter } from "expo-router";
 import { useRef, useState } from "react";
 import { StyleSheet, Text, View } from "react-native";
 import { useGuardians } from "../../api/guardians";
-import { useCreateMember } from "../../api/members";
+import { useCreateMember, useUpdateMember } from "../../api/members";
 import { useOrgs } from "../../api/orgs";
 import { Button } from "../../components/Button";
 import { DateField } from "../../components/DateField";
@@ -21,6 +23,7 @@ import { fieldStyles } from "../../components/fieldStyles";
 import { OptionList } from "../../components/OptionList";
 import { Screen } from "../../components/Screen";
 import { TextField } from "../../components/TextField";
+import { confirmRemove } from "../../lib/confirmRemove";
 import { formatCalendarDate } from "../../lib/format";
 import { errorMessage, memberFieldErrorKey, t } from "../../lib/messages";
 import { bodyLineHeight, colors, fonts, fontSizes, headingLineHeight, spacing } from "../../theme/tokens";
@@ -29,12 +32,19 @@ import { GuardianFields } from "./GuardianFields";
 // Where the birthday picker starts: an adult member is the common case.
 const yearsAgo = (today: Date, years: number) => new Date(today.getFullYear() - years, 0, 1);
 
-export const AddMemberScreen = () => {
+type MemberFormScreenProps = {
+  // Set to edit this member; without it the screen adds a new one.
+  member?: MemberResponse;
+};
+
+export const MemberFormScreen = ({ member }: MemberFormScreenProps) => {
   const router = useRouter();
   const orgs = useOrgs();
   const guardians = useGuardians();
   const createMember = useCreateMember();
-  const [draft, setDraft] = useState<MemberDraft>(emptyMemberDraft);
+  const updateMember = useUpdateMember(member?.id ?? "");
+  const saving = member ? updateMember : createMember;
+  const [draft, setDraft] = useState<MemberDraft>(() => (member ? memberDraftFrom(member) : emptyMemberDraft));
   const [submitted, setSubmitted] = useState(false);
   // Fixed for the life of the form, so the minor check does not change while typing.
   const [today] = useState(() => new Date());
@@ -46,14 +56,24 @@ export const AddMemberScreen = () => {
   const effectiveDraft: MemberDraft = { ...draft, orgId: draft.orgId || (onlyOrg?.id ?? "") };
   const validation = validateMemberDraft(effectiveDraft, today);
   const errors = submitted && !validation.ok ? validation.errors : {};
-  const serverCode = createMember.error ? toErrorCode(createMember.error) : undefined;
+  const serverCode = saving.error ? toErrorCode(saving.error) : undefined;
 
   const message = (code: MemberFieldError | undefined) =>
     code ? t(memberFieldErrorKey(code), { age: ADULT_AGE }) : undefined;
   const fieldError = (path: string) => message(errors[path]);
+  // A new member has no login, so a conflict is the tax number. An edited one
+  // may be a trainer whose login email is taken.
   const taxNumberError =
-    fieldError("taxNumber") ?? (serverCode === "CONFLICT" ? t("memberForm.error.taxNumberTaken") : undefined);
-  const formError = serverCode && serverCode !== "CONFLICT" ? errorMessage(serverCode) : undefined;
+    fieldError("taxNumber") ??
+    (serverCode === "CONFLICT" && !member ? t("memberForm.error.taxNumberTaken") : undefined);
+  const formError =
+    serverCode === "CONFLICT"
+      ? member
+        ? t("memberForm.error.taken")
+        : undefined
+      : serverCode
+        ? errorMessage(serverCode)
+        : undefined;
 
   const update = (changes: Partial<MemberDraft>) => setDraft((current) => ({ ...current, ...changes }));
   const updateGuardian = (index: number, guardian: GuardianDraft) =>
@@ -68,7 +88,12 @@ export const AddMemberScreen = () => {
 
   const save = () => {
     setSubmitted(true);
-    if (validation.ok) {
+    if (!validation.ok) {
+      return;
+    }
+    if (member) {
+      updateMember.mutate(toUpdateMemberBody(validation.body), { onSuccess: () => router.back() });
+    } else {
       createMember.mutate(validation.body, { onSuccess: () => router.back() });
     }
   };
@@ -106,7 +131,7 @@ export const AddMemberScreen = () => {
         <Text accessibilityRole="header" style={styles.sectionTitle}>
           {t("memberForm.member")}
         </Text>
-        {onlyOrg ? null : (
+        {onlyOrg || member ? null : (
           <OptionList
             label={t("memberForm.org")}
             options={orgs.data.items.map((org) => ({ value: org.id, label: org.name }))}
@@ -145,7 +170,7 @@ export const AddMemberScreen = () => {
           value={draft.taxNumber}
           onChangeText={(taxNumber) => {
             update({ taxNumber });
-            createMember.reset();
+            saving.reset();
           }}
           error={taxNumberError}
           keyboardType="number-pad"
@@ -185,7 +210,13 @@ export const AddMemberScreen = () => {
             index={index}
             guardian={guardian}
             onChange={(changed) => updateGuardian(index, changed)}
-            onRemove={() => removeGuardian(index)}
+            onRemove={() =>
+              confirmRemove({
+                title: t("memberForm.guardianRemoveConfirmTitle", { number: index + 1 }),
+                message: t("memberForm.guardianRemoveConfirmText"),
+                onConfirm: () => removeGuardian(index),
+              })
+            }
             errorFor={(field) => fieldError(`guardians.${index}.${field}`)}
             existingGuardians={guardians.data?.items}
             existingState={guardiansState}
@@ -202,9 +233,11 @@ export const AddMemberScreen = () => {
       ) : null}
 
       <Button
-        label={createMember.isPending ? t("memberForm.submitting") : t("memberForm.submit")}
+        label={
+          saving.isPending ? t("memberForm.submitting") : t(member ? "memberForm.saveChanges" : "memberForm.submit")
+        }
         onPress={save}
-        disabled={createMember.isPending}
+        disabled={saving.isPending}
       />
     </Screen>
   );

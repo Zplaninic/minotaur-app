@@ -1,11 +1,13 @@
-import type { CreateMemberBody } from "@repo/shared";
+import type { CreateMemberBody, UpdateMemberBody } from "@repo/shared";
 import {
   createMember,
   fetchMembersPage,
   keysToInvalidateAfterCreateMember,
+  keysToInvalidateAfterUpdateMember,
   memberKeys,
   memberQueries,
   nextMembersPage,
+  updateMember,
 } from "@repo/shared/client";
 import { useInfiniteQuery, useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { api } from "./client";
@@ -18,6 +20,8 @@ export const useMemberPages = (pageSize: number) =>
     initialPageParam: 1,
     getNextPageParam: nextMembersPage,
   });
+
+export const useMember = (memberId: string) => useQuery(memberQueries.detail(api, memberId));
 
 // Every member of the club, for pickers.
 export const useAllMembers = () => useQuery(memberQueries.everyone(api));
@@ -32,6 +36,18 @@ export const useCreateMember = () => {
     onSuccess: async () => {
       await Promise.all(
         keysToInvalidateAfterCreateMember.map((queryKey) => queryClient.invalidateQueries({ queryKey })),
+      );
+    },
+  });
+};
+
+export const useUpdateMember = (memberId: string) => {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: (body: UpdateMemberBody) => updateMember(api, memberId, body),
+    onSuccess: async () => {
+      await Promise.all(
+        keysToInvalidateAfterUpdateMember.map((queryKey) => queryClient.invalidateQueries({ queryKey })),
       );
     },
   });

@@ -5,6 +5,8 @@ import { SafeAreaView } from "react-native-safe-area-context";
 import { useAbility } from "../../api/auth";
 import { useGroup, useGroupMembers, useRemoveGroupMember } from "../../api/groups";
 import { Button } from "../../components/Button";
+import { confirmRemove } from "../../lib/confirmRemove";
+import { formatPersonName } from "../../lib/format";
 import { errorMessage, t } from "../../lib/messages";
 import { bodyLineHeight, borders, colors, fonts, fontSizes, headingLineHeight, spacing } from "../../theme/tokens";
 import { GroupMemberRow } from "./GroupMemberRow";
@@ -58,7 +60,16 @@ export const GroupScreen = ({ groupId }: GroupScreenProps) => {
         renderItem={({ item }) => (
           <GroupMemberRow
             member={item}
-            onRemove={canChange ? () => removeMember.mutate(item.id) : undefined}
+            onRemove={
+              canChange
+                ? () =>
+                    confirmRemove({
+                      title: t("groupMembers.confirmTitle", { name: formatPersonName(item) }),
+                      message: t("groupMembers.confirmText"),
+                      onConfirm: () => removeMember.mutate(item.id),
+                    })
+                : undefined
+            }
             disabled={removeMember.isPending}
           />
         )}
