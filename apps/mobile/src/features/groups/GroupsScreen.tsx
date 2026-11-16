@@ -51,7 +51,9 @@ export const GroupsScreen = () => {
       <FlatList
         data={groups.data?.items ?? []}
         keyExtractor={(group) => group.id}
-        renderItem={({ item }) => <GroupRow group={item} />}
+        renderItem={({ item }) => (
+          <GroupRow group={item} onPress={() => router.push({ pathname: "/groups/[id]", params: { id: item.id } })} />
+        )}
         ListHeaderComponent={
           ability.can("create", "Group") ? (
             <View style={styles.header}>

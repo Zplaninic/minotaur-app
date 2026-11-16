@@ -19,6 +19,9 @@ export const useMemberPages = (pageSize: number) =>
     getNextPageParam: nextMembersPage,
   });
 
+// Every member of the club, for pickers.
+export const useAllMembers = () => useQuery(memberQueries.everyone(api));
+
 // The members who can own a group.
 export const useTrainers = () => useQuery(memberQueries.trainers(api));
 

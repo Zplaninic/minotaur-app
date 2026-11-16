@@ -103,6 +103,25 @@ const messages = {
   "groups.empty": "No groups yet.",
   "groups.offlineTitle": "No connection",
   "groups.name": "{trainer} - {days} - {from} - {to}",
+  "groups.memberCount": "Members: {count}",
+  "groups.open": "Open group {name}",
+
+  "group.title": "Group",
+  "group.loading": "Loading the group…",
+  "group.offlineTitle": "No connection",
+
+  "groupMembers.title": "Members",
+  "groupMembers.add": "Add member",
+  "groupMembers.empty": "No members in this group yet.",
+  "groupMembers.remove": "Remove",
+  "groupMembers.removeLabel": "Remove {name} from the group",
+
+  "groupMemberForm.title": "Add member to the group",
+  "groupMemberForm.hint": "Tap a member to add them to the group.",
+  "groupMemberForm.membersLoading": "Loading members…",
+  "groupMemberForm.membersEmpty": "There is no member left to add to this group.",
+  "groupMemberForm.offlineTitle": "No connection",
+  "groupMemberForm.addLabel": "Add {name} to the group",
 
   "groupForm.title": "Add group",
   "groupForm.owner": "Trainer",

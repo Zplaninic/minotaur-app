@@ -1,0 +1,48 @@
+import type { MemberResponse } from "@repo/shared";
+import { Pressable, StyleSheet, Text } from "react-native";
+import { formatPersonName, formatSortedName } from "../../lib/format";
+import { t } from "../../lib/messages";
+import { bodyLineHeight, borders, colors, fonts, fontSizes, minTouchSize, opacity, spacing } from "../../theme/tokens";
+
+type GroupMemberCandidateRowProps = {
+  member: MemberResponse;
+  onAdd: () => void;
+  disabled: boolean;
+};
+
+export const GroupMemberCandidateRow = ({ member, onAdd, disabled }: GroupMemberCandidateRowProps) => (
+  <Pressable
+    onPress={onAdd}
+    disabled={disabled}
+    accessibilityRole="button"
+    accessibilityLabel={t("groupMemberForm.addLabel", { name: formatPersonName(member) })}
+    accessibilityState={{ disabled }}
+    style={({ pressed }) => [styles.row, pressed && styles.rowPressed, disabled && styles.disabled]}
+  >
+    <Text style={styles.name}>{formatSortedName(member)}</Text>
+  </Pressable>
+);
+
+const styles = StyleSheet.create({
+  row: {
+    minHeight: minTouchSize,
+    justifyContent: "center",
+    paddingHorizontal: spacing[4],
+    paddingVertical: spacing[3],
+    borderBottomWidth: borders.width,
+    borderBottomColor: colors.greenDark30,
+    backgroundColor: colors.beige10,
+  },
+  rowPressed: {
+    backgroundColor: colors.greenDark10,
+  },
+  disabled: {
+    opacity: opacity.disabled,
+  },
+  name: {
+    color: colors.greenDark,
+    fontFamily: fonts.bodySemibold,
+    fontSize: fontSizes.md,
+    lineHeight: bodyLineHeight(fontSizes.md),
+  },
+});

@@ -20,6 +20,7 @@ const group: GroupResponse = {
   days: ["monday", "wednesday"],
   from: "17:00",
   to: "18:30",
+  memberCount: 3,
   createdAt: "2026-11-15T17:00:00.000Z",
   updatedAt: "2026-11-15T17:00:00.000Z",
 };
@@ -76,6 +77,14 @@ describe("GroupsScreen", () => {
     await renderScreen();
     await fireEvent.press(await screen.findByRole("button", { name: t("groups.add") }));
     expect(mockPush).toHaveBeenCalledWith("/groups/new");
+  });
+
+  it("shows the member count and opens the group when its row is pressed", async () => {
+    answer(admin, async () => ({ items: [group] }));
+    await renderScreen();
+    expect(await screen.findByText(t("groups.memberCount", { count: "3" }))).toBeOnTheScreen();
+    await fireEvent.press(screen.getByRole("button", { name: /^Open group Petra Kovač/ }));
+    expect(mockPush).toHaveBeenCalledWith({ pathname: "/groups/[id]", params: { id: "1" } });
   });
 
   it("shows a trainer the list without the add button", async () => {
