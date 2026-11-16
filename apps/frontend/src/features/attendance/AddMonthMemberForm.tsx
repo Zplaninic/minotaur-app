@@ -6,7 +6,7 @@ import { useGroupMembers } from "../../api/groups";
 import { Button } from "../../components/Button";
 import { SelectField } from "../../components/SelectField";
 import { formatSortedName } from "../../lib/format";
-import { errorMessage, t } from "../../lib/messages";
+import { useMessages } from "../../lib/messages";
 import styles from "../groups/GroupForm.module.css";
 
 type AddMonthMemberFormProps = {
@@ -18,6 +18,7 @@ type AddMonthMemberFormProps = {
 
 // Picks one of the group's members who is not on the month's roster yet.
 export const AddMonthMemberForm = ({ groupId, month, onCancel, onSaved }: AddMonthMemberFormProps) => {
+  const { errorMessage, t } = useMessages();
   const groupMembers = useGroupMembers(groupId);
   const attendance = useGroupAttendance(groupId, month);
   const addMember = useAddMonthMember(groupId, month);

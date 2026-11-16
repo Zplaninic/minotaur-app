@@ -4,7 +4,7 @@ import { fireEvent, render, screen, waitFor, within } from "@testing-library/rea
 import { beforeEach, describe, expect, it, vi } from "vitest";
 import { ApiError } from "@repo/shared/client";
 import { api } from "../api/client";
-import { t } from "../lib/messages";
+import { translate as t } from "../lib/messages";
 import { MembersPage } from "./MembersPage";
 
 vi.mock("../api/client", () => ({ api: { fetch: vi.fn() } }));

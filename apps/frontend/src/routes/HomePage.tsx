@@ -1,8 +1,11 @@
 import { Logo } from "../components/Logo";
-import { t } from "../lib/messages";
+import { useMessages } from "../lib/messages";
 
-export const HomePage = () => (
-  <h1>
-    <Logo variant="app" alt={t("app.name")} />
-  </h1>
-);
+export const HomePage = () => {
+  const { t } = useMessages();
+  return (
+    <h1>
+      <Logo variant="app" alt={t("app.name")} />
+    </h1>
+  );
+};

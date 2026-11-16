@@ -25,7 +25,7 @@ import { CreateMonthSessions } from "../features/attendance/CreateMonthSessions"
 import { SessionChecklist } from "../features/attendance/SessionChecklist";
 import { groupName } from "../features/groups/groupName";
 import { formatMonth, formatSessionDate } from "../lib/format";
-import { errorMessage, t } from "../lib/messages";
+import { useMessages } from "../lib/messages";
 import { useNarrowScreen } from "../lib/useNarrowScreen";
 import { useToday } from "../lib/useToday";
 import styles from "./AttendancePage.module.css";
@@ -33,6 +33,7 @@ import styles from "./AttendancePage.module.css";
 const ROUTE = "/app/groups/$groupId/attendance";
 
 export const AttendancePage = () => {
+  const { t } = useMessages();
   const { groupId } = useParams({ from: ROUTE });
   const search = useSearch({ from: ROUTE });
   const navigate = useNavigate({ from: "/groups/$groupId/attendance" });
@@ -75,7 +76,7 @@ export const AttendancePage = () => {
       <div className={styles.header}>
         <div>
           <h1 className={styles.title}>{t("attendance.title")}</h1>
-          {group.isSuccess ? <p className={styles.group}>{groupName(group.data)}</p> : null}
+          {group.isSuccess ? <p className={styles.group}>{groupName(group.data, t)}</p> : null}
         </div>
         <div className={styles.actions}>
           {ability.can("update", "Attendance") && sessions.length > 0 ? (
@@ -207,6 +208,7 @@ const AttendanceBody = ({
   error,
   onRetry,
 }: AttendanceBodyProps) => {
+  const { errorMessage, t } = useMessages();
   if (error) {
     return (
       <div className={navStyles.state} role="alert">

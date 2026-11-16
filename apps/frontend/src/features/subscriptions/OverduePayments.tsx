@@ -2,11 +2,12 @@ import { toErrorCode } from "@repo/shared/client";
 import { useOverduePayments } from "../../api/subscriptions";
 import { Button } from "../../components/Button";
 import { formatMoney, formatMonth, formatSortedName } from "../../lib/format";
-import { errorMessage, t } from "../../lib/messages";
+import { useMessages } from "../../lib/messages";
 import styles from "./PaymentSummary.module.css";
 
 // Members who had a subscription in a past month and did not pay for it.
 export const OverduePayments = () => {
+  const { errorMessage, t } = useMessages();
   const overdue = useOverduePayments();
 
   const body = () => {

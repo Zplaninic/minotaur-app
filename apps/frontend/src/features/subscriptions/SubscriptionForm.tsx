@@ -12,7 +12,7 @@ import { Button } from "../../components/Button";
 import { SelectField } from "../../components/SelectField";
 import { TextField } from "../../components/TextField";
 import { formatNumber } from "../../lib/format";
-import { errorMessage, subscriptionFieldErrorKey, t } from "../../lib/messages";
+import { subscriptionFieldErrorKey, useMessages } from "../../lib/messages";
 import styles from "./SubscriptionForm.module.css";
 
 const sessionOptions = Array.from({ length: MAX_SESSIONS_PER_WEEK - MIN_SESSIONS_PER_WEEK + 1 }, (_, index) => {
@@ -28,6 +28,7 @@ type SubscriptionFormProps = {
 };
 
 export const SubscriptionForm = ({ subscription, onCancel, onSaved }: SubscriptionFormProps) => {
+  const { errorMessage, t } = useMessages();
   const createSubscription = useCreateSubscription();
   const updateSubscription = useUpdateSubscription(subscription?.id ?? "");
   const save = subscription ? updateSubscription : createSubscription;

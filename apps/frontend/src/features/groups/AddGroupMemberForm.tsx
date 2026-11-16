@@ -5,7 +5,7 @@ import { useAllMembers } from "../../api/members";
 import { Button } from "../../components/Button";
 import { SelectField } from "../../components/SelectField";
 import { formatSortedName } from "../../lib/format";
-import { errorMessage, t } from "../../lib/messages";
+import { useMessages } from "../../lib/messages";
 import styles from "./GroupForm.module.css";
 
 type AddGroupMemberFormProps = {
@@ -15,6 +15,7 @@ type AddGroupMemberFormProps = {
 };
 
 export const AddGroupMemberForm = ({ groupId, onCancel, onSaved }: AddGroupMemberFormProps) => {
+  const { errorMessage, t } = useMessages();
   const everyone = useAllMembers();
   const current = useGroupMembers(groupId);
   const addMember = useAddGroupMember(groupId);

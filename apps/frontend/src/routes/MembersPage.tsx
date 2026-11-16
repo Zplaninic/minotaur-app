@@ -5,10 +5,11 @@ import { Button } from "../components/Button";
 import { Dialog } from "../components/Dialog";
 import { MemberForm } from "../features/members/MemberForm";
 import { MembersTable } from "../features/members/MembersTable";
-import { t } from "../lib/messages";
+import { useMessages } from "../lib/messages";
 import styles from "./MembersPage.module.css";
 
 export const MembersPage = () => {
+  const { t } = useMessages();
   const ability = useAbility();
   const [adding, setAdding] = useState(false);
   const [editing, setEditing] = useState<MemberResponse | undefined>();

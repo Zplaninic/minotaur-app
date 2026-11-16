@@ -3,13 +3,14 @@ import { useState } from "react";
 import { useSubscriptionSummary } from "../../api/subscriptions";
 import { Button } from "../../components/Button";
 import { formatMoney, formatMonth, formatNumber } from "../../lib/format";
-import { errorMessage, t } from "../../lib/messages";
+import { useMessages } from "../../lib/messages";
 import { useToday } from "../../lib/useToday";
 import navStyles from "../attendance/Attendance.module.css";
 import styles from "./PaymentSummary.module.css";
 
 // One month's money: what was expected, what came in, and per subscription.
 export const PaymentSummary = () => {
+  const { errorMessage, t } = useMessages();
   const today = useToday();
   // An ISO date starts with its month.
   const currentMonth = today.slice(0, 7);

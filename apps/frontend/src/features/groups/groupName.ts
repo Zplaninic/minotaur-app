@@ -1,9 +1,9 @@
 import type { GroupResponse } from "@repo/shared";
 import { formatPersonName, formatTimeOfDay } from "../../lib/format";
-import { t, weekdayKey } from "../../lib/messages";
+import { type Translate, weekdayKey } from "../../lib/messages";
 
 // A group has no name of its own; it is named after its trainer and schedule.
-export const groupName = (group: GroupResponse): string =>
+export const groupName = (group: GroupResponse, t: Translate): string =>
   t("groups.name", {
     trainer: formatPersonName(group.owner),
     days: group.days.map((day) => t(weekdayKey(day))).join(", "),

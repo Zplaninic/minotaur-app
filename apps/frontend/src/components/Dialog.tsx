@@ -1,5 +1,5 @@
 import { useEffect, useId, useRef, type ReactNode } from "react";
-import { t } from "../lib/messages";
+import { useMessages } from "../lib/messages";
 import styles from "./Dialog.module.css";
 
 type DialogProps = {
@@ -11,6 +11,7 @@ type DialogProps = {
 
 // Native modal dialog: focus trap, Escape to close and the backdrop come from the browser.
 export const Dialog = ({ open, onClose, title, children }: DialogProps) => {
+  const { t } = useMessages();
   const ref = useRef<HTMLDialogElement>(null);
   const titleId = useId();
 

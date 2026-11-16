@@ -4,7 +4,7 @@ import { useAbility } from "../../api/auth";
 import { useCreateMonthSessions } from "../../api/attendance";
 import { Button } from "../../components/Button";
 import { formatMonth } from "../../lib/format";
-import { errorMessage, t, weekdayKey } from "../../lib/messages";
+import { useMessages, weekdayKey } from "../../lib/messages";
 import styles from "./Attendance.module.css";
 
 type CreateMonthSessionsProps = {
@@ -16,6 +16,7 @@ type CreateMonthSessionsProps = {
 
 // The empty state of a month: fill in its sessions from the group's days.
 export const CreateMonthSessions = ({ groupId, month, days, today }: CreateMonthSessionsProps) => {
+  const { errorMessage, t } = useMessages();
   const ability = useAbility();
   const createSessions = useCreateMonthSessions(groupId);
   const canCreate = ability.can("create", "Attendance");

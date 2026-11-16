@@ -21,7 +21,7 @@ import { ConfirmDialog } from "../../components/ConfirmDialog";
 import { FieldMessage } from "../../components/FieldMessage";
 import { SelectField } from "../../components/SelectField";
 import { TextField } from "../../components/TextField";
-import { errorMessage, memberFieldErrorKey, t } from "../../lib/messages";
+import { memberFieldErrorKey, useMessages } from "../../lib/messages";
 import { GuardianFieldset } from "./GuardianFieldset";
 import styles from "./MemberForm.module.css";
 
@@ -33,6 +33,7 @@ type MemberFormProps = {
 };
 
 export const MemberForm = ({ member, onCancel, onSaved }: MemberFormProps) => {
+  const { errorMessage, t } = useMessages();
   const orgs = useOrgs();
   const guardians = useGuardians();
   const createMember = useCreateMember();

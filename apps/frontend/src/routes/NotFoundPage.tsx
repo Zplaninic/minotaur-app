@@ -1,11 +1,14 @@
 import { Link } from "@tanstack/react-router";
-import { t } from "../lib/messages";
+import { useMessages } from "../lib/messages";
 
-export const NotFoundPage = () => (
-  <>
-    <h1>{t("notFound.title")}</h1>
-    <p>
-      <Link to="/">{t("notFound.home")}</Link>
-    </p>
-  </>
-);
+export const NotFoundPage = () => {
+  const { t } = useMessages();
+  return (
+    <>
+      <h1>{t("notFound.title")}</h1>
+      <p>
+        <Link to="/">{t("notFound.home")}</Link>
+      </p>
+    </>
+  );
+};

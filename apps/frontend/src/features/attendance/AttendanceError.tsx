@@ -2,7 +2,7 @@ import type { Month } from "@repo/shared";
 import { toErrorCode } from "@repo/shared/client";
 import { useMutationState } from "@tanstack/react-query";
 import { attendanceMutationKey } from "../../api/attendance";
-import { errorMessage } from "../../lib/messages";
+import { useMessages } from "../../lib/messages";
 import styles from "./Attendance.module.css";
 
 type AttendanceErrorProps = {
@@ -13,6 +13,7 @@ type AttendanceErrorProps = {
 // The error of the latest tick in this group's month, if it failed. The box
 // itself is already back to what the server has.
 export const AttendanceError = ({ groupId, month }: AttendanceErrorProps) => {
+  const { errorMessage } = useMessages();
   const latest = useMutationState({
     filters: { mutationKey: attendanceMutationKey(groupId, month) },
     select: (mutation) => mutation.state,

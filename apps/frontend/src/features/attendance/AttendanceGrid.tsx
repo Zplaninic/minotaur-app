@@ -5,7 +5,7 @@ import { useAbility } from "../../api/auth";
 import { useDeleteTrainingSession, useRemoveMonthMember } from "../../api/attendance";
 import { ConfirmDialog } from "../../components/ConfirmDialog";
 import { formatMonth, formatPersonName, formatSessionDate, formatSortedName } from "../../lib/format";
-import { errorMessage, t } from "../../lib/messages";
+import { useMessages } from "../../lib/messages";
 import { AttendanceCheckbox } from "./AttendanceCheckbox";
 import { MonthPaidCheckbox } from "./MonthPaidCheckbox";
 import { MonthSubscriptionSelect } from "./MonthSubscriptionSelect";
@@ -21,6 +21,7 @@ type AttendanceGridProps = {
 
 // Members × sessions of one month, like a sheet. Wide months scroll inside the box.
 export const AttendanceGrid = ({ groupId, month, data, today }: AttendanceGridProps) => {
+  const { errorMessage, t } = useMessages();
   const ability = useAbility();
   const deleteSession = useDeleteTrainingSession(groupId);
   const removeMember = useRemoveMonthMember(groupId, month);

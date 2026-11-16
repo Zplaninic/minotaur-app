@@ -1,12 +1,14 @@
 import { Navigate, useNavigate, useSearch } from "@tanstack/react-router";
 import { useMe } from "../api/auth";
+import { LanguageSwitcher } from "../components/LanguageSwitcher";
 import { Logo } from "../components/Logo";
 import { LoginForm }from "../features/auth/LoginForm";
-import { t } from "../lib/messages";
+import { useMessages } from "../lib/messages";
 import { safeRedirect } from "../lib/redirect";
 import styles from "./LoginPage.module.css";
 
 export const LoginPage = () => {
+  const { t } = useMessages();
   const me = useMe();
   const navigate = useNavigate();
   const { redirect } = useSearch({ from: "/login" });
@@ -24,6 +26,9 @@ export const LoginPage = () => {
         </div>
         <h1 className={styles.title}>{t("login.title")}</h1>
         <LoginForm onLoggedIn={() => void navigate({ to: target, replace: true })} />
+        <div className={styles.language}>
+          <LanguageSwitcher />
+        </div>
       </div>
     </main>
   );

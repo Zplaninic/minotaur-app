@@ -2,7 +2,7 @@ import type { AttendanceMemberResponse, Month } from "@repo/shared";
 import { toErrorCode } from "@repo/shared/client";
 import { useSetMonthPaid } from "../../api/attendance";
 import { formatMonth, formatPersonName } from "../../lib/format";
-import { errorMessage, t } from "../../lib/messages";
+import { useMessages } from "../../lib/messages";
 import styles from "./AttendanceCheckbox.module.css";
 import selectStyles from "./MonthSubscriptionSelect.module.css";
 
@@ -18,6 +18,7 @@ type MonthPaidCheckboxProps = {
 // Whether the member paid for the month, the same in all their groups.
 // Saves as soon as it changes. Only a month with a subscription can be paid.
 export const MonthPaidCheckbox = ({ groupId, month, member, disabled, layout }: MonthPaidCheckboxProps) => {
+  const { errorMessage, t } = useMessages();
   const setPaid = useSetMonthPaid(groupId, month, member.id);
   // While saving, show the value being saved rather than jumping back.
   const checked = setPaid.isPending ? setPaid.variables : member.paid;

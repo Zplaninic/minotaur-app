@@ -4,10 +4,11 @@ import { Button } from "../components/Button";
 import { Dialog } from "../components/Dialog";
 import { GroupForm } from "../features/groups/GroupForm";
 import { GroupsTable } from "../features/groups/GroupsTable";
-import { t } from "../lib/messages";
+import { useMessages } from "../lib/messages";
 import styles from "./GroupsPage.module.css";
 
 export const GroupsPage = () => {
+  const { t } = useMessages();
   const ability = useAbility();
   const [adding, setAdding] = useState(false);
   const close = () => setAdding(false);

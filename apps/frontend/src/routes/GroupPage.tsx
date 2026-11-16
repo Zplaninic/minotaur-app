@@ -10,10 +10,11 @@ import { AddGroupMemberForm } from "../features/groups/AddGroupMemberForm";
 import { GroupMembersTable } from "../features/groups/GroupMembersTable";
 import { groupName } from "../features/groups/groupName";
 import { formatSortedName, formatTimeOfDay } from "../lib/format";
-import { errorMessage, t, weekdayKey } from "../lib/messages";
+import { useMessages, weekdayKey } from "../lib/messages";
 import styles from "./GroupPage.module.css";
 
 export const GroupPage = () => {
+  const { errorMessage, t } = useMessages();
   const { groupId } = useParams({ from: "/app/groups/$groupId" });
   const ability = useAbility();
   const group = useGroup(groupId);
@@ -51,7 +52,7 @@ export const GroupPage = () => {
       {group.isSuccess ? (
         <>
           <div className={styles.header}>
-            <h1 className={styles.title}>{groupName(group.data)}</h1>
+            <h1 className={styles.title}>{groupName(group.data, t)}</h1>
             <div className={styles.headerActions}>
               {ability.can("delete", "Group") ? (
                 <Button variant="secondary" onClick={() => setDeleting(true)}>

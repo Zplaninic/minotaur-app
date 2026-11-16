@@ -4,7 +4,7 @@ import { useState, type FormEvent } from "react";
 import { useLogin } from "../../api/auth";
 import { Button } from "../../components/Button";
 import { TextField } from "../../components/TextField";
-import { errorMessage, t, type MessageKey } from "../../lib/messages";
+import { type MessageKey, useMessages } from "../../lib/messages";
 import styles from "./LoginForm.module.css";
 
 type LoginFormProps = {
@@ -17,6 +17,7 @@ const fieldErrorKeys: Record<string, MessageKey> = {
 };
 
 export const LoginForm = ({ onLoggedIn }: LoginFormProps) => {
+  const { errorMessage, t } = useMessages();
   const login = useLogin();
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");

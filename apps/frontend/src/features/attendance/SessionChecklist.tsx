@@ -2,7 +2,7 @@ import type { AttendanceMemberResponse, Month, TrainingSessionResponse } from "@
 import { isFutureDate } from "@repo/shared/client";
 import { useAbility } from "../../api/auth";
 import { formatNumber, formatPersonName, formatSessionDate, formatSortedName } from "../../lib/format";
-import { t } from "../../lib/messages";
+import { useMessages } from "../../lib/messages";
 import { AttendanceCheckbox } from "./AttendanceCheckbox";
 import { MonthPaidCheckbox } from "./MonthPaidCheckbox";
 import { MonthSubscriptionSelect } from "./MonthSubscriptionSelect";
@@ -19,6 +19,7 @@ type SessionChecklistProps = {
 
 // One session, one tappable row per member: the phone layout.
 export const SessionChecklist = ({ groupId, month, session, members, today }: SessionChecklistProps) => {
+  const { t } = useMessages();
   const ability = useAbility();
   const canTick = ability.can("update", "Attendance");
   const disabled = !canTick || isFutureDate(session.date, today);

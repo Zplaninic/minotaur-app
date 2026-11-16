@@ -4,7 +4,7 @@ import { useAbility } from "../../api/auth";
 import { useSubscriptions } from "../../api/subscriptions";
 import { Button } from "../../components/Button";
 import { formatMoney, formatNumber } from "../../lib/format";
-import { errorMessage, t } from "../../lib/messages";
+import { useMessages } from "../../lib/messages";
 import styles from "./SubscriptionsTable.module.css";
 
 type SubscriptionsTableProps = {
@@ -12,6 +12,7 @@ type SubscriptionsTableProps = {
 };
 
 export const SubscriptionsTable = ({ onEdit }: SubscriptionsTableProps) => {
+  const { errorMessage, t } = useMessages();
   const subscriptions = useSubscriptions();
   const canEdit = useAbility().can("update", "Subscription");
 

@@ -5,7 +5,7 @@ import { createMemoryHistory, RouterProvider } from "@tanstack/react-router";
 import { fireEvent, render, screen, waitFor, within } from "@testing-library/react";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import { api } from "../api/client";
-import { t } from "../lib/messages";
+import { translate as t } from "../lib/messages";
 import { createAppRouter } from "./router";
 
 vi.mock("../api/client", () => ({ api: { fetch: vi.fn() } }));

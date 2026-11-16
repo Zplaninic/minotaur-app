@@ -4,7 +4,7 @@ import { useId } from "react";
 import { useSetMonthSubscription } from "../../api/attendance";
 import { useSubscriptions } from "../../api/subscriptions";
 import { formatMonth, formatPersonName } from "../../lib/format";
-import { errorMessage, t } from "../../lib/messages";
+import { useMessages } from "../../lib/messages";
 import styles from "./MonthSubscriptionSelect.module.css";
 
 type MonthSubscriptionSelectProps = {
@@ -17,6 +17,7 @@ type MonthSubscriptionSelectProps = {
 // The member's subscription for the month, the same in all their groups.
 // Saves as soon as it changes. A paid month cannot go without one.
 export const MonthSubscriptionSelect = ({ groupId, month, member, disabled }: MonthSubscriptionSelectProps) => {
+  const { errorMessage, t } = useMessages();
   const errorId = useId();
   const subscriptions = useSubscriptions();
   const setSubscription = useSetMonthSubscription(groupId, month, member.id);

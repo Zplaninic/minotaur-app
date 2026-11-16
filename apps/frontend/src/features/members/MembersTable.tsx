@@ -6,14 +6,8 @@ import { useArchiveMember, useMembers } from "../../api/members";
 import { Button } from "../../components/Button";
 import { ConfirmDialog } from "../../components/ConfirmDialog";
 import { formatCalendarDate, formatPersonName, formatSortedName } from "../../lib/format";
-import { errorMessage, t } from "../../lib/messages";
+import { useMessages } from "../../lib/messages";
 import styles from "./MembersTable.module.css";
-
-const orEmpty = (value: string | null) => value ?? t("common.empty");
-
-// The only CONFLICT here is a trainer who still leads groups.
-const archiveErrorMessage = (code: ClientErrorCode): string =>
-  code === "CONFLICT" ? t("members.deleteOwnerConflict") : errorMessage(code);
 
 type MembersTableProps = {
   onEdit: (member: MemberResponse) => void;
@@ -22,6 +16,11 @@ type MembersTableProps = {
 };
 
 export const MembersTable = ({ onEdit, unpaidOnly }: MembersTableProps) => {
+  const { errorMessage, t } = useMessages();
+  const orEmpty = (value: string | null) => value ?? t("common.empty");
+  // The only CONFLICT here is a trainer who still leads groups.
+  const archiveErrorMessage = (code: ClientErrorCode): string =>
+    code === "CONFLICT" ? t("members.deleteOwnerConflict") : errorMessage(code);
   const ability = useAbility();
   const me = useMe();
   const canEdit = ability.can("update", "Member");

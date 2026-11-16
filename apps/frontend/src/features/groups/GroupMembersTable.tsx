@@ -6,7 +6,7 @@ import { useGroupMembers, useRemoveGroupMember } from "../../api/groups";
 import { Button } from "../../components/Button";
 import { ConfirmDialog } from "../../components/ConfirmDialog";
 import { formatCalendarDate, formatPersonName, formatSortedName } from "../../lib/format";
-import { errorMessage, t } from "../../lib/messages";
+import { useMessages } from "../../lib/messages";
 import styles from "./GroupMembersTable.module.css";
 
 type GroupMembersTableProps = {
@@ -14,6 +14,7 @@ type GroupMembersTableProps = {
 };
 
 export const GroupMembersTable = ({ groupId }: GroupMembersTableProps) => {
+  const { errorMessage, t } = useMessages();
   const ability = useAbility();
   const members = useGroupMembers(groupId);
   const removeMember = useRemoveGroupMember(groupId);

@@ -6,20 +6,20 @@ import {
   formatSessionDate as formatSessionDateIn,
   formatTimeOfDay as formatTimeOfDayIn,
 } from "@repo/shared/client";
-import { locale } from "./messages";
+import { currentLanguage } from "./i18n";
 
 export { formatPersonName, formatSortedName } from "@repo/shared/client";
 
-export const formatCalendarDate = (isoDate: string): string => formatCalendarDateIn(isoDate, locale);
+export const formatCalendarDate = (isoDate: string): string => formatCalendarDateIn(isoDate, currentLanguage());
 
-export const formatTimeOfDay = (time: string): string => formatTimeOfDayIn(time, locale);
+export const formatTimeOfDay = (time: string): string => formatTimeOfDayIn(time, currentLanguage());
 
-export const formatSessionDate = (isoDate: string): string => formatSessionDateIn(isoDate, locale);
+export const formatSessionDate = (isoDate: string): string => formatSessionDateIn(isoDate, currentLanguage());
 
-export const formatMonth = (month: string): string => formatMonthIn(month, locale);
+export const formatMonth = (month: string): string => formatMonthIn(month, currentLanguage());
 
-export const formatShortMonth = (month: string): string => formatShortMonthIn(month, locale);
+export const formatShortMonth = (month: string): string => formatShortMonthIn(month, currentLanguage());
 
-export const formatMoney = (cents: number): string => formatMoneyIn(cents, locale);
+export const formatMoney = (cents: number): string => formatMoneyIn(cents, currentLanguage());
 
-export const formatNumber = (value: number): string => new Intl.NumberFormat(locale).format(value);
+export const formatNumber = (value: number): string => new Intl.NumberFormat(currentLanguage()).format(value);

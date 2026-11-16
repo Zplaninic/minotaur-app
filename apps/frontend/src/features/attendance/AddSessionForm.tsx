@@ -4,7 +4,7 @@ import { useState, type FormEvent } from "react";
 import { useAddTrainingSession } from "../../api/attendance";
 import { Button } from "../../components/Button";
 import { TextField } from "../../components/TextField";
-import { errorMessage, t } from "../../lib/messages";
+import { useMessages } from "../../lib/messages";
 import styles from "../groups/GroupForm.module.css";
 
 type AddSessionFormProps = {
@@ -15,6 +15,7 @@ type AddSessionFormProps = {
 };
 
 export const AddSessionForm = ({ groupId, today, onCancel, onSaved }: AddSessionFormProps) => {
+  const { errorMessage, t } = useMessages();
   const addSession = useAddTrainingSession(groupId);
   const [date, setDate] = useState("");
   const [submitted, setSubmitted] = useState(false);

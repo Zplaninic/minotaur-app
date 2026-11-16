@@ -4,7 +4,7 @@ import { Button } from "../../components/Button";
 import { SelectField } from "../../components/SelectField";
 import { TextField } from "../../components/TextField";
 import { formatSortedName } from "../../lib/format";
-import { t } from "../../lib/messages";
+import { useMessages } from "../../lib/messages";
 import styles from "./MemberForm.module.css";
 
 type GuardianFieldsetProps = {
@@ -26,6 +26,7 @@ export const GuardianFieldset = ({
   existingGuardians,
   existingState,
 }: GuardianFieldsetProps) => {
+  const { t } = useMessages();
   const number = index + 1;
   const update = (changes: Partial<GuardianDraft>) => onChange({ ...guardian, ...changes });
 

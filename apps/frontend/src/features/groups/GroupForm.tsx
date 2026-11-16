@@ -14,7 +14,7 @@ import { CheckboxGroup } from "../../components/CheckboxGroup";
 import { SelectField } from "../../components/SelectField";
 import { TextField } from "../../components/TextField";
 import { formatSortedName } from "../../lib/format";
-import { errorMessage, groupFieldErrorKey, t, weekdayKey } from "../../lib/messages";
+import { groupFieldErrorKey, useMessages, weekdayKey } from "../../lib/messages";
 import styles from "./GroupForm.module.css";
 
 type GroupFormProps = {
@@ -23,6 +23,7 @@ type GroupFormProps = {
 };
 
 export const GroupForm = ({ onCancel, onSaved }: GroupFormProps) => {
+  const { errorMessage, t } = useMessages();
   const trainers = useTrainers();
   const createGroup = useCreateGroup();
   const [draft, setDraft] = useState<GroupDraft>(emptyGroupDraft);

@@ -2,12 +2,14 @@ import { toErrorCode } from "@repo/shared/client";
 import { Link, Navigate, Outlet, useLocation } from "@tanstack/react-router";
 import { useAbility, useLogout, useMe } from "../api/auth";
 import { Button } from "../components/Button";
+import { LanguageSwitcher } from "../components/LanguageSwitcher";
 import { Logo } from "../components/Logo";
-import { errorMessage, t } from "../lib/messages";
+import { useMessages } from "../lib/messages";
 import styles from "./AppLayout.module.css";
 
 // Every page except login: only for logged-in members.
 export const AppLayout = () => {
+  const { errorMessage, t } = useMessages();
   const me = useMe();
   const ability = useAbility();
   const logout = useLogout();
@@ -61,6 +63,7 @@ export const AppLayout = () => {
             </Link>
           ) : null}
           <div className={styles.account}>
+            <LanguageSwitcher />
             <span className={styles.name}>{t("nav.loggedInAs", { name: `${me.data.name} ${me.data.surname}` })}</span>
             <button
               type="button"

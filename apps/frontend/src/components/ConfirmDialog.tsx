@@ -1,4 +1,4 @@
-import { t } from "../lib/messages";
+import { useMessages } from "../lib/messages";
 import { Button } from "./Button";
 import styles from "./ConfirmDialog.module.css";
 import { Dialog } from "./Dialog";
@@ -28,21 +28,24 @@ export const ConfirmDialog = ({
   pendingLabel,
   pending = false,
   error,
-}: ConfirmDialogProps) => (
-  <Dialog open={open} onClose={onCancel} title={title}>
-    <p>{message}</p>
-    {error ? (
-      <p role="alert" className={styles.error}>
-        {error}
-      </p>
-    ) : null}
-    <div className={styles.actions}>
-      <Button variant="secondary" onClick={onCancel}>
-        {t("common.cancel")}
-      </Button>
-      <Button onClick={onConfirm} disabled={pending}>
-        {pending && pendingLabel ? pendingLabel : confirmLabel}
-      </Button>
-    </div>
-  </Dialog>
-);
+}: ConfirmDialogProps) => {
+  const { t } = useMessages();
+  return (
+    <Dialog open={open} onClose={onCancel} title={title}>
+      <p>{message}</p>
+      {error ? (
+        <p role="alert" className={styles.error}>
+          {error}
+        </p>
+      ) : null}
+      <div className={styles.actions}>
+        <Button variant="secondary" onClick={onCancel}>
+          {t("common.cancel")}
+        </Button>
+        <Button onClick={onConfirm} disabled={pending}>
+          {pending && pendingLabel ? pendingLabel : confirmLabel}
+        </Button>
+      </div>
+    </Dialog>
+  );
+};

@@ -3,11 +3,12 @@ import { Link } from "@tanstack/react-router";
 import { useGroups } from "../../api/groups";
 import { Button } from "../../components/Button";
 import { formatNumber, formatSortedName, formatTimeOfDay } from "../../lib/format";
-import { errorMessage, t, weekdayKey } from "../../lib/messages";
+import { useMessages, weekdayKey } from "../../lib/messages";
 import { groupName } from "./groupName";
 import styles from "./GroupsTable.module.css";
 
 export const GroupsTable = () => {
+  const { errorMessage, t } = useMessages();
   const groups = useGroups();
 
   if (groups.isPending) {
@@ -47,7 +48,7 @@ export const GroupsTable = () => {
             <tr key={group.id}>
               <th scope="row">
                 <Link to="/groups/$groupId" params={{ groupId: group.id }}>
-                  {groupName(group)}
+                  {groupName(group, t)}
                 </Link>
               </th>
               <td className={styles.nowrap}>{formatSortedName(group.owner)}</td>

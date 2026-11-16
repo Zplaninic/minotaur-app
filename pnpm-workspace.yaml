@@ -10,7 +10,9 @@ allowBuilds:
 
 # Single source of truth for versions used by more than one package.
 catalog:
+  i18next: 27.1.1
   oxlint: 1.93.0
+  react-i18next: 18.0.1
   typescript: 7.0.2
   vitest: 5.1.0
   zod: 4.6.7

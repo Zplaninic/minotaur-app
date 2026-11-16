@@ -7,10 +7,11 @@ import { OverduePayments } from "../features/subscriptions/OverduePayments";
 import { PaymentSummary } from "../features/subscriptions/PaymentSummary";
 import { SubscriptionForm } from "../features/subscriptions/SubscriptionForm";
 import { SubscriptionsTable } from "../features/subscriptions/SubscriptionsTable";
-import { t } from "../lib/messages";
+import { useMessages } from "../lib/messages";
 import styles from "./SubscriptionsPage.module.css";
 
 export const SubscriptionsPage = () => {
+  const { t } = useMessages();
   const ability = useAbility();
   const [adding, setAdding] = useState(false);
   const [editing, setEditing] = useState<SubscriptionResponse | undefined>();
