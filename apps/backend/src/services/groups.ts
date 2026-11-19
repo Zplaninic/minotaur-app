@@ -6,6 +6,7 @@ import {
   type GroupResponse,
   type ListGroupMembersResponse,
   type ListGroupsResponse,
+  type UpdateGroupBody,
   type Weekday,
 } from "@repo/shared";
 import type { Db } from "../db/client.js";
@@ -21,6 +22,8 @@ const groupSelect = {
   days: true,
   from: true,
   to: true,
+  ageFrom: true,
+  ageTo: true,
   createdAt: true,
   updatedAt: true,
   owner: { select: { id: true, name: true, surname: true } },
@@ -41,6 +44,8 @@ const toGroupResponse = (group: GroupRow): GroupResponse => ({
   days: inWeekOrder(group.days),
   from: toTimeOfDay(group.from),
   to: toTimeOfDay(group.to),
+  ageFrom: group.ageFrom,
+  ageTo: group.ageTo,
   memberCount: group._count.members,
   createdAt: group.createdAt.toISOString(),
   updatedAt: group.updatedAt.toISOString(),
@@ -55,28 +60,39 @@ export const listGroups = async (db: Db): Promise<ListGroupsResponse> => {
   return { items: groups.map(toGroupResponse) };
 };
 
-export const createGroup = async (db: Db, body: CreateGroupBody): Promise<GroupResponse> => {
-  const ownerId = toDbId(body.ownerId);
-  if (ownerId === undefined) {
-    throw new AppError("NOT_FOUND", 404, "Owner not found");
+const ownerNotFound = (): AppError => new AppError("NOT_FOUND", 404, "Owner not found");
+
+// Returns the owner's database id once they are known to be a trainer.
+const requireTrainer = async (tx: Prisma.TransactionClient, ownerId: string): Promise<number> => {
+  const id = toDbId(ownerId);
+  if (id === undefined) {
+    throw ownerNotFound();
   }
+  const owner = await tx.member.findUnique({ where: { id, deletedAt: null }, select: { role: true } });
+  if (!owner) {
+    throw ownerNotFound();
+  }
+  if (owner.role !== GROUP_OWNER_ROLE) {
+    throw new AppError("VALIDATION_ERROR", 400, "The owner of a group must be a trainer");
+  }
+  return id;
+};
 
-  return db.$transaction(async (tx) => {
-    const owner = await tx.member.findUnique({ where: { id: ownerId, deletedAt: null }, select: { role: true } });
-    if (!owner) {
-      throw new AppError("NOT_FOUND", 404, "Owner not found");
-    }
-    if (owner.role !== GROUP_OWNER_ROLE) {
-      throw new AppError("VALIDATION_ERROR", 400, "The owner of a group must be a trainer");
-    }
+const toGroupData = (body: CreateGroupBody, ownerId: number) => ({
+  ownerId,
+  days: inWeekOrder(body.days),
+  from: toDbTime(body.from),
+  to: toDbTime(body.to),
+  ageFrom: body.ageFrom,
+  ageTo: body.ageTo,
+});
 
-    const group = await tx.group.create({
-      data: { ownerId, days: inWeekOrder(body.days), from: toDbTime(body.from), to: toDbTime(body.to) },
-      select: groupSelect,
-    });
+export const createGroup = async (db: Db, body: CreateGroupBody): Promise<GroupResponse> =>
+  db.$transaction(async (tx) => {
+    const ownerId = await requireTrainer(tx, body.ownerId);
+    const group = await tx.group.create({ data: toGroupData(body, ownerId), select: groupSelect });
     return toGroupResponse(group);
   });
-};
 
 const groupNotFound = (): AppError => new AppError("NOT_FOUND", 404, "Group not found");
 const memberNotFound = (): AppError => new AppError("NOT_FOUND", 404, "Member not found");
@@ -98,6 +114,20 @@ export const getGroup = async (db: Db, groupId: string): Promise<GroupResponse> 
     throw groupNotFound();
   }
   return toGroupResponse(group);
+};
+
+// Replaces the whole group. Sessions already recorded stay as they are, even
+// on days the group no longer trains.
+export const updateGroup = async (db: Db, groupId: string, body: UpdateGroupBody): Promise<GroupResponse> => {
+  const id = requireGroupId(groupId);
+  return db.$transaction(async (tx) => {
+    if (!(await tx.group.findUnique({ where: { id, deletedAt: null }, select: { id: true } }))) {
+      throw groupNotFound();
+    }
+    const ownerId = await requireTrainer(tx, body.ownerId);
+    const group = await tx.group.update({ where: { id }, data: toGroupData(body, ownerId), select: groupSelect });
+    return toGroupResponse(group);
+  });
 };
 
 const groupMemberSelect = {

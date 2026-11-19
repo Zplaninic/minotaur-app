@@ -5,6 +5,7 @@ import {
   groupResponse,
   listGroupMembersResponse,
   listGroupsResponse,
+  updateGroupBody,
 } from "@repo/shared";
 import type { FastifyPluginAsync } from "fastify";
 import type { ZodTypeProvider } from "fastify-type-provider-zod";
@@ -19,6 +20,7 @@ import {
   listGroupMembers,
   listGroups,
   removeGroupMember,
+  updateGroup,
 } from "../services/groups.js";
 import { guardedErrorResponses } from "./responses.js";
 
@@ -56,6 +58,19 @@ export const groupRoutes: FastifyPluginAsync = async (app) => {
       },
     },
     async (request) => getGroup(app.db, request.params.id),
+  );
+
+  routes.put(
+    "/:id",
+    {
+      onRequest: app.requireAbility("update", "Group"),
+      schema: {
+        params: groupParams,
+        body: updateGroupBody,
+        response: { 200: groupResponse, ...guardedErrorResponses(400, 404) },
+      },
+    },
+    async (request) => updateGroup(app.db, request.params.id, request.body),
   );
 
   routes.delete(

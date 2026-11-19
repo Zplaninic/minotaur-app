@@ -1,7 +1,16 @@
 import { afterAll, beforeEach, describe, expect, it } from "vitest";
 import { createGuardian, createLoginMember, createOrg, resetDb } from "../../test/db.js";
 import { prisma } from "../db/client.js";
-import { addGroupMember, createGroup, getGroup, listGroupMembers, listGroups, removeGroupMember } from "./groups.js";
+import {
+  addGroupMember,
+  archiveGroup,
+  createGroup,
+  getGroup,
+  listGroupMembers,
+  listGroups,
+  removeGroupMember,
+  updateGroup,
+} from "./groups.js";
 import { setMemberRole } from "./logins.js";
 
 const TODAY = "2026-11-16";
@@ -24,6 +33,8 @@ const group = (overrides: Partial<Parameters<typeof createGroup>[1]> = {}) => ({
   days: ["monday" as const, "wednesday" as const],
   from: "17:00",
   to: "18:30",
+  ageFrom: null,
+  ageTo: null,
   ...overrides,
 });
 
@@ -35,8 +46,16 @@ describe("createGroup", () => {
       days: ["monday", "wednesday"],
       from: "17:00",
       to: "18:30",
+      ageFrom: null,
+      ageTo: null,
       memberCount: 0,
     });
+  });
+
+  it("saves an age range open at one end", async () => {
+    const created = await createGroup(prisma, group({ ageFrom: 7 }));
+    expect(created).toMatchObject({ ageFrom: 7, ageTo: null });
+    expect(await getGroup(prisma, created.id)).toMatchObject({ ageFrom: 7, ageTo: null });
   });
 
   it("returns the days in week order", async () => {
@@ -55,6 +74,51 @@ describe("createGroup", () => {
   it("rejects an unknown owner", async () => {
     await expect(createGroup(prisma, group({ ownerId: "999999" }))).rejects.toMatchObject({ code: "NOT_FOUND" });
     await expect(createGroup(prisma, group({ ownerId: "abc" }))).rejects.toMatchObject({ code: "NOT_FOUND" });
+  });
+});
+
+describe("updateGroup", () => {
+  it("replaces the trainer, days, times and age range", async () => {
+    const created = await createGroup(prisma, group({ ageFrom: 7, ageTo: 10 }));
+    const other = String((await createLoginMember(prisma, orgId, "trainer", "other@example.com")).memberId);
+    const updated = await updateGroup(
+      prisma,
+      created.id,
+      group({ ownerId: other, days: ["friday", "tuesday"], from: "08:00", to: "09:00", ageFrom: null, ageTo: 12 }),
+    );
+    expect(updated).toMatchObject({
+      id: created.id,
+      owner: { id: other },
+      days: ["tuesday", "friday"],
+      from: "08:00",
+      to: "09:00",
+      ageFrom: null,
+      ageTo: 12,
+    });
+    expect(await getGroup(prisma, created.id)).toEqual(updated);
+  });
+
+  it("keeps the group's members", async () => {
+    const created = await createGroup(prisma, group());
+    await addGroupMember(prisma, created.id, await addedMember("child", "Ana", "Horvat"), TODAY);
+    expect((await updateGroup(prisma, created.id, group({ ageFrom: 7 }))).memberCount).toBe(1);
+  });
+
+  it("rejects an owner who is not a trainer", async () => {
+    const created = await createGroup(prisma, group());
+    const { memberId } = await createLoginMember(prisma, orgId, "admin", "admin@example.com");
+    await expect(updateGroup(prisma, created.id, group({ ownerId: String(memberId) }))).rejects.toMatchObject({
+      code: "VALIDATION_ERROR",
+    });
+    expect((await getGroup(prisma, created.id)).owner.id).toBe(trainerId);
+  });
+
+  it("rejects an unknown or archived group", async () => {
+    const created = await createGroup(prisma, group());
+    await archiveGroup(prisma, created.id, new Date());
+    await expect(updateGroup(prisma, created.id, group())).rejects.toMatchObject({ code: "NOT_FOUND" });
+    await expect(updateGroup(prisma, "999999", group())).rejects.toMatchObject({ code: "NOT_FOUND" });
+    await expect(updateGroup(prisma, "abc", group())).rejects.toMatchObject({ code: "NOT_FOUND" });
   });
 });
 

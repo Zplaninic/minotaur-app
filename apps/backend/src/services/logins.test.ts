@@ -84,7 +84,14 @@ describe("setLoginPassword", () => {
 describe("setMemberRole", () => {
   it("takes a member who becomes a trainer out of their groups", async () => {
     const owner = await createLoginMember(prisma, orgId, "trainer", "owner@example.com");
-    const group = await createGroup(prisma, { ownerId: String(owner.memberId), days: ["monday"], from: "18:00", to: "19:00" });
+    const group = await createGroup(prisma, {
+      ownerId: String(owner.memberId),
+      days: ["monday"],
+      from: "18:00",
+      to: "19:00",
+      ageFrom: null,
+      ageTo: null,
+    });
     const { memberId } = await createLoginMember(prisma, orgId, "child");
     await addGroupMember(prisma, group.id, String(memberId), TODAY);
 

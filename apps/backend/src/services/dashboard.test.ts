@@ -32,7 +32,14 @@ const child = async (surname: string): Promise<string> => {
 };
 
 const groupWith = async (days: ("monday" | "wednesday")[], memberIds: string[]): Promise<string> => {
-  const { id } = await createGroup(prisma, { ownerId: trainerId, days, from: "17:00", to: "18:00" });
+  const { id } = await createGroup(prisma, {
+    ownerId: trainerId,
+    days,
+    from: "17:00",
+    to: "18:00",
+    ageFrom: null,
+    ageTo: null,
+  });
   for (const memberId of memberIds) {
     await addGroupMember(prisma, id, memberId, TODAY);
   }

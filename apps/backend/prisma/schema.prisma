@@ -134,6 +134,9 @@ model Group {
   // Wall-clock times at the gym, without a date or a time zone.
   from         DateTime           @db.Time(0)
   to           DateTime           @db.Time(0)
+  // Age range in whole years; either end may be open (null).
+  ageFrom      Int?               @db.SmallInt
+  ageTo        Int?               @db.SmallInt
   createdAt    DateTime           @default(now()) @db.Timestamptz
   updatedAt    DateTime           @updatedAt @db.Timestamptz
   // Set when the group is archived. Archived groups are hidden but kept for history.

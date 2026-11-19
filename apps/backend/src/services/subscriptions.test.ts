@@ -74,7 +74,16 @@ describe("payments", () => {
     const orgId = await createOrg(prisma);
     adminId = String((await createLoginMember(prisma, orgId, "admin")).memberId);
     const trainerId = String((await createLoginMember(prisma, orgId, "trainer")).memberId);
-    groupId = (await createGroup(prisma, { ownerId: trainerId, days: ["monday"], from: "17:00", to: "18:00" })).id;
+    groupId = (
+      await createGroup(prisma, {
+        ownerId: trainerId,
+        days: ["monday"],
+        from: "17:00",
+        to: "18:00",
+        ageFrom: null,
+        ageTo: null,
+      })
+    ).id;
     const child = async (surname: string) => {
       const id = String((await createLoginMember(prisma, orgId, "child", `${surname}@example.com`)).memberId);
       await prisma.member.update({ where: { id: Number(id) }, data: { surname } });

@@ -24,8 +24,17 @@ type DemoGroup = {
   to: string;
   // Children's birth years, oldest first.
   birthYears: [number, number];
+  ageFrom: number | null;
+  ageTo: number | null;
   size: number;
 };
+
+// The birth years of a group's children and the age range it is named with.
+type AgeBand = Pick<DemoGroup, "birthYears" | "ageFrom" | "ageTo">;
+
+const LITTLE: AgeBand = { birthYears: [2019, 2021], ageFrom: 5, ageTo: 7 };
+const MIDDLE: AgeBand = { birthYears: [2015, 2018], ageFrom: 8, ageTo: 11 };
+const TEENS: AgeBand = { birthYears: [2008, 2014], ageFrom: 12, ageTo: null };
 
 type DemoTrainer = { name: string; surname: string; email: string; birthday: string; groups: DemoGroup[] };
 
@@ -36,9 +45,9 @@ const TRAINERS: readonly DemoTrainer[] = [
     email: "lorena.vidmar@demo.example.com",
     birthday: "1994-04-18",
     groups: [
-      { days: ["monday", "wednesday"], from: "17:00", to: "18:00", birthYears: [2019, 2021], size: 10 },
-      { days: ["monday", "wednesday"], from: "18:00", to: "19:00", birthYears: [2015, 2018], size: 12 },
-      { days: ["monday", "wednesday"], from: "19:00", to: "20:30", birthYears: [2008, 2014], size: 11 },
+      { days: ["monday", "wednesday"], from: "17:00", to: "18:00", ...LITTLE, size: 10 },
+      { days: ["monday", "wednesday"], from: "18:00", to: "19:00", ...MIDDLE, size: 12 },
+      { days: ["monday", "wednesday"], from: "19:00", to: "20:30", ...TEENS, size: 11 },
     ],
   },
   {
@@ -47,9 +56,9 @@ const TRAINERS: readonly DemoTrainer[] = [
     email: "dario.kolarec@demo.example.com",
     birthday: "1990-09-02",
     groups: [
-      { days: ["tuesday", "thursday"], from: "16:30", to: "17:30", birthYears: [2019, 2021], size: 9 },
-      { days: ["tuesday", "thursday"], from: "17:30", to: "19:00", birthYears: [2015, 2018], size: 12 },
-      { days: ["saturday"], from: "10:00", to: "11:30", birthYears: [2008, 2014], size: 8 },
+      { days: ["tuesday", "thursday"], from: "16:30", to: "17:30", ...LITTLE, size: 9 },
+      { days: ["tuesday", "thursday"], from: "17:30", to: "19:00", ...MIDDLE, size: 12 },
+      { days: ["saturday"], from: "10:00", to: "11:30", ...TEENS, size: 8 },
     ],
   },
 ];
@@ -153,7 +162,14 @@ const createChild = async (db: Db, orgId: string, birthYears: [number, number], 
 };
 
 const seedGroup = async (db: Db, orgId: string, ownerId: string, demo: DemoGroup, today: string) => {
-  const group = await createGroup(db, { ownerId, days: demo.days, from: demo.from, to: demo.to });
+  const group = await createGroup(db, {
+    ownerId,
+    days: demo.days,
+    from: demo.from,
+    to: demo.to,
+    ageFrom: demo.ageFrom,
+    ageTo: demo.ageTo,
+  });
   const currentMonth = SEASON.indexOf(today.slice(0, 7));
 
   const children: DemoChild[] = [];

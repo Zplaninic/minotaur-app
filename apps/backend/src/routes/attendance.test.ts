@@ -38,6 +38,8 @@ beforeEach(async () => {
       days: ["monday", "wednesday"],
       from: "18:00",
       to: "19:00",
+      ageFrom: null,
+      ageTo: null,
     })
   ).id;
   childId = String((await createLoginMember(app.db, orgId, "child")).memberId);

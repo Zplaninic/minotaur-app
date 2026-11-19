@@ -48,7 +48,15 @@ describe("POST /groups", () => {
       days: ["tuesday", "thursday"],
       from: "17:00",
       to: "18:30",
+      ageFrom: null,
+      ageTo: null,
     });
+  });
+
+  it("saves an age range", async () => {
+    const response = await post({ ...body(), ageFrom: 7, ageTo: 10 });
+    expect(response.statusCode).toBe(201);
+    expect(groupResponse.parse(response.json())).toMatchObject({ ageFrom: 7, ageTo: 10 });
   });
 
   it("answers FORBIDDEN for a trainer", async () => {
@@ -61,6 +69,8 @@ describe("POST /groups", () => {
     ["no days", { days: [] }],
     ["an end before the start", { from: "19:00", to: "18:00" }],
     ["a time that is not HH:mm", { from: "5pm" }],
+    ["an upper age below the lower age", { ageFrom: 10, ageTo: 7 }],
+    ["an age that is not a whole number", { ageFrom: "seven" }],
   ])("rejects %s", async (_label, override) => {
     const response = await post({ ...body(), ...override });
     expect(response.statusCode).toBe(400);
@@ -124,6 +134,53 @@ describe("GET /groups/:id", () => {
 
   it("answers UNAUTHORIZED without a session", async () => {
     const response = await app.inject({ method: "GET", url: "/groups/1" });
+    expect(response.statusCode).toBe(401);
+  });
+});
+
+const put = (groupId: string, payload: object, headers = admin) =>
+  app.inject({ method: "PUT", url: `/groups/${groupId}`, payload, headers });
+
+describe("PUT /groups/:id", () => {
+  it("lets an admin replace the group", async () => {
+    const groupId = await createdGroupId();
+    const response = await put(groupId, { ...body(), days: ["friday"], from: "08:00", to: "09:00", ageFrom: 12 });
+    expect(response.statusCode).toBe(200);
+    expect(groupResponse.parse(response.json())).toMatchObject({
+      id: groupId,
+      days: ["friday"],
+      from: "08:00",
+      to: "09:00",
+      ageFrom: 12,
+      ageTo: null,
+    });
+  });
+
+  it("answers FORBIDDEN for a trainer", async () => {
+    const groupId = await createdGroupId();
+    const response = await put(groupId, body(), trainer);
+    expect(response.statusCode).toBe(403);
+    expect(errorResponse.parse(response.json()).code).toBe("FORBIDDEN");
+  });
+
+  it.each([
+    ["no days", { days: [] }],
+    ["an upper age below the lower age", { ageFrom: 10, ageTo: 7 }],
+  ])("rejects %s", async (_label, override) => {
+    const groupId = await createdGroupId();
+    const response = await put(groupId, { ...body(), ...override });
+    expect(response.statusCode).toBe(400);
+    expect(errorResponse.parse(response.json()).code).toBe("VALIDATION_ERROR");
+  });
+
+  it("answers NOT_FOUND for an unknown group", async () => {
+    const response = await put("999999", body());
+    expect(response.statusCode).toBe(404);
+    expect(errorResponse.parse(response.json()).code).toBe("NOT_FOUND");
+  });
+
+  it("answers UNAUTHORIZED before looking at an invalid body", async () => {
+    const response = await app.inject({ method: "PUT", url: "/groups/1", payload: {} });
     expect(response.statusCode).toBe(401);
   });
 });

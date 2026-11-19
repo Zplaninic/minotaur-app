@@ -28,8 +28,16 @@ beforeEach(async () => {
   await resetDb(prisma);
   orgId = await createOrg(prisma);
   const trainerId = String((await createLoginMember(prisma, orgId, "trainer")).memberId);
-  groupId = (await createGroup(prisma, { ownerId: trainerId, days: ["monday", "wednesday"], from: "18:00", to: "19:00" }))
-    .id;
+  groupId = (
+    await createGroup(prisma, {
+      ownerId: trainerId,
+      days: ["monday", "wednesday"],
+      from: "18:00",
+      to: "19:00",
+      ageFrom: null,
+      ageTo: null,
+    })
+  ).id;
   childId = String((await createLoginMember(prisma, orgId, "child")).memberId);
   await addGroupMember(prisma, groupId, childId, TODAY);
 });
@@ -133,7 +141,14 @@ describe("deleteTrainingSession", () => {
   it("answers NOT_FOUND for a session of another group", async () => {
     const sessionId = await sessionOn("2026-11-02");
     const trainerId = String((await createLoginMember(prisma, orgId, "trainer", "other@example.com")).memberId);
-    const other = await createGroup(prisma, { ownerId: trainerId, days: ["friday"], from: "17:00", to: "18:00" });
+    const other = await createGroup(prisma, {
+      ownerId: trainerId,
+      days: ["friday"],
+      from: "17:00",
+      to: "18:00",
+      ageFrom: null,
+      ageTo: null,
+    });
     await expect(deleteTrainingSession(prisma, other.id, sessionId)).rejects.toMatchObject({ code: "NOT_FOUND" });
     expect(await prisma.trainingSession.count()).toBe(1);
   });
@@ -393,7 +408,16 @@ describe("one subscription and payment per member per month", () => {
 
   beforeEach(async () => {
     const trainerId = String((await createLoginMember(prisma, orgId, "trainer", "other@example.com")).memberId);
-    otherGroupId = (await createGroup(prisma, { ownerId: trainerId, days: ["friday"], from: "17:00", to: "18:00" })).id;
+    otherGroupId = (
+      await createGroup(prisma, {
+        ownerId: trainerId,
+        days: ["friday"],
+        from: "17:00",
+        to: "18:00",
+        ageFrom: null,
+        ageTo: null,
+      })
+    ).id;
     await addGroupMember(prisma, otherGroupId, childId, TODAY);
   });
 

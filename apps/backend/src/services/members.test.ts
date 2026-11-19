@@ -217,7 +217,14 @@ describe("archiveMember", () => {
   const groupWithChild = async () => {
     const trainerId = String((await createLoginMember(prisma, orgId, "trainer")).memberId);
     const groupId = (
-      await createGroup(prisma, { ownerId: trainerId, days: ["monday"], from: "18:00", to: "19:00" })
+      await createGroup(prisma, {
+        ownerId: trainerId,
+        days: ["monday"],
+        from: "18:00",
+        to: "19:00",
+        ageFrom: null,
+        ageTo: null,
+      })
     ).id;
     const childId = String((await createLoginMember(prisma, orgId, "child")).memberId);
     await addGroupMember(prisma, groupId, childId, TODAY);
