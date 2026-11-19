@@ -14,10 +14,10 @@ import type { Db } from "../db/client.js";
 import { deleteMemberSessions } from "../auth/sessions.js";
 import { AppError } from "../errors.js";
 import type { Prisma } from "../generated/prisma/client.js";
-import { monthOf, monthStart } from "./attendance.js";
+import { monthOf, monthStart, toDbDate, toIsoDate } from "./dates.js";
 import { leaveGroups } from "./groups.js";
 import { guardianSelect, toGuardianResponse } from "./guardians.js";
-import { toApiId, toDbId } from "./ids.js";
+import { requireDbId, toApiId, toDbId } from "./ids.js";
 
 const memberSelect = {
   id: true,
@@ -39,10 +39,6 @@ const memberSelect = {
 type MemberRow = Prisma.MemberGetPayload<{ select: typeof memberSelect }>;
 
 type ResolvedGuardian = { kind: "existing"; id: number } | ({ kind: "new" } & CreateGuardianBody);
-
-// Birthdays are calendar dates, kept as UTC midnight in a Date.
-const toDbDate = (isoDate: string): Date => new Date(`${isoDate}T00:00:00.000Z`);
-const toIsoDate = (date: Date): string => date.toISOString().slice(0, 10);
 
 // Age in whole years. Both dates are YYYY-MM-DD; today is the day at the gym.
 // The MM-DD parts sort like the days of the year they stand for.
@@ -90,14 +86,6 @@ export const listMembers = async (db: Db, query: ListMembersQuery, today: string
     }),
   ]);
   return { items: members.map(toMemberResponse), page: query.page, pageSize: query.pageSize, total };
-};
-
-const requireDbId = (value: string, notFoundMessage: string): number => {
-  const dbId = toDbId(value);
-  if (dbId === undefined) {
-    throw new AppError("NOT_FOUND", 404, notFoundMessage);
-  }
-  return dbId;
 };
 
 type DbClient = Db | Prisma.TransactionClient;

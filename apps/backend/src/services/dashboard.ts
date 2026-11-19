@@ -1,6 +1,6 @@
 import { GROUP_MEMBER_ROLES, type DashboardResponse } from "@repo/shared";
 import type { Db } from "../db/client.js";
-import { monthOf, monthStart } from "./attendance.js";
+import { monthOf, monthStart, toDbDate } from "./dates.js";
 import { toApiId } from "./ids.js";
 
 const sum = (values: readonly number[]): number => values.reduce((total, value) => total + value, 0);
@@ -19,7 +19,7 @@ export const getDashboard = async (db: Db, today: string): Promise<DashboardResp
     }),
     db.groupMonthMember.groupBy({ by: ["groupId"], where: rosterOfThisMonth, _count: { _all: true } }),
     db.trainingSession.findMany({
-      where: { date: { gte: monthStart(month), lte: new Date(`${today}T00:00:00.000Z`) }, group: { deletedAt: null } },
+      where: { date: { gte: monthStart(month), lte: toDbDate(today) }, group: { deletedAt: null } },
       select: { groupId: true, _count: { select: { attendance: { where: { member: { deletedAt: null } } } } } },
     }),
   ]);

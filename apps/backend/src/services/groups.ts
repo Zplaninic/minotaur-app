@@ -11,7 +11,8 @@ import {
 import type { Db } from "../db/client.js";
 import { AppError } from "../errors.js";
 import type { Prisma } from "../generated/prisma/client.js";
-import { ensureMemberMonths, monthOf, monthStart, monthsFrom } from "./attendance.js";
+import { ensureMemberMonths, monthsFrom } from "./attendance.js";
+import { monthOf, monthStart, toIsoDate } from "./dates.js";
 import { guardianSelect, toGuardianResponse } from "./guardians.js";
 import { toApiId, toDbId } from "./ids.js";
 
@@ -130,7 +131,7 @@ export const listGroupMembers = async (db: Db, groupId: string): Promise<ListGro
       id: toApiId(member.id),
       name: member.name,
       surname: member.surname,
-      birthday: member.birthday.toISOString().slice(0, 10),
+      birthday: toIsoDate(member.birthday),
       email: member.email,
       phone: member.phone,
       guardians: member.guardians.map((link) => toGuardianResponse(link.guardian)),

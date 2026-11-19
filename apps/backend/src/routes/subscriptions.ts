@@ -1,5 +1,4 @@
 import {
-  errorResponse,
   listSubscriptionsResponse,
   overduePaymentsResponse,
   subscriptionBody,
@@ -11,7 +10,7 @@ import {
 import type { FastifyPluginAsync } from "fastify";
 import type { ZodTypeProvider } from "fastify-type-provider-zod";
 import { config } from "../config.js";
-import { isoDateIn } from "../services/attendance.js";
+import { isoDateIn } from "../services/dates.js";
 import {
   createSubscription,
   getSubscriptionSummary,
@@ -19,6 +18,7 @@ import {
   listSubscriptions,
   updateSubscription,
 } from "../services/subscriptions.js";
+import { guardedErrorResponses } from "./responses.js";
 
 export const subscriptionRoutes: FastifyPluginAsync = async (app) => {
   const routes = app.withTypeProvider<ZodTypeProvider>();
@@ -28,7 +28,7 @@ export const subscriptionRoutes: FastifyPluginAsync = async (app) => {
     {
       onRequest: app.requireAbility("read", "Subscription"),
       schema: {
-        response: { 200: listSubscriptionsResponse, 401: errorResponse, 403: errorResponse, 500: errorResponse },
+        response: { 200: listSubscriptionsResponse, ...guardedErrorResponses() },
       },
     },
     async () => listSubscriptions(app.db),
@@ -40,13 +40,7 @@ export const subscriptionRoutes: FastifyPluginAsync = async (app) => {
       onRequest: app.requireAbility("read", "Subscription"),
       schema: {
         querystring: subscriptionSummaryQuery,
-        response: {
-          200: subscriptionSummaryResponse,
-          400: errorResponse,
-          401: errorResponse,
-          403: errorResponse,
-          500: errorResponse,
-        },
+        response: { 200: subscriptionSummaryResponse, ...guardedErrorResponses(400) },
       },
     },
     async (request) => getSubscriptionSummary(app.db, request.query.month),
@@ -57,7 +51,7 @@ export const subscriptionRoutes: FastifyPluginAsync = async (app) => {
     {
       onRequest: app.requireAbility("read", "Subscription"),
       schema: {
-        response: { 200: overduePaymentsResponse, 401: errorResponse, 403: errorResponse, 500: errorResponse },
+        response: { 200: overduePaymentsResponse, ...guardedErrorResponses() },
       },
     },
     async () => listOverduePayments(app.db, isoDateIn(new Date(), config.GYM_TIME_ZONE)),
@@ -69,14 +63,7 @@ export const subscriptionRoutes: FastifyPluginAsync = async (app) => {
       onRequest: app.requireAbility("create", "Subscription"),
       schema: {
         body: subscriptionBody,
-        response: {
-          201: subscriptionResponse,
-          400: errorResponse,
-          401: errorResponse,
-          403: errorResponse,
-          409: errorResponse,
-          500: errorResponse,
-        },
+        response: { 201: subscriptionResponse, ...guardedErrorResponses(400, 409) },
       },
     },
     async (request, reply) => reply.status(201).send(await createSubscription(app.db, request.body)),
@@ -89,15 +76,7 @@ export const subscriptionRoutes: FastifyPluginAsync = async (app) => {
       schema: {
         params: subscriptionParams,
         body: subscriptionBody,
-        response: {
-          200: subscriptionResponse,
-          400: errorResponse,
-          401: errorResponse,
-          403: errorResponse,
-          404: errorResponse,
-          409: errorResponse,
-          500: errorResponse,
-        },
+        response: { 200: subscriptionResponse, ...guardedErrorResponses(400, 404, 409) },
       },
     },
     async (request) => updateSubscription(app.db, request.params.id, request.body),

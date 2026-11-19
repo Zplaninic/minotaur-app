@@ -29,9 +29,10 @@ export const groupsTrainingOn = (
 ): GroupResponse[] => {
   const day = weekdayOfDate(isoDate);
   const isMine = (group: GroupResponse): number => (group.owner.id === ownerId ? 0 : 1);
+  // filter returns a new array, so sorting it in place is safe; Hermes has no toSorted.
   return groups
     .filter((group) => group.days.includes(day))
-    .toSorted((a, b) => isMine(a) - isMine(b) || a.from.localeCompare(b.from));
+    .sort((a, b) => isMine(a) - isMine(b) || a.from.localeCompare(b.from));
 };
 
 // The share of expected attendance that was marked, 0..1; undefined when nothing was expected.

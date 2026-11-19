@@ -1,7 +1,8 @@
-import { errorResponse, listOrgsResponse } from "@repo/shared";
+import { listOrgsResponse } from "@repo/shared";
 import type { FastifyPluginAsync } from "fastify";
 import type { ZodTypeProvider } from "fastify-type-provider-zod";
 import { listOrgs } from "../services/orgs.js";
+import { guardedErrorResponses } from "./responses.js";
 
 export const orgRoutes: FastifyPluginAsync = async (app) => {
   const routes = app.withTypeProvider<ZodTypeProvider>();
@@ -10,7 +11,7 @@ export const orgRoutes: FastifyPluginAsync = async (app) => {
     "/",
     {
       onRequest: app.requireAbility("read", "Org"),
-      schema: { response: { 200: listOrgsResponse, 401: errorResponse, 403: errorResponse, 500: errorResponse } },
+      schema: { response: { 200: listOrgsResponse, ...guardedErrorResponses() } },
     },
     async () => listOrgs(app.db),
   );

@@ -9,7 +9,7 @@ import type {
 import type { Db } from "../db/client.js";
 import { AppError } from "../errors.js";
 import type { Prisma } from "../generated/prisma/client.js";
-import { monthOf, monthStart } from "./attendance.js";
+import { monthOf, monthStart, toIsoDate } from "./dates.js";
 import { toApiId, toDbId } from "./ids.js";
 
 const subscriptionSelect = {
@@ -140,7 +140,7 @@ export const listOverduePayments = async (db: Db, today: string): Promise<Overdu
       items.push(item);
     }
     item.months.push({
-      month: monthOf(row.month.toISOString().slice(0, 10)),
+      month: monthOf(toIsoDate(row.month)),
       subscription: { id: toApiId(row.subscription.id), name: row.subscription.name },
       price: row.subscriptionPrice,
     });

@@ -7,14 +7,13 @@ import {
   createMonthSessions,
   deleteTrainingSession,
   getGroupAttendance,
-  isoDateIn,
   markAttendance,
   removeMonthMember,
   setMonthPaid,
   setMonthSubscription,
-  trainingDates,
   unmarkAttendance,
 } from "./attendance.js";
+import { trainingDates } from "./dates.js";
 import { addGroupMember, archiveGroup, createGroup, removeGroupMember } from "./groups.js";
 import { createSubscription, updateSubscription } from "./subscriptions.js";
 
@@ -40,36 +39,6 @@ afterAll(async () => {
 
 const sessionOn = async (date: string, today = TODAY): Promise<string> =>
   (await addTrainingSession(prisma, groupId, date, today)).id;
-
-describe("trainingDates", () => {
-  it("lists every Monday and Wednesday of November 2026", () => {
-    expect(trainingDates("2026-11", ["monday", "wednesday"])).toEqual([
-      "2026-11-02",
-      "2026-11-04",
-      "2026-11-09",
-      "2026-11-11",
-      "2026-11-16",
-      "2026-11-18",
-      "2026-11-23",
-      "2026-11-25",
-      "2026-11-30",
-    ]);
-  });
-
-  it("includes the first and last day of the month", () => {
-    expect(trainingDates("2026-12", ["tuesday", "thursday"]).at(0)).toBe("2026-12-01");
-    expect(trainingDates("2026-12", ["thursday"]).at(-1)).toBe("2026-12-31");
-    expect(trainingDates("2027-02", ["sunday"])).toEqual(["2027-02-07", "2027-02-14", "2027-02-21", "2027-02-28"]);
-  });
-});
-
-describe("isoDateIn", () => {
-  it("returns the day in the given time zone", () => {
-    const lateEvening = new Date("2026-11-16T23:30:00.000Z");
-    expect(isoDateIn(lateEvening, "UTC")).toBe("2026-11-16");
-    expect(isoDateIn(lateEvening, "Europe/Zagreb")).toBe("2026-11-17");
-  });
-});
 
 describe("createMonthSessions", () => {
   it("creates a session for every training day of the month, once", async () => {

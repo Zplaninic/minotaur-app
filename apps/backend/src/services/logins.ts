@@ -11,6 +11,7 @@ import { hashPassword } from "../auth/password.js";
 import { deleteMemberSessions } from "../auth/sessions.js";
 import type { Db } from "../db/client.js";
 import { AppError } from "../errors.js";
+import { toDbDate } from "./dates.js";
 import { leaveGroups } from "./groups.js";
 
 // Used by the backend commands until there are screens for managing logins.
@@ -69,7 +70,7 @@ export const createMemberWithLogin = async (
       orgId: input.orgId,
       name: personName.parse(input.name),
       surname: personName.parse(input.surname),
-      birthday: new Date(`${input.birthday}T00:00:00.000Z`),
+      birthday: toDbDate(input.birthday),
       email: emailSchema.parse(input.email),
       role,
       login: { create: { passwordHash } },

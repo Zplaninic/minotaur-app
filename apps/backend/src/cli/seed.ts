@@ -1,13 +1,8 @@
 import type { Month, Weekday } from "@repo/shared";
 import { config } from "../config.js";
 import type { Db } from "../db/client.js";
-import {
-  createMonthSessions,
-  getGroupAttendance,
-  isoDateIn,
-  markAttendance,
-  removeMonthMember,
-} from "../services/attendance.js";
+import { createMonthSessions, getGroupAttendance, markAttendance, removeMonthMember } from "../services/attendance.js";
+import { isoDateIn } from "../services/dates.js";
 import { addGroupMember, createGroup, removeGroupMember } from "../services/groups.js";
 import { createMemberWithLogin } from "../services/logins.js";
 import { createMember } from "../services/members.js";
