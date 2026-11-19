@@ -56,11 +56,14 @@ export const AttendanceScreen = ({ groupId, now: fixedNow }: AttendanceScreenPro
   const group = useGroup(groupId);
   const attendance = useGroupAttendance(groupId, month);
   const createSessions = useCreateMonthSessions(groupId);
-  const latestTick = useMutationState({
-    filters: { mutationKey: attendanceMutationKey(groupId, month) },
-    select: (mutation) => mutation.state,
-  })
-    .toSorted((a, b) => a.submittedAt - b.submittedAt)
+  // Copied before sorting: useMutationState may return a memoized array, and Hermes has no toSorted.
+  const latestTick = [
+    ...useMutationState({
+      filters: { mutationKey: attendanceMutationKey(groupId, month) },
+      select: (mutation) => mutation.state,
+    }),
+  ]
+    .sort((a, b) => a.submittedAt - b.submittedAt)
     .at(-1);
 
   const sessions = attendance.data?.sessions ?? [];
