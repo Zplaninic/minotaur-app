@@ -90,6 +90,20 @@ export const setMonthPaid = (api: ApiClient, groupId: string, month: Month, memb
     body: JSON.stringify({ paid }),
   });
 
+// The server answers 204 with no body. null or blank text clears the comment.
+export const setMonthComment = (
+  api: ApiClient,
+  groupId: string,
+  month: Month,
+  memberId: string,
+  comment: string | null,
+) =>
+  api.fetch(`${monthMemberPath(groupId, month, memberId)}/comment`, z.undefined(), {
+    method: "PUT",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({ comment }),
+  });
+
 // The group's members who are not on the month's roster yet.
 export const monthRosterCandidates = <Member extends { id: string }>(
   groupMembers: readonly Member[],

@@ -38,6 +38,15 @@ export const monthMemberSubscription = z.object({
 });
 export type MonthMemberSubscription = z.infer<typeof monthMemberSubscription>;
 
+export const MAX_MONTH_COMMENT_LENGTH = 500;
+
+// A trainer's note on a member for one month. Blank text means no comment.
+export const monthComment = z
+  .string()
+  .trim()
+  .max(MAX_MONTH_COMMENT_LENGTH)
+  .transform((value) => (value === "" ? null : value));
+
 export const attendanceMemberResponse = z.object({
   id,
   name: z.string(),
@@ -46,6 +55,8 @@ export const attendanceMemberResponse = z.object({
   subscription: monthMemberSubscription.nullable(),
   // Whether the member paid for this month.
   paid: z.boolean(),
+  // The same in all the member's groups, like paid.
+  comment: z.string().nullable(),
 });
 export type AttendanceMemberResponse = z.infer<typeof attendanceMemberResponse>;
 
@@ -71,3 +82,7 @@ export type SetMonthSubscriptionBody = z.infer<typeof setMonthSubscriptionBody>;
 
 export const setMonthPaidBody = z.object({ paid: z.boolean() });
 export type SetMonthPaidBody = z.infer<typeof setMonthPaidBody>;
+
+// null or blank text clears the comment.
+export const setMonthCommentBody = z.object({ comment: monthComment.nullable() });
+export type SetMonthCommentBody = z.input<typeof setMonthCommentBody>;
