@@ -138,7 +138,7 @@ export const en = {
   "groups.loading": "Loading groups…",
   "groups.table.caption": "Training groups, sorted by trainer",
   "groups.name": "{trainer} - {days} - {from} - {to}",
-  "groups.nameWithAge": "{trainer} - {age} - {days} - {from} - {to}",
+  "groups.nameWithAge": "{trainer} ({age}) - {days} - {from} - {to}",
   "groups.age.range": "{from}–{to} yrs",
   "groups.age.from": "{from}+ yrs",
   "groups.age.to": "up to {to} yrs",

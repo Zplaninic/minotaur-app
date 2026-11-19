@@ -130,7 +130,7 @@ describe("GroupPage", () => {
     expect(
       await screen.findByRole("heading", {
         level: 1,
-        name: "Petra Kovač - 7–10 yrs - Monday, Wednesday - 5:00 PM - 6:30 PM",
+        name: "Petra Kovač (7–10 yrs) - Monday, Wednesday - 5:00 PM - 6:30 PM",
       }),
     ).toBeInTheDocument();
   });
@@ -163,7 +163,7 @@ describe("GroupPage", () => {
     expect(
       await screen.findByRole("heading", {
         level: 1,
-        name: "Petra Kovač - 12+ yrs - Monday, Wednesday - 5:00 PM - 6:30 PM",
+        name: "Petra Kovač (12+ yrs) - Monday, Wednesday - 5:00 PM - 6:30 PM",
       }),
     ).toBeInTheDocument();
   });
