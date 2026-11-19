@@ -9,6 +9,7 @@ export * from "./groups.js";
 export * from "./guardians.js";
 export * from "./memberDraft.js";
 export * from "./members.js";
+export * from "./monthCommentDraft.js";
 export * from "./orgs.js";
 export * from "./subscriptionDraft.js";
 export * from "./subscriptions.js";

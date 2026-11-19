@@ -1,4 +1,4 @@
-import { errorResponse, groupAttendanceResponse, trainingSessionResponse } from "@repo/shared";
+import { errorResponse, groupAttendanceResponse, MAX_MONTH_COMMENT_LENGTH, trainingSessionResponse } from "@repo/shared";
 import type { FastifyInstance } from "fastify";
 import { afterAll, beforeAll, beforeEach, describe, expect, it } from "vitest";
 import { authHeaders, createLoginMember, createOrg, resetDb } from "../../test/db.js";
@@ -265,5 +265,42 @@ describe("PUT /groups/:id/months/:month/members/:memberId/paid", () => {
 
   it("answers UNAUTHORIZED without a session", async () => {
     expect((await put({ paid: true }, {})).statusCode).toBe(401);
+  });
+});
+
+describe("PUT /groups/:id/months/:month/members/:memberId/comment", () => {
+  const put = (payload: object, headers: Record<string, string> = trainer) =>
+    app.inject({
+      method: "PUT",
+      url: `/groups/${groupId}/months/${thisMonth}/members/${childId}/comment`,
+      payload,
+      headers,
+    });
+  const savedComment = async () =>
+    groupAttendanceResponse.parse((await getMonth(thisMonth)).json()).members[0]?.comment;
+
+  it("sets a trimmed comment and clears it with blank text", async () => {
+    await addSession(firstOfThisMonth);
+    expect((await put({ comment: " Injured knee " })).statusCode).toBe(204);
+    expect(await savedComment()).toBe("Injured knee");
+
+    expect((await put({ comment: "  " })).statusCode).toBe(204);
+    expect(await savedComment()).toBeNull();
+  });
+
+  it("rejects a comment over the limit", async () => {
+    await addSession(firstOfThisMonth);
+    const response = await put({ comment: "a".repeat(MAX_MONTH_COMMENT_LENGTH + 1) });
+    expect(response.statusCode).toBe(400);
+    expect(errorResponse.parse(response.json()).code).toBe("VALIDATION_ERROR");
+  });
+
+  it("rejects a member who is not on the month's roster", async () => {
+    const response = await put({ comment: "Injured knee" });
+    expect(response.statusCode).toBe(400);
+  });
+
+  it("answers UNAUTHORIZED without a session", async () => {
+    expect((await put({ comment: "Injured knee" }, {})).statusCode).toBe(401);
   });
 });

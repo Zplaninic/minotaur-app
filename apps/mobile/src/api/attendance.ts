@@ -11,6 +11,7 @@ import {
   keysToInvalidateAfterMonthPaymentChange,
   markAttendance,
   removeMonthMember,
+  setMonthComment,
   setMonthPaid,
   setMonthSubscription,
   unmarkAttendance,
@@ -116,5 +117,14 @@ export const useSetMonthPaid = (groupId: string, month: Month, memberId: string)
   return useMutation({
     mutationFn: (paid: boolean) => setMonthPaid(api, groupId, month, memberId, paid),
     onSuccess: () => invalidateMonthPayment(queryClient),
+  });
+};
+
+// null clears the comment. Only the sheets show it.
+export const useSetMonthComment = (groupId: string, month: Month, memberId: string) => {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: (comment: string | null) => setMonthComment(api, groupId, month, memberId, comment),
+    onSuccess: () => invalidateAttendance(queryClient),
   });
 };

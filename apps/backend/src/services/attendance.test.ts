@@ -9,6 +9,7 @@ import {
   getGroupAttendance,
   markAttendance,
   removeMonthMember,
+  setMonthComment,
   setMonthPaid,
   setMonthSubscription,
   unmarkAttendance,
@@ -95,7 +96,15 @@ describe("getGroupAttendance", () => {
       { id: second, date: "2026-11-04" },
     ]);
     expect(attendance.members).toEqual([
-      { id: childId, name: "Test", surname: "child", attendedSessionIds: [second], subscription: null, paid: false },
+      {
+        id: childId,
+        name: "Test",
+        surname: "child",
+        attendedSessionIds: [second],
+        subscription: null,
+        paid: false,
+        comment: null,
+      },
     ]);
   });
 });
@@ -401,6 +410,19 @@ describe("one subscription and payment per member per month", () => {
     for (const id of [groupId, otherGroupId]) {
       expect(await inGroup(id, "2026-11")).toMatchObject({ subscription: { id: subscription.id }, paid: true });
     }
+  });
+
+  it("shows a comment set in one group in every group, and clears it", async () => {
+    await createMonthSessions(prisma, groupId, "2026-11", TODAY);
+    await createMonthSessions(prisma, otherGroupId, "2026-11", TODAY);
+    await setMonthComment(prisma, { groupId, month: "2026-11", memberId: childId }, "Injured knee");
+
+    for (const id of [groupId, otherGroupId]) {
+      expect((await inGroup(id, "2026-11"))?.comment).toBe("Injured knee");
+    }
+
+    await setMonthComment(prisma, { groupId: otherGroupId, month: "2026-11", memberId: childId }, null);
+    expect((await inGroup(groupId, "2026-11"))?.comment).toBeNull();
   });
 
   it("carries the subscription from another group's earlier month", async () => {

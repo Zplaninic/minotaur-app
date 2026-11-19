@@ -6,7 +6,14 @@ import { fieldStyles } from "./fieldStyles";
 
 type TextFieldProps = Pick<
   TextInputProps,
-  "keyboardType" | "autoCapitalize" | "maxLength" | "inputMode" | "autoComplete" | "textContentType" | "secureTextEntry"
+  | "keyboardType"
+  | "autoCapitalize"
+  | "maxLength"
+  | "inputMode"
+  | "autoComplete"
+  | "textContentType"
+  | "secureTextEntry"
+  | "multiline"
 > & {
   label: string;
   value: string;

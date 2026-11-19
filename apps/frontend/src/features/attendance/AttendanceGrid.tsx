@@ -7,6 +7,7 @@ import { ConfirmDialog } from "../../components/ConfirmDialog";
 import { formatMonth, formatPersonName, formatSessionDate, formatSortedName } from "../../lib/format";
 import { useMessages } from "../../lib/messages";
 import { AttendanceCheckbox } from "./AttendanceCheckbox";
+import { MonthCommentInput } from "./MonthCommentInput";
 import { MonthPaidCheckbox } from "./MonthPaidCheckbox";
 import { MonthSubscriptionSelect } from "./MonthSubscriptionSelect";
 import { UnpaidBadge } from "./UnpaidBadge";
@@ -69,6 +70,9 @@ export const AttendanceGrid = ({ groupId, month, data, today }: AttendanceGridPr
                   ) : null}
                 </th>
               ))}
+              <th scope="col" className={styles.comment}>
+                {t("attendance.table.comment")}
+              </th>
             </tr>
           </thead>
           <tbody>
@@ -118,6 +122,9 @@ export const AttendanceGrid = ({ groupId, month, data, today }: AttendanceGridPr
                     />
                   </td>
                 ))}
+                <td className={styles.comment}>
+                  <MonthCommentInput groupId={groupId} month={month} member={member} disabled={!canTick} layout="cell" />
+                </td>
               </tr>
             ))}
           </tbody>

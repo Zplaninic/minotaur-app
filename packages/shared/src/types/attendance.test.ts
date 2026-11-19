@@ -4,6 +4,8 @@ import {
   groupAttendanceResponse,
   monthMemberParams,
   monthQuery,
+  MAX_MONTH_COMMENT_LENGTH,
+  setMonthCommentBody,
   setMonthPaidBody,
   setMonthSubscriptionBody,
 } from "./attendance.js";
@@ -34,7 +36,15 @@ describe("groupAttendanceResponse", () => {
         { id: "2", date: "2026-11-04" },
       ],
       members: [
-        { id: "7", name: "Leo", surname: "Perić", attendedSessionIds: ["1"], subscription: null, paid: false },
+        {
+          id: "7",
+          name: "Leo",
+          surname: "Perić",
+          attendedSessionIds: ["1"],
+          subscription: null,
+          paid: false,
+          comment: null,
+        },
         {
           id: "8",
           name: "Nora",
@@ -42,6 +52,7 @@ describe("groupAttendanceResponse", () => {
           attendedSessionIds: [],
           subscription: { id: "3", name: "Kids 2x", sessionsPerWeek: 2, price: 4500 },
           paid: true,
+          comment: "Injured knee",
         },
       ],
     };
@@ -70,5 +81,18 @@ describe("setMonthPaidBody", () => {
     expect(setMonthPaidBody.parse({ paid: true })).toEqual({ paid: true });
     expect(setMonthPaidBody.safeParse({ paid: "yes" }).success).toBe(false);
     expect(setMonthPaidBody.safeParse({}).success).toBe(false);
+  });
+});
+
+describe("setMonthCommentBody", () => {
+  it("trims the comment and turns blank text into null", () => {
+    expect(setMonthCommentBody.parse({ comment: " Injured knee " })).toEqual({ comment: "Injured knee" });
+    expect(setMonthCommentBody.parse({ comment: "  " })).toEqual({ comment: null });
+    expect(setMonthCommentBody.parse({ comment: null })).toEqual({ comment: null });
+  });
+
+  it("rejects a missing or too long comment", () => {
+    expect(setMonthCommentBody.safeParse({}).success).toBe(false);
+    expect(setMonthCommentBody.safeParse({ comment: "a".repeat(MAX_MONTH_COMMENT_LENGTH + 1) }).success).toBe(false);
   });
 });

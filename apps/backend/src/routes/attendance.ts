@@ -6,6 +6,7 @@ import {
   groupParams,
   monthMemberParams,
   monthQuery,
+  setMonthCommentBody,
   setMonthPaidBody,
   setMonthSubscriptionBody,
   trainingSessionParams,
@@ -23,6 +24,7 @@ import {
   getGroupAttendance,
   markAttendance,
   removeMonthMember,
+  setMonthComment,
   setMonthPaid,
   setMonthSubscription,
   unmarkAttendance,
@@ -184,6 +186,23 @@ export const attendanceRoutes: FastifyPluginAsync = async (app) => {
     async (request, reply) => {
       const { id, month, memberId } = request.params;
       await setMonthPaid(app.db, { groupId: id, month, memberId }, request.body.paid);
+      return reply.status(204).send();
+    },
+  );
+
+  routes.put(
+    "/:id/months/:month/members/:memberId/comment",
+    {
+      onRequest: app.requireAbility("update", "Attendance"),
+      schema: {
+        params: monthMemberParams,
+        body: setMonthCommentBody,
+        response: { 204: z.undefined(), ...guardedErrorResponses(400, 404) },
+      },
+    },
+    async (request, reply) => {
+      const { id, month, memberId } = request.params;
+      await setMonthComment(app.db, { groupId: id, month, memberId }, request.body.comment);
       return reply.status(204).send();
     },
   );

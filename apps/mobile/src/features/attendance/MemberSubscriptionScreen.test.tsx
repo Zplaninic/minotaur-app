@@ -1,4 +1,4 @@
-import type { GroupAttendanceResponse, SubscriptionResponse } from "@repo/shared";
+import { MAX_MONTH_COMMENT_LENGTH, type GroupAttendanceResponse, type SubscriptionResponse } from "@repo/shared";
 import { ApiError } from "@repo/shared/client";
 import { fireEvent, render, screen, waitFor } from "@testing-library/react-native";
 import { api } from "../../api/client";
@@ -33,6 +33,7 @@ const attendance: GroupAttendanceResponse = {
       attendedSessionIds: [],
       subscription: { id: "1", name: "Kids 1x", sessionsPerWeek: 1, price: 3000 },
       paid: false,
+      comment: null,
     },
   ],
 };
@@ -41,6 +42,7 @@ let sentBody: unknown;
 let offline: boolean;
 let paidMonth: boolean;
 let withoutSubscription: boolean;
+let savedComment: string | null;
 
 beforeEach(() => {
   mockBack.mockReset();
@@ -48,6 +50,7 @@ beforeEach(() => {
   offline = false;
   paidMonth = false;
   withoutSubscription = false;
+  savedComment = null;
   fetchMock.mockReset();
   fetchMock.mockImplementation(async (path, _schema, init) => {
     if (offline) {
@@ -60,11 +63,17 @@ beforeEach(() => {
           ...member,
           paid: paidMonth,
           subscription: withoutSubscription ? null : member.subscription,
+          comment: savedComment,
         })),
       };
     }
     if (path === "/groups/1/months/2026-11/members/4/paid" && init?.method === "PUT") {
       sentBody = JSON.parse(String(init.body));
+      return undefined;
+    }
+    if (path === "/groups/1/months/2026-11/members/4/comment" && init?.method === "PUT") {
+      sentBody = JSON.parse(String(init.body));
+      savedComment = (sentBody as { comment: string | null }).comment;
       return undefined;
     }
     if (path === "/subscriptions") {
@@ -134,6 +143,34 @@ describe("MemberSubscriptionScreen", () => {
     await fireEvent.press(await screen.findByRole("checkbox", { name: t("monthSubscriptionForm.paid") }));
 
     expect(screen.getByText(t("monthSubscriptionForm.paidNeedsSubscription"))).toBeOnTheScreen();
+    expect(sentBody).toBeUndefined();
+  });
+
+  it("saves a comment for the month and stays on the screen", async () => {
+    await renderScreen();
+    const field = await screen.findByLabelText(t("monthCommentForm.label"));
+    const save = screen.getByRole("button", { name: t("monthCommentForm.save") });
+    expect(save).toBeDisabled();
+
+    await fireEvent.changeText(field, " Injured knee ");
+    await fireEvent.press(save);
+
+    await waitFor(() => expect(sentBody).toEqual({ comment: "Injured knee" }));
+    expect(await screen.findByText(t("monthCommentForm.saved"))).toBeOnTheScreen();
+    expect(mockBack).not.toHaveBeenCalled();
+  });
+
+  it("does not save a comment that is too long", async () => {
+    await renderScreen();
+    await fireEvent.changeText(
+      await screen.findByLabelText(t("monthCommentForm.label")),
+      "a".repeat(MAX_MONTH_COMMENT_LENGTH + 1),
+    );
+    await fireEvent.press(screen.getByRole("button", { name: t("monthCommentForm.save") }));
+
+    expect(
+      screen.getByText(t("monthCommentForm.error.tooLong", { max: MAX_MONTH_COMMENT_LENGTH })),
+    ).toBeOnTheScreen();
     expect(sentBody).toBeUndefined();
   });
 

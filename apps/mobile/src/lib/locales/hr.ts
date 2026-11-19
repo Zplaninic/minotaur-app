@@ -174,6 +174,7 @@ export const hr: Record<keyof typeof en, string> = {
   "attendance.changeSubscription": "Uredi",
   "attendance.paid": "Plaćeno",
   "attendance.notPaid": "Nije plaćeno",
+  "attendance.comment": "Komentar: {comment}",
   "attendance.monthStatus": "{subscription} · {paid}",
   "attendance.changeSubscriptionLabel": "Promijeni članarinu i uplatu: {name}, {month}",
 
@@ -189,6 +190,11 @@ export const hr: Record<keyof typeof en, string> = {
   "monthSubscriptionForm.loading": "Učitavanje članarina…",
   "monthSubscriptionForm.offlineTitle": "Nema veze",
   "monthSubscriptionForm.saving": "Spremanje…",
+
+  "monthCommentForm.label": "Komentar za ovaj mjesec",
+  "monthCommentForm.save": "Spremi komentar",
+  "monthCommentForm.saved": "Komentar je spremljen.",
+  "monthCommentForm.error.tooLong": "Komentar može imati najviše {max} znakova.",
 
   "monthMemberForm.title": "Dodaj člana u ovaj mjesec",
   "monthMemberForm.hint": "Dodirnite člana da ga dodate u {month}.",
