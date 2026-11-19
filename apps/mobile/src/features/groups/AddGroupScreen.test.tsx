@@ -78,6 +78,16 @@ describe("AddGroupScreen", () => {
     expect(postedBody).toBeUndefined();
   });
 
+  it("asks for an upper age that is not below the lower age", async () => {
+    await renderScreen();
+    await fireEvent.changeText(screen.getByLabelText(t("groupForm.ageFrom")), "10");
+    await fireEvent.changeText(screen.getByLabelText(t("groupForm.ageTo")), "7");
+    await save();
+
+    expect(screen.getByText(t("groupForm.error.ageOrder"))).toBeOnTheScreen();
+    expect(postedBody).toBeUndefined();
+  });
+
   it("saves a group and goes back to the list", async () => {
     await renderScreen();
     await fireEvent.press(screen.getByRole("radio", { name: "Kovač Petra" }));
@@ -85,9 +95,18 @@ describe("AddGroupScreen", () => {
     await fireEvent.press(screen.getByRole("checkbox", { name: t("weekday.monday") }));
     await pickTime(t("groupForm.from"), "from-picker", 17, 0);
     await pickTime(t("groupForm.to"), "to-picker", 18, 30);
+    await fireEvent.changeText(screen.getByLabelText(t("groupForm.ageFrom")), "7");
+    await fireEvent.changeText(screen.getByLabelText(t("groupForm.ageTo")), "10");
     await save();
 
     await waitFor(() => expect(mockBack).toHaveBeenCalled());
-    expect(postedBody).toEqual({ ownerId: "2", days: ["monday", "friday"], from: "17:00", to: "18:30" });
+    expect(postedBody).toEqual({
+      ownerId: "2",
+      days: ["monday", "friday"],
+      from: "17:00",
+      to: "18:30",
+      ageFrom: 7,
+      ageTo: 10,
+    });
   });
 });

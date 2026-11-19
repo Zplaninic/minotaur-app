@@ -33,6 +33,8 @@ const group: GroupResponse = {
   days: ["monday", "wednesday"],
   from: "17:00",
   to: "18:30",
+  ageFrom: null,
+  ageTo: null,
   memberCount: 1,
   createdAt: "2026-11-15T17:00:00.000Z",
   updatedAt: "2026-11-15T17:00:00.000Z",

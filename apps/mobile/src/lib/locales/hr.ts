@@ -145,6 +145,10 @@ export const hr: Record<keyof typeof en, string> = {
   "groups.empty": "Još nema grupa.",
   "groups.offlineTitle": "Nema veze",
   "groups.name": "{trainer} - {days} - {from} - {to}",
+  "groups.nameWithAge": "{trainer} - {age} - {days} - {from} - {to}",
+  "groups.age.range": "{from}–{to} god.",
+  "groups.age.from": "{from}+ god.",
+  "groups.age.to": "do {to} god.",
   "groups.memberCount": "Članovi: {count}",
   "groups.open": "Otvori grupu {name}",
 
@@ -225,6 +229,8 @@ export const hr: Record<keyof typeof en, string> = {
   "groupForm.days": "Dani",
   "groupForm.from": "Od",
   "groupForm.to": "Do",
+  "groupForm.ageFrom": "Dob od",
+  "groupForm.ageTo": "Dob do",
   "groupForm.timePlaceholder": "Odaberite vrijeme",
   "groupForm.submit": "Spremi grupu",
   "groupForm.submitting": "Spremanje…",
@@ -234,6 +240,8 @@ export const hr: Record<keyof typeof en, string> = {
   "groupForm.error.from": "Odaberite vrijeme početka.",
   "groupForm.error.to": "Odaberite vrijeme završetka.",
   "groupForm.error.timeOrder": "Vrijeme završetka mora biti nakon vremena početka.",
+  "groupForm.error.age": "Unesite cijeli broj godina od 0 do 99.",
+  "groupForm.error.ageOrder": "Gornja dob ne smije biti manja od donje.",
   "groupForm.error.invalid": "Provjerite ovo polje.",
 
   "subscriptions.title": "Članarine",

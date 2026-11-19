@@ -16,6 +16,7 @@ import { CheckboxList } from "../../components/CheckboxList";
 import { fieldStyles } from "../../components/fieldStyles";
 import { OptionList } from "../../components/OptionList";
 import { Screen } from "../../components/Screen";
+import { TextField } from "../../components/TextField";
 import { TimeField } from "../../components/TimeField";
 import { formatSortedName, formatTimeOfDay } from "../../lib/format";
 import { groupFieldErrorKey, useMessages, weekdayKey } from "../../lib/messages";
@@ -110,6 +111,24 @@ export const AddGroupScreen = () => {
         placeholder={t("groupForm.timePlaceholder")}
         initialTime={draft.from || INITIAL_TO}
         error={fieldError("to")}
+      />
+      <TextField
+        label={t("groupForm.ageFrom")}
+        value={draft.ageFrom}
+        onChangeText={(ageFrom) => update({ ageFrom })}
+        keyboardType="number-pad"
+        maxLength={2}
+        error={fieldError("ageFrom")}
+        optional
+      />
+      <TextField
+        label={t("groupForm.ageTo")}
+        value={draft.ageTo}
+        onChangeText={(ageTo) => update({ ageTo })}
+        keyboardType="number-pad"
+        maxLength={2}
+        error={fieldError("ageTo")}
+        optional
       />
 
       {formError ? (

@@ -141,6 +141,10 @@ export const en = {
   "groups.empty": "No groups yet.",
   "groups.offlineTitle": "No connection",
   "groups.name": "{trainer} - {days} - {from} - {to}",
+  "groups.nameWithAge": "{trainer} - {age} - {days} - {from} - {to}",
+  "groups.age.range": "{from}–{to} yrs",
+  "groups.age.from": "{from}+ yrs",
+  "groups.age.to": "up to {to} yrs",
   "groups.memberCount": "Members: {count}",
   "groups.open": "Open group {name}",
 
@@ -221,6 +225,8 @@ export const en = {
   "groupForm.days": "Days",
   "groupForm.from": "From",
   "groupForm.to": "To",
+  "groupForm.ageFrom": "Age from",
+  "groupForm.ageTo": "Age to",
   "groupForm.timePlaceholder": "Choose a time",
   "groupForm.submit": "Save group",
   "groupForm.submitting": "Saving…",
@@ -230,6 +236,8 @@ export const en = {
   "groupForm.error.from": "Choose a start time.",
   "groupForm.error.to": "Choose an end time.",
   "groupForm.error.timeOrder": "The end time must be after the start time.",
+  "groupForm.error.age": "Enter a whole number of years from 0 to 99.",
+  "groupForm.error.ageOrder": "The upper age must not be below the lower age.",
   "groupForm.error.invalid": "Check this field.",
 
   "subscriptions.title": "Subscriptions",

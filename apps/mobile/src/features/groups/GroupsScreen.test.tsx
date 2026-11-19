@@ -20,6 +20,8 @@ const group: GroupResponse = {
   days: ["monday", "wednesday"],
   from: "17:00",
   to: "18:30",
+  ageFrom: null,
+  ageTo: null,
   memberCount: 3,
   createdAt: "2026-11-15T17:00:00.000Z",
   updatedAt: "2026-11-15T17:00:00.000Z",
@@ -48,6 +50,14 @@ describe("GroupsScreen", () => {
     answer(admin, async () => ({ items: [group] }));
     await renderScreen();
     expect(await screen.findByText(groupName)).toBeOnTheScreen();
+  });
+
+  it("puts a group's age range after the trainer", async () => {
+    answer(admin, async () => ({ items: [{ ...group, ageFrom: null, ageTo: 10 }] }));
+    await renderScreen();
+    expect(
+      await screen.findByText(/^Petra Kovač - up to 10 yrs - Monday, Wednesday - 5:00\sPM - 6:30\sPM$/),
+    ).toBeOnTheScreen();
   });
 
   it("shows the empty state when there are no groups", async () => {
