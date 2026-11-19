@@ -17,6 +17,5 @@ apps/mobile/android/
 
 .DS_Store
 
-# Private notes: project facts and plans stay local
-/PROJECT.md
+# Private notes: plans stay local
 *-plan.md
