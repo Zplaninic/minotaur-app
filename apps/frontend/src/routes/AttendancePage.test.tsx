@@ -1,4 +1,10 @@
-import type { GroupAttendanceResponse, GroupResponse, MeResponse, SubscriptionResponse } from "@repo/shared";
+import {
+  MAX_MONTH_COMMENT_LENGTH,
+  type GroupAttendanceResponse,
+  type GroupResponse,
+  type MeResponse,
+  type SubscriptionResponse,
+} from "@repo/shared";
 import { ApiError } from "@repo/shared/client";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { createMemoryHistory, RouterProvider } from "@tanstack/react-router";
@@ -39,8 +45,9 @@ const november = (): GroupAttendanceResponse => ({
       attendedSessionIds: ["11"],
       subscription: { id: "1", name: "Kids 1x", sessionsPerWeek: 1, price: 3000 },
       paid: true,
+      comment: "Injured knee",
     },
-    { id: "5", name: "Nora", surname: "Jurić", attendedSessionIds: [], subscription: null, paid: false },
+    { id: "5", name: "Nora", surname: "Jurić", attendedSessionIds: [], subscription: null, paid: false, comment: null },
   ],
 });
 
@@ -125,6 +132,16 @@ beforeEach(() => {
       };
       return undefined;
     }
+    const monthComment = /^\/groups\/1\/months\/2026-11\/members\/(\d+)\/comment$/.exec(path);
+    if (monthComment) {
+      const [, memberId = ""] = monthComment;
+      const { comment } = JSON.parse(String(init?.body)) as { comment: string | null };
+      attendance = {
+        ...attendance,
+        members: attendance.members.map((member) => (member.id === memberId ? { ...member, comment } : member)),
+      };
+      return undefined;
+    }
     if (path === "/subscriptions/overdue") {
       return {
         items: [
@@ -171,7 +188,15 @@ beforeEach(() => {
           init?.method === "PUT"
             ? [
                 ...attendance.members,
-                { id: memberId, name: "Mia", surname: "Novak", attendedSessionIds: [], subscription: null, paid: false },
+                {
+                  id: memberId,
+                  name: "Mia",
+                  surname: "Novak",
+                  attendedSessionIds: [],
+                  subscription: null,
+                  paid: false,
+                  comment: null,
+                },
               ]
             : attendance.members.filter((member) => member.id !== memberId),
       };
@@ -287,6 +312,47 @@ describe("AttendancePage, wide screens", () => {
       ),
     );
     await waitFor(() => expect(leo).not.toBeChecked());
+  });
+
+  it("shows each member's comment for the month and saves an edit on blur", async () => {
+    renderAt("/groups/1/attendance?month=2026-11");
+    const commentOf = (name: string) =>
+      screen.findByRole("textbox", { name: t("attendance.commentLabel", { name, month: "November 2026" }) });
+
+    expect(await commentOf("Leo Perić")).toHaveValue("Injured knee");
+    const nora = await commentOf("Nora Jurić");
+    expect(nora).toHaveValue("");
+
+    fireEvent.change(nora, { target: { value: "  Moves to the evening group " } });
+    fireEvent.blur(nora);
+
+    await waitFor(() =>
+      expect(fetchMock).toHaveBeenCalledWith(
+        "/groups/1/months/2026-11/members/5/comment",
+        expect.anything(),
+        expect.objectContaining({ method: "PUT", body: JSON.stringify({ comment: "Moves to the evening group" }) }),
+      ),
+    );
+    await waitFor(() => expect(nora).toHaveValue("Moves to the evening group"));
+  });
+
+  it("does not save a comment that is too long", async () => {
+    renderAt("/groups/1/attendance?month=2026-11");
+    const leo = await screen.findByRole("textbox", {
+      name: t("attendance.commentLabel", { name: "Leo Perić", month: "November 2026" }),
+    });
+
+    fireEvent.change(leo, { target: { value: "a".repeat(MAX_MONTH_COMMENT_LENGTH + 1) } });
+    fireEvent.blur(leo);
+
+    expect(
+      await screen.findByText(t("attendance.commentError.tooLong", { max: MAX_MONTH_COMMENT_LENGTH })),
+    ).toBeInTheDocument();
+    expect(fetchMock).not.toHaveBeenCalledWith(
+      "/groups/1/months/2026-11/members/4/comment",
+      expect.anything(),
+      expect.anything(),
+    );
   });
 
   it("marks members who have not paid a past month", async () => {

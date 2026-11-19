@@ -3,6 +3,7 @@ import type {
   ClientErrorCode,
   GroupFieldError,
   MemberFieldError,
+  MonthCommentError,
   SubscriptionFieldError,
 } from "@repo/shared/client";
 import { useMemo } from "react";
@@ -35,5 +36,7 @@ export const groupFieldErrorKey = (code: GroupFieldError): MessageKey => `groupF
 
 export const subscriptionFieldErrorKey = (code: SubscriptionFieldError): MessageKey =>
   `subscriptionForm.error.${code}` as const;
+
+export const monthCommentErrorKey = (code: MonthCommentError): MessageKey => `attendance.commentError.${code}` as const;
 
 export const weekdayKey = (day: Weekday): MessageKey => `weekday.${day}` as const;

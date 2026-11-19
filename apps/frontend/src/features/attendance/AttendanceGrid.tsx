@@ -7,6 +7,7 @@ import { ConfirmDialog } from "../../components/ConfirmDialog";
 import { formatMonth, formatPersonName, formatSessionDate, formatSortedName } from "../../lib/format";
 import { useMessages } from "../../lib/messages";
 import { AttendanceCheckbox } from "./AttendanceCheckbox";
+import { MonthCommentInput } from "./MonthCommentInput";
 import { MonthPaidCheckbox } from "./MonthPaidCheckbox";
 import { MonthSubscriptionSelect } from "./MonthSubscriptionSelect";
 import { UnpaidBadge } from "./UnpaidBadge";
@@ -54,6 +55,9 @@ export const AttendanceGrid = ({ groupId, month, data, today }: AttendanceGridPr
               <th scope="col" className={styles.paid}>
                 {t("attendance.table.paid")}
               </th>
+              <th scope="col" className={styles.comment}>
+                {t("attendance.table.comment")}
+              </th>
               {data.sessions.map((session) => (
                 <th key={session.id} scope="col" className={styles.session}>
                   <span>{formatSessionDate(session.date)}</span>
@@ -100,6 +104,9 @@ export const AttendanceGrid = ({ groupId, month, data, today }: AttendanceGridPr
                 </td>
                 <td className={styles.paid}>
                   <MonthPaidCheckbox groupId={groupId} month={month} member={member} disabled={!canTick} layout="cell" />
+                </td>
+                <td className={styles.comment}>
+                  <MonthCommentInput groupId={groupId} month={month} member={member} disabled={!canTick} layout="cell" />
                 </td>
                 {data.sessions.map((session) => (
                   <td key={session.id}>

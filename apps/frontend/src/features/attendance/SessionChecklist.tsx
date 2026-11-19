@@ -4,6 +4,7 @@ import { useAbility } from "../../api/auth";
 import { formatNumber, formatPersonName, formatSessionDate, formatSortedName } from "../../lib/format";
 import { useMessages } from "../../lib/messages";
 import { AttendanceCheckbox } from "./AttendanceCheckbox";
+import { MonthCommentInput } from "./MonthCommentInput";
 import { MonthPaidCheckbox } from "./MonthPaidCheckbox";
 import { MonthSubscriptionSelect } from "./MonthSubscriptionSelect";
 import { UnpaidBadge } from "./UnpaidBadge";
@@ -52,6 +53,7 @@ export const SessionChecklist = ({ groupId, month, session, members, today }: Se
               <MonthSubscriptionSelect groupId={groupId} month={month} member={member} disabled={!canTick} />
               <MonthPaidCheckbox groupId={groupId} month={month} member={member} disabled={!canTick} layout="row" />
               <UnpaidBadge memberId={member.id} />
+              <MonthCommentInput groupId={groupId} month={month} member={member} disabled={!canTick} layout="row" />
             </div>
           </li>
         ))}
