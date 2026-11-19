@@ -33,9 +33,6 @@ jobs:
           --health-retries 15
 
     env:
-      # Never connected to in CI; the backend config requires it and the
-      # vitest config requires it to differ from the test database.
-      DATABASE_URL: postgresql://minotaur:minotaur@localhost:5433/minotaur_dev
       DATABASE_URL_TEST: postgresql://minotaur:minotaur@localhost:5433/minotaur_test
       WEB_ORIGIN: http://localhost:5173
       EXPO_PUBLIC_API_URL: http://localhost:3000
