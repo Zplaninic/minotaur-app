@@ -219,6 +219,8 @@ model MemberMonth {
   subscriptionSessionsPerWeek Int?
   // Only a month with a subscription can be paid.
   paid                        Boolean            @default(false)
+  // A trainer's note on the member for the month. Blank is stored as null.
+  comment                     String?
   createdAt                   DateTime           @default(now()) @db.Timestamptz
   updatedAt                   DateTime           @updatedAt @db.Timestamptz
   member                      Member             @relation(fields: [memberId], references: [id], onDelete: Cascade)

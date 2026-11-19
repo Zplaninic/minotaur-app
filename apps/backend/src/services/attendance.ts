@@ -136,6 +136,7 @@ export const getGroupAttendance = async (db: Db, groupId: string, month: Month):
               subscriptionSessionsPerWeek: true,
               subscription: { select: { id: true, name: true } },
               paid: true,
+              comment: true,
             },
           },
         },
@@ -169,6 +170,7 @@ export const getGroupAttendance = async (db: Db, groupId: string, month: Month):
       attendedSessionIds: sessionIdsByMember.get(row.member.id) ?? [],
       subscription: toMonthMemberSubscription(row.memberMonth),
       paid: row.memberMonth.paid,
+      comment: row.memberMonth.comment,
     })),
   };
 };
@@ -430,6 +432,19 @@ export const setMonthPaid = async (db: Db, target: MonthMemberTarget, paid: bool
     if (count === 0) {
       throw new AppError("VALIDATION_ERROR", 400, "Only a month with a subscription can be paid");
     }
+  });
+};
+
+// Sets or clears (null) the member's comment for the month, in all their groups.
+export const setMonthComment = async (db: Db, target: MonthMemberTarget, comment: string | null): Promise<void> => {
+  const groupDbId = requireDbId(target.groupId, "Group not found");
+  const memberDbId = requireDbId(target.memberId, "Member not found");
+  await db.$transaction(async (tx) => {
+    await requireGroupRoster(tx, groupDbId, target.month, memberDbId);
+    await tx.memberMonth.update({
+      where: { memberId_month: { memberId: memberDbId, month: monthStart(target.month) } },
+      data: { comment },
+    });
   });
 };
 
