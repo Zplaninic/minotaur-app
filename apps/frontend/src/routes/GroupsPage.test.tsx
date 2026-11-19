@@ -34,6 +34,8 @@ const mondayGroup: GroupResponse = {
   days: ["monday", "wednesday"],
   from: "17:00",
   to: "18:30",
+  ageFrom: null,
+  ageTo: null,
   memberCount: 3,
   createdAt: "2026-11-15T17:00:00.000Z",
   updatedAt: "2026-11-15T17:00:00.000Z",
@@ -130,6 +132,20 @@ describe("GroupsPage", () => {
     expect(within(dialog).getByText(t("groupForm.error.timeOrder"))).toBeInTheDocument();
   });
 
+  it("asks for an upper age that is not below the lower age", async () => {
+    renderPage();
+    const dialog = await openDialog();
+    fireEvent.change(within(dialog).getByLabelText(t("groupForm.ageFrom"), { exact: false }), {
+      target: { value: "10" },
+    });
+    fireEvent.change(within(dialog).getByLabelText(t("groupForm.ageTo"), { exact: false }), {
+      target: { value: "7" },
+    });
+    save(dialog);
+
+    expect(within(dialog).getByText(t("groupForm.error.ageOrder"))).toBeInTheDocument();
+  });
+
   it("saves a group, closes the popup and shows the new row", async () => {
     renderPage();
     const dialog = await openDialog();
@@ -137,6 +153,9 @@ describe("GroupsPage", () => {
     fireEvent.click(within(dialog).getByRole("checkbox", { name: t("weekday.friday") }));
     fireEvent.change(within(dialog).getByLabelText(t("groupForm.from")), { target: { value: "09:00" } });
     fireEvent.change(within(dialog).getByLabelText(t("groupForm.to")), { target: { value: "10:00" } });
+    fireEvent.change(within(dialog).getByLabelText(t("groupForm.ageFrom"), { exact: false }), {
+      target: { value: "7" },
+    });
     save(dialog);
 
     await waitFor(() => expect(screen.queryByRole("dialog")).not.toBeInTheDocument());
@@ -145,7 +164,7 @@ describe("GroupsPage", () => {
       expect.anything(),
       expect.objectContaining({
         method: "POST",
-        body: JSON.stringify({ ownerId: "2", days: ["friday"], from: "09:00", to: "10:00" }),
+        body: JSON.stringify({ ownerId: "2", days: ["friday"], from: "09:00", to: "10:00", ageFrom: 7, ageTo: null }),
       }),
     );
     expect(await screen.findByText("9:00 AM – 10:00 AM")).toBeInTheDocument();

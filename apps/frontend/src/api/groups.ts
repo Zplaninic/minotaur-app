@@ -7,7 +7,9 @@ import {
   keysToInvalidateAfterArchiveGroup,
   keysToInvalidateAfterCreateGroup,
   keysToInvalidateAfterGroupMemberChange,
+  keysToInvalidateAfterUpdateGroup,
   removeGroupMember,
+  updateGroup,
 } from "@repo/shared/client";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { api } from "./client";
@@ -18,14 +20,15 @@ export const useGroup = (groupId: string) => useQuery(groupQueries.detail(api, g
 
 export const useGroupMembers = (groupId: string) => useQuery(groupQueries.members(api, groupId));
 
-export const useCreateGroup = () => {
+// Creates a group, or replaces the group with groupId when one is given.
+export const useSaveGroup = (groupId?: string) => {
   const queryClient = useQueryClient();
   return useMutation({
-    mutationFn: (body: CreateGroupBody) => createGroup(api, body),
+    mutationFn: (body: CreateGroupBody) =>
+      groupId === undefined ? createGroup(api, body) : updateGroup(api, groupId, body),
     onSuccess: async () => {
-      await Promise.all(
-        keysToInvalidateAfterCreateGroup.map((queryKey) => queryClient.invalidateQueries({ queryKey })),
-      );
+      const keys = groupId === undefined ? keysToInvalidateAfterCreateGroup : keysToInvalidateAfterUpdateGroup;
+      await Promise.all(keys.map((queryKey) => queryClient.invalidateQueries({ queryKey })));
     },
   });
 };

@@ -14,12 +14,16 @@ const fetchMock = vi.mocked(api.fetch);
 
 const admin: MeResponse = { memberId: "9", name: "Zvonimir", surname: "Admin", email: "admin@example.com", role: "admin" };
 
-const group: GroupResponse = {
+let group: GroupResponse;
+
+const savedGroup: GroupResponse = {
   id: "1",
   owner: { id: "2", name: "Petra", surname: "Kovač" },
   days: ["monday", "wednesday"],
   from: "17:00",
   to: "18:30",
+  ageFrom: null,
+  ageTo: null,
   memberCount: 1,
   createdAt: "2026-11-15T17:00:00.000Z",
   updatedAt: "2026-11-15T17:00:00.000Z",
@@ -50,6 +54,7 @@ let groupMembers: GroupMemberResponse[];
 
 beforeEach(() => {
   me = admin;
+  group = savedGroup;
   groupMembers = [
     {
       id: "4",
@@ -68,6 +73,10 @@ beforeEach(() => {
     }
     if (path === "/groups/1" && init?.method === "DELETE") {
       return undefined;
+    }
+    if (path === "/groups/1" && init?.method === "PUT") {
+      group = { ...group, ...JSON.parse(String(init.body)) };
+      return group;
     }
     if (path === "/groups/1") {
       return group;
@@ -113,6 +122,50 @@ describe("GroupPage", () => {
     expect(within(row as HTMLElement).getByText("Mar 12, 2014")).toBeInTheDocument();
     expect(within(row as HTMLElement).getByText("+385 91 123 4567")).toBeInTheDocument();
     expect(within(row as HTMLElement).getByText("Iva Horvat")).toBeInTheDocument();
+  });
+
+  it("names the group with its age range", async () => {
+    group = { ...savedGroup, ageFrom: 7, ageTo: 10 };
+    renderAt("/groups/1");
+    expect(
+      await screen.findByRole("heading", {
+        level: 1,
+        name: "Petra Kovač - 7–10 yrs - Monday, Wednesday - 5:00 PM - 6:30 PM",
+      }),
+    ).toBeInTheDocument();
+  });
+
+  it("edits the group's age range", async () => {
+    renderAt("/groups/1");
+    fireEvent.click(await screen.findByRole("button", { name: t("group.edit") }));
+    const dialog = screen.getByRole("dialog", { name: t("groupForm.editTitle") });
+    const ageFrom = await within(dialog).findByLabelText(t("groupForm.ageFrom"), { exact: false });
+    expect(within(dialog).getByLabelText(t("groupForm.from"))).toHaveValue("17:00");
+    fireEvent.change(ageFrom, { target: { value: "12" } });
+    fireEvent.click(within(dialog).getByRole("button", { name: t("groupForm.submit") }));
+
+    await waitFor(() => expect(screen.queryByRole("dialog")).not.toBeInTheDocument());
+    expect(fetchMock).toHaveBeenCalledWith(
+      "/groups/1",
+      expect.anything(),
+      expect.objectContaining({
+        method: "PUT",
+        body: JSON.stringify({
+          ownerId: "2",
+          days: ["monday", "wednesday"],
+          from: "17:00",
+          to: "18:30",
+          ageFrom: 12,
+          ageTo: null,
+        }),
+      }),
+    );
+    expect(
+      await screen.findByRole("heading", {
+        level: 1,
+        name: "Petra Kovač - 12+ yrs - Monday, Wednesday - 5:00 PM - 6:30 PM",
+      }),
+    ).toBeInTheDocument();
   });
 
   it("shows the empty state when the group has no members", async () => {
@@ -191,6 +244,7 @@ describe("GroupPage", () => {
     expect(screen.queryByRole("button", { name: t("groupMembers.add") })).not.toBeInTheDocument();
     expect(screen.queryByRole("button", { name: /Remove/ })).not.toBeInTheDocument();
     expect(screen.queryByRole("button", { name: t("group.delete") })).not.toBeInTheDocument();
+    expect(screen.queryByRole("button", { name: t("group.edit") })).not.toBeInTheDocument();
   });
 
   it("deletes the group after confirming and goes back to the groups", async () => {

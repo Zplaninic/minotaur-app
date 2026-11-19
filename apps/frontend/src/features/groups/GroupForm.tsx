@@ -1,13 +1,14 @@
-import { weekday } from "@repo/shared";
+import { weekday, type GroupResponse } from "@repo/shared";
 import {
   emptyGroupDraft,
+  groupToDraft,
   toErrorCode,
   toggleWeekday,
   validateGroupDraft,
   type GroupDraft,
 } from "@repo/shared/client";
 import { useState, type FormEvent } from "react";
-import { useCreateGroup } from "../../api/groups";
+import { useSaveGroup } from "../../api/groups";
 import { useTrainers } from "../../api/members";
 import { Button } from "../../components/Button";
 import { CheckboxGroup } from "../../components/CheckboxGroup";
@@ -18,15 +19,17 @@ import { groupFieldErrorKey, useMessages, weekdayKey } from "../../lib/messages"
 import styles from "./GroupForm.module.css";
 
 type GroupFormProps = {
+  // The group to edit; without one the form adds a new group.
+  group?: GroupResponse | undefined;
   onCancel: () => void;
   onSaved: () => void;
 };
 
-export const GroupForm = ({ onCancel, onSaved }: GroupFormProps) => {
+export const GroupForm = ({ group, onCancel, onSaved }: GroupFormProps) => {
   const { errorMessage, t } = useMessages();
   const trainers = useTrainers();
-  const createGroup = useCreateGroup();
-  const [draft, setDraft] = useState<GroupDraft>(emptyGroupDraft);
+  const saveGroup = useSaveGroup(group?.id);
+  const [draft, setDraft] = useState<GroupDraft>(() => (group ? groupToDraft(group) : emptyGroupDraft));
   const [submitted, setSubmitted] = useState(false);
 
   const validation = validateGroupDraft(draft);
@@ -35,7 +38,7 @@ export const GroupForm = ({ onCancel, onSaved }: GroupFormProps) => {
     const code = errors[field];
     return code ? t(groupFieldErrorKey(code)) : undefined;
   };
-  const formError = createGroup.error ? errorMessage(toErrorCode(createGroup.error)) : undefined;
+  const formError = saveGroup.error ? errorMessage(toErrorCode(saveGroup.error)) : undefined;
 
   const update = (changes: Partial<GroupDraft>) => setDraft((current) => ({ ...current, ...changes }));
 
@@ -43,7 +46,7 @@ export const GroupForm = ({ onCancel, onSaved }: GroupFormProps) => {
     event.preventDefault();
     setSubmitted(true);
     if (validation.ok) {
-      createGroup.mutate(validation.body, { onSuccess: onSaved });
+      saveGroup.mutate(validation.body, { onSuccess: onSaved });
     }
   };
 
@@ -103,6 +106,26 @@ export const GroupForm = ({ onCancel, onSaved }: GroupFormProps) => {
           required
         />
       </div>
+      <div className={styles.grid}>
+        <TextField
+          label={t("groupForm.ageFrom")}
+          inputMode="numeric"
+          autoComplete="off"
+          value={draft.ageFrom}
+          onChange={(ageFrom) => update({ ageFrom })}
+          error={fieldError("ageFrom")}
+          optional
+        />
+        <TextField
+          label={t("groupForm.ageTo")}
+          inputMode="numeric"
+          autoComplete="off"
+          value={draft.ageTo}
+          onChange={(ageTo) => update({ ageTo })}
+          error={fieldError("ageTo")}
+          optional
+        />
+      </div>
 
       {formError ? (
         <p role="alert" className={styles.formError}>
@@ -114,8 +137,8 @@ export const GroupForm = ({ onCancel, onSaved }: GroupFormProps) => {
         <Button variant="secondary" onClick={onCancel}>
           {t("common.cancel")}
         </Button>
-        <Button type="submit" disabled={createGroup.isPending}>
-          {createGroup.isPending ? t("groupForm.submitting") : t("groupForm.submit")}
+        <Button type="submit" disabled={saveGroup.isPending}>
+          {saveGroup.isPending ? t("groupForm.submitting") : t("groupForm.submit")}
         </Button>
       </div>
     </form>

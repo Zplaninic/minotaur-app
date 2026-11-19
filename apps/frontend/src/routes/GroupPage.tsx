@@ -7,8 +7,9 @@ import { Button } from "../components/Button";
 import { ConfirmDialog } from "../components/ConfirmDialog";
 import { Dialog } from "../components/Dialog";
 import { AddGroupMemberForm } from "../features/groups/AddGroupMemberForm";
+import { GroupForm } from "../features/groups/GroupForm";
 import { GroupMembersTable } from "../features/groups/GroupMembersTable";
-import { groupName } from "../features/groups/groupName";
+import { groupAgeRange, groupName } from "../features/groups/groupName";
 import { formatSortedName, formatTimeOfDay } from "../lib/format";
 import { useMessages, weekdayKey } from "../lib/messages";
 import styles from "./GroupPage.module.css";
@@ -21,8 +22,10 @@ export const GroupPage = () => {
   const navigate = useNavigate();
   const archiveGroup = useArchiveGroup(groupId);
   const [adding, setAdding] = useState(false);
+  const [editing, setEditing] = useState(false);
   const [deleting, setDeleting] = useState(false);
   const close = () => setAdding(false);
+  const closeEdit = () => setEditing(false);
   const closeConfirm = () => {
     setDeleting(false);
     archiveGroup.reset();
@@ -54,6 +57,11 @@ export const GroupPage = () => {
           <div className={styles.header}>
             <h1 className={styles.title}>{groupName(group.data, t)}</h1>
             <div className={styles.headerActions}>
+              {ability.can("update", "Group") ? (
+                <Button variant="secondary" onClick={() => setEditing(true)}>
+                  {t("group.edit")}
+                </Button>
+              ) : null}
               {ability.can("delete", "Group") ? (
                 <Button variant="secondary" onClick={() => setDeleting(true)}>
                   {t("group.delete")}
@@ -84,6 +92,10 @@ export const GroupPage = () => {
                 })}
               </dd>
             </div>
+            <div>
+              <dt>{t("group.age")}</dt>
+              <dd>{groupAgeRange(group.data, t) ?? t("common.empty")}</dd>
+            </div>
           </dl>
 
           <section className={styles.members} aria-labelledby="group-members-title">
@@ -96,6 +108,9 @@ export const GroupPage = () => {
             <GroupMembersTable groupId={groupId} />
           </section>
 
+          <Dialog open={editing} onClose={closeEdit} title={t("groupForm.editTitle")}>
+            <GroupForm group={group.data} onCancel={closeEdit} onSaved={closeEdit} />
+          </Dialog>
           <Dialog open={adding} onClose={close} title={t("groupMemberForm.title")}>
             <AddGroupMemberForm groupId={groupId} onCancel={close} onSaved={close} />
           </Dialog>

@@ -1,6 +1,7 @@
 import type { Weekday } from "@repo/shared";
 import type {
   ClientErrorCode,
+  GroupAgeRangeKind,
   GroupFieldError,
   MemberFieldError,
   MonthCommentError,
@@ -38,5 +39,7 @@ export const subscriptionFieldErrorKey = (code: SubscriptionFieldError): Message
   `subscriptionForm.error.${code}` as const;
 
 export const monthCommentErrorKey = (code: MonthCommentError): MessageKey => `attendance.commentError.${code}` as const;
+
+export const groupAgeKey = (kind: GroupAgeRangeKind): MessageKey => `groups.age.${kind}` as const;
 
 export const weekdayKey = (day: Weekday): MessageKey => `weekday.${day}` as const;
