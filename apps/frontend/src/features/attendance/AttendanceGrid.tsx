@@ -55,9 +55,6 @@ export const AttendanceGrid = ({ groupId, month, data, today }: AttendanceGridPr
               <th scope="col" className={styles.paid}>
                 {t("attendance.table.paid")}
               </th>
-              <th scope="col" className={styles.comment}>
-                {t("attendance.table.comment")}
-              </th>
               {data.sessions.map((session) => (
                 <th key={session.id} scope="col" className={styles.session}>
                   <span>{formatSessionDate(session.date)}</span>
@@ -73,6 +70,9 @@ export const AttendanceGrid = ({ groupId, month, data, today }: AttendanceGridPr
                   ) : null}
                 </th>
               ))}
+              <th scope="col" className={styles.comment}>
+                {t("attendance.table.comment")}
+              </th>
             </tr>
           </thead>
           <tbody>
@@ -105,9 +105,6 @@ export const AttendanceGrid = ({ groupId, month, data, today }: AttendanceGridPr
                 <td className={styles.paid}>
                   <MonthPaidCheckbox groupId={groupId} month={month} member={member} disabled={!canTick} layout="cell" />
                 </td>
-                <td className={styles.comment}>
-                  <MonthCommentInput groupId={groupId} month={month} member={member} disabled={!canTick} layout="cell" />
-                </td>
                 {data.sessions.map((session) => (
                   <td key={session.id}>
                     <AttendanceCheckbox
@@ -125,6 +122,9 @@ export const AttendanceGrid = ({ groupId, month, data, today }: AttendanceGridPr
                     />
                   </td>
                 ))}
+                <td className={styles.comment}>
+                  <MonthCommentInput groupId={groupId} month={month} member={member} disabled={!canTick} layout="cell" />
+                </td>
               </tr>
             ))}
           </tbody>

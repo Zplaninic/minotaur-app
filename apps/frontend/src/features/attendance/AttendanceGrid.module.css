@@ -79,7 +79,7 @@
 .table .comment {
   min-width: calc(var(--space-12) * 4);
   padding: var(--space-2) var(--space-3);
-  border-right: var(--border-width) solid var(--color-green-dark-20);
+  border-left: var(--border-width) solid var(--color-green-dark-20);
   text-align: left;
 }
 
