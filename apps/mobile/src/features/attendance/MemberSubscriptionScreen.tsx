@@ -11,6 +11,7 @@ import { OptionList } from "../../components/OptionList";
 import { Screen } from "../../components/Screen";
 import { formatMoney, formatMonth, formatPersonName } from "../../lib/format";
 import { useMessages } from "../../lib/messages";
+import { MonthCommentForm } from "./MonthCommentForm";
 import { bodyLineHeight, colors, fonts, fontSizes, headingLineHeight } from "../../theme/tokens";
 
 type MemberSubscriptionScreenProps = {
@@ -22,9 +23,9 @@ type MemberSubscriptionScreenProps = {
 // "" in the option list stands for no subscription.
 const NONE = "";
 
-// One member's subscription and payment for one month, shared by all their
-// groups. Picking a
-// subscription saves it and goes back; the paid box saves and stays.
+// One member's subscription, payment and comment for one month, shared by all
+// their groups. Picking a subscription saves it and goes back; the paid box
+// and the comment save and stay.
 export const MemberSubscriptionScreen = ({ groupId, month, memberId }: MemberSubscriptionScreenProps) => {
   const { errorMessage, t } = useMessages();
   const router = useRouter();
@@ -122,6 +123,7 @@ export const MemberSubscriptionScreen = ({ groupId, month, memberId }: MemberSub
         error={paidError}
       />
       {canPay ? null : <Text style={fieldStyles.value}>{t("monthSubscriptionForm.paidNeedsSubscription")}</Text>}
+      <MonthCommentForm groupId={groupId} month={month} member={member} />
       <OptionList
         label={t("monthSubscriptionForm.label")}
         options={options}

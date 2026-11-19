@@ -65,6 +65,9 @@ export const AttendanceRow = ({
               paid: member.paid ? t("attendance.paid") : t("attendance.notPaid"),
             })}
           </Text>
+          {member.comment ? (
+            <Text style={styles.subscription}>{t("attendance.comment", { comment: member.comment })}</Text>
+          ) : null}
           {unpaidMonths.length > 0 ? (
             <Text style={styles.unpaid}>
               {t("overdue.badge", { months: unpaidMonths.map(formatShortMonth).join(", ") })}

@@ -170,6 +170,7 @@ export const en = {
   "attendance.changeSubscription": "Edit",
   "attendance.paid": "Paid",
   "attendance.notPaid": "Not paid",
+  "attendance.comment": "Comment: {comment}",
   "attendance.monthStatus": "{subscription} · {paid}",
   "attendance.changeSubscriptionLabel": "Change the subscription and payment of {name} in {month}",
 
@@ -185,6 +186,11 @@ export const en = {
   "monthSubscriptionForm.loading": "Loading subscriptions…",
   "monthSubscriptionForm.offlineTitle": "No connection",
   "monthSubscriptionForm.saving": "Saving…",
+
+  "monthCommentForm.label": "Comment for this month",
+  "monthCommentForm.save": "Save comment",
+  "monthCommentForm.saved": "Comment saved.",
+  "monthCommentForm.error.tooLong": "A comment can have at most {max} characters.",
 
   "monthMemberForm.title": "Add member to this month",
   "monthMemberForm.hint": "Tap a member to add them to {month}.",

@@ -34,8 +34,16 @@ const november = (): GroupAttendanceResponse => ({
     { id: "18", date: "2026-11-18" },
   ],
   members: [
-    { id: "4", name: "Leo", surname: "Perić", attendedSessionIds: ["11"], subscription: null, paid: false },
-    { id: "5", name: "Nora", surname: "Jurić", attendedSessionIds: [], subscription: null, paid: false },
+    {
+      id: "4",
+      name: "Leo",
+      surname: "Perić",
+      attendedSessionIds: ["11"],
+      subscription: null,
+      paid: false,
+      comment: "Injured knee",
+    },
+    { id: "5", name: "Nora", surname: "Jurić", attendedSessionIds: [], subscription: null, paid: false, comment: null },
   ],
 });
 
@@ -213,6 +221,7 @@ describe("AttendanceScreen", () => {
     await renderScreen();
     expect(await screen.findByText("Kids 1x · Paid")).toBeOnTheScreen();
     expect(screen.getByText("No subscription · Not paid")).toBeOnTheScreen();
+    expect(screen.getByText(t("attendance.comment", { comment: "Injured knee" }))).toBeOnTheScreen();
 
     fireEvent.press(
       screen.getByRole("button", {
