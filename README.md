@@ -71,6 +71,9 @@ Docker running.
 
 The code is released under the [MIT License](LICENSE).
 
-The Minotaur name, logo, and visual identity are not covered by that license.
-They belong to the club and may not be used without permission. If you fork
-this project, replace them with your own.
+The Minotaur and SPK Minotaur names, logos, and visual identity are not
+covered by that license, including the logo files in earlier commits of this
+repository. They belong to the club and may not be used without its written
+permission. The logo files in `apps/frontend/src/assets/` and
+`apps/mobile/assets/` are neutral placeholders; if you fork this project,
+replace them with your own.
