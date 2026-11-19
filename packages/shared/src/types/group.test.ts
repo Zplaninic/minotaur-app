@@ -5,8 +5,14 @@ import { memberRole } from "./member.js";
 const validBody = { ownerId: "1", days: ["monday", "wednesday"], from: "17:00", to: "18:30" };
 
 describe("createGroupBody", () => {
-  it("accepts an owner, days and a time range", () => {
-    expect(createGroupBody.parse(validBody)).toEqual(validBody);
+  it("accepts an owner, days and a time range, with no age range", () => {
+    expect(createGroupBody.parse(validBody)).toEqual({ ...validBody, ageFrom: null, ageTo: null });
+  });
+
+  it("accepts an age range open at either end", () => {
+    expect(createGroupBody.parse({ ...validBody, ageFrom: 7, ageTo: 10 })).toMatchObject({ ageFrom: 7, ageTo: 10 });
+    expect(createGroupBody.parse({ ...validBody, ageFrom: 7, ageTo: null })).toMatchObject({ ageFrom: 7, ageTo: null });
+    expect(createGroupBody.parse({ ...validBody, ageTo: 10 })).toMatchObject({ ageFrom: null, ageTo: 10 });
   });
 
   it.each([
@@ -17,6 +23,10 @@ describe("createGroupBody", () => {
     ["an hour past 23", { to: "24:00" }],
     ["an end before the start", { from: "18:30", to: "17:00" }],
     ["an end equal to the start", { from: "17:00", to: "17:00" }],
+    ["a fractional age", { ageFrom: 7.5 }],
+    ["a negative age", { ageFrom: -1 }],
+    ["an age past 99", { ageTo: 100 }],
+    ["an upper age below the lower age", { ageFrom: 10, ageTo: 7 }],
   ])("rejects %s", (_label, override) => {
     expect(createGroupBody.safeParse({ ...validBody, ...override }).success).toBe(false);
   });
@@ -30,6 +40,8 @@ describe("groupResponse", () => {
       days: ["monday"],
       from: "17:00",
       to: "18:30",
+      ageFrom: 7,
+      ageTo: null,
       memberCount: 3,
       createdAt: "2026-11-15T17:00:22.251Z",
       updatedAt: "2026-11-15T17:00:22.251Z",

@@ -20,6 +20,11 @@ export const isGroupMemberRole = (role: MemberRole): role is GroupMemberRole =>
 export const timeOfDay = z.string().regex(/^([01]\d|2[0-3]):[0-5]\d$/);
 export type TimeOfDay = z.infer<typeof timeOfDay>;
 
+export const MAX_GROUP_AGE = 99;
+
+// An age in whole years, as a bound of a group's age range.
+export const groupAge = z.number().int().min(0).max(MAX_GROUP_AGE);
+
 export const createGroupBody = z
   .object({
     ownerId: id,
@@ -29,10 +34,21 @@ export const createGroupBody = z
       .refine((days) => new Set(days).size === days.length, { message: "The same day is listed twice" }),
     from: timeOfDay,
     to: timeOfDay,
+    // Either end of the age range may be left open. Left out means no bound.
+    ageFrom: groupAge.nullable().default(null),
+    ageTo: groupAge.nullable().default(null),
   })
   // HH:mm strings sort like the times they stand for.
-  .refine((group) => group.from < group.to, { path: ["to"], message: "The end must be after the start" });
+  .refine((group) => group.from < group.to, { path: ["to"], message: "The end must be after the start" })
+  .refine((group) => group.ageFrom === null || group.ageTo === null || group.ageFrom <= group.ageTo, {
+    path: ["ageTo"],
+    message: "The upper age must not be below the lower age",
+  });
 export type CreateGroupBody = z.infer<typeof createGroupBody>;
+
+// Replaces the whole group.
+export const updateGroupBody = createGroupBody;
+export type UpdateGroupBody = z.infer<typeof updateGroupBody>;
 
 export const groupOwnerResponse = z.object({
   id,
@@ -47,6 +63,8 @@ export const groupResponse = z.object({
   days: z.array(weekday),
   from: timeOfDay,
   to: timeOfDay,
+  ageFrom: groupAge.nullable(),
+  ageTo: groupAge.nullable(),
   memberCount: z.number().int().min(0),
   createdAt: z.iso.datetime(),
   updatedAt: z.iso.datetime(),

@@ -7,6 +7,7 @@ import {
   type CreateGroupBody,
   type GroupMemberResponse,
   type GroupResponse,
+  type UpdateGroupBody,
 } from "../types/group.js";
 import type { MemberResponse } from "../types/member.js";
 import type { ApiClient } from "./apiClient.js";
@@ -48,6 +49,15 @@ export const createGroup = (api: ApiClient, body: CreateGroupBody): Promise<Grou
 
 export const keysToInvalidateAfterCreateGroup = [groupKeys.all] as const;
 
+export const updateGroup = (api: ApiClient, groupId: string, body: UpdateGroupBody): Promise<GroupResponse> =>
+  api.fetch(groupPath(groupId), groupResponse, {
+    method: "PUT",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify(body),
+  });
+
+export const keysToInvalidateAfterUpdateGroup = [groupKeys.all] as const;
+
 // The server answers 204 with no body.
 export const archiveGroup = (api: ApiClient, groupId: string): Promise<undefined> =>
   api.fetch(groupPath(groupId), z.undefined(), { method: "DELETE" });
@@ -73,4 +83,17 @@ export const groupMemberCandidates = (
 ): MemberResponse[] => {
   const currentIds = new Set(current.map((member) => member.id));
   return members.filter((member) => isGroupMemberRole(member.role) && !currentIds.has(member.id));
+};
+
+// Which wording a group's age range takes, or null when it has none.
+export type GroupAgeRangeKind = "range" | "from" | "to";
+
+export const groupAgeRangeKind = (group: Pick<GroupResponse, "ageFrom" | "ageTo">): GroupAgeRangeKind | null => {
+  if (group.ageFrom !== null && group.ageTo !== null) {
+    return "range";
+  }
+  if (group.ageFrom !== null) {
+    return "from";
+  }
+  return group.ageTo === null ? null : "to";
 };
