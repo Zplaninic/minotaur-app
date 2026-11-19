@@ -1,0 +1,74 @@
+name: CI
+
+on:
+  pull_request:
+  push:
+    branches: [main]
+
+permissions:
+  contents: read
+
+concurrency:
+  group: ci-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  check:
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+
+    services:
+      postgres:
+        image: postgres:18.7
+        env:
+          POSTGRES_USER: minotaur
+          POSTGRES_PASSWORD: minotaur
+          POSTGRES_DB: minotaur_test
+        ports:
+          - 5433:5432
+        options: >-
+          --health-cmd "pg_isready -U minotaur -d minotaur_test"
+          --health-interval 2s
+          --health-timeout 2s
+          --health-retries 15
+
+    env:
+      DATABASE_URL_TEST: postgresql://minotaur:minotaur@localhost:5433/minotaur_test
+      WEB_ORIGIN: http://localhost:5173
+      EXPO_PUBLIC_API_URL: http://localhost:3000
+
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+      - uses: pnpm/action-setup@9bbca1e9dc2902adb87e8780fe5c98796985a62d # v6.1.1
+      - uses: actions/setup-node@949feb2413d6458794dcd2491c4babbbce0c15c1 # v7.1.0
+        with:
+          node-version-file: .nvmrc
+          cache: pnpm
+
+      - run: pnpm install --frozen-lockfile
+
+      # The apps consume shared through its build output.
+      - name: shared
+        run: |
+          pnpm --filter @repo/shared build
+          pnpm --filter @repo/shared typecheck
+          pnpm --filter @repo/shared lint
+          pnpm --filter @repo/shared test
+
+      - name: backend
+        run: |
+          pnpm --filter @repo/backend typecheck
+          pnpm --filter @repo/backend lint
+          pnpm --filter @repo/backend test
+
+      - name: frontend
+        run: |
+          pnpm --filter @repo/frontend typecheck
+          pnpm --filter @repo/frontend lint
+          pnpm --filter @repo/frontend test
+
+      - name: mobile
+        run: |
+          pnpm --filter @repo/mobile typecheck
+          pnpm --filter @repo/mobile lint
+          pnpm --filter @repo/mobile test
