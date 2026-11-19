@@ -56,7 +56,7 @@ describe("GroupsScreen", () => {
     answer(admin, async () => ({ items: [{ ...group, ageFrom: null, ageTo: 10 }] }));
     await renderScreen();
     expect(
-      await screen.findByText(/^Petra Kovač - up to 10 yrs - Monday, Wednesday - 5:00\sPM - 6:30\sPM$/),
+      await screen.findByText(/^Petra Kovač \(up to 10 yrs\) - Monday, Wednesday - 5:00\sPM - 6:30\sPM$/),
     ).toBeOnTheScreen();
   });
 

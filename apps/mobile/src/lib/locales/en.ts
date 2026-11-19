@@ -141,7 +141,7 @@ export const en = {
   "groups.empty": "No groups yet.",
   "groups.offlineTitle": "No connection",
   "groups.name": "{trainer} - {days} - {from} - {to}",
-  "groups.nameWithAge": "{trainer} - {age} - {days} - {from} - {to}",
+  "groups.nameWithAge": "{trainer} ({age}) - {days} - {from} - {to}",
   "groups.age.range": "{from}–{to} yrs",
   "groups.age.from": "{from}+ yrs",
   "groups.age.to": "up to {to} yrs",

@@ -145,7 +145,7 @@ export const hr: Record<keyof typeof en, string> = {
   "groups.empty": "Još nema grupa.",
   "groups.offlineTitle": "Nema veze",
   "groups.name": "{trainer} - {days} - {from} - {to}",
-  "groups.nameWithAge": "{trainer} - {age} - {days} - {from} - {to}",
+  "groups.nameWithAge": "{trainer} ({age}) - {days} - {from} - {to}",
   "groups.age.range": "{from}–{to} god.",
   "groups.age.from": "{from}+ god.",
   "groups.age.to": "do {to} god.",
