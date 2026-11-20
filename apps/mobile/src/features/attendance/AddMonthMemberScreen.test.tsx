@@ -23,6 +23,7 @@ const groupMember = (id: string, name: string, surname: string): GroupMemberResp
   email: null,
   phone: null,
   guardians: [],
+  isNew: false,
 });
 
 const everyoneMember = (id: string, name: string, surname: string, role: MemberResponse["role"]): MemberResponse => ({
@@ -43,7 +44,7 @@ const everyone = [
 
 const attendance: GroupAttendanceResponse = {
   sessions: [{ id: "11", date: "2026-11-11" }],
-  members: [{ id: "4", name: "Leo", surname: "Perić", attendedSessionIds: [], subscription: null, paid: false, comment: null }],
+  members: [{ id: "4", name: "Leo", surname: "Perić", attendedSessionIds: [], subscription: null, paid: false, comment: null, isNew: false }],
 };
 
 beforeEach(() => {

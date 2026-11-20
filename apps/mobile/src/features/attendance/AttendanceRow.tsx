@@ -4,6 +4,7 @@ import { Pressable, StyleSheet, Text, View } from "react-native";
 import { useSetAttendance } from "../../api/attendance";
 import { useAbility } from "../../api/auth";
 import { useOverduePayments } from "../../api/subscriptions";
+import { NewBadge } from "../../components/NewBadge";
 import { formatMonth, formatPersonName, formatShortMonth } from "../../lib/format";
 import { useMessages } from "../../lib/messages";
 import {
@@ -59,6 +60,7 @@ export const AttendanceRow = ({
         <View style={[styles.box, checked && styles.boxChecked, disabled && styles.boxDisabled]} />
         <View style={styles.text}>
           <Text style={styles.name}>{formatPersonName(member)}</Text>
+          {member.isNew ? <NewBadge /> : null}
           <Text style={styles.subscription}>
             {t("attendance.monthStatus", {
               subscription: member.subscription?.name ?? t("attendance.noSubscription"),

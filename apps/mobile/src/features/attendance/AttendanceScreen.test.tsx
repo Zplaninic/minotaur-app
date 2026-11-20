@@ -45,8 +45,18 @@ const november = (): GroupAttendanceResponse => ({
       subscription: null,
       paid: false,
       comment: "Injured knee",
+      isNew: true,
     },
-    { id: "5", name: "Nora", surname: "Jurić", attendedSessionIds: [], subscription: null, paid: false, comment: null },
+    {
+      id: "5",
+      name: "Nora",
+      surname: "Jurić",
+      attendedSessionIds: [],
+      subscription: null,
+      paid: false,
+      comment: null,
+      isNew: false,
+    },
   ],
 });
 
@@ -150,6 +160,12 @@ describe("AttendanceScreen", () => {
       expect.objectContaining({ method: "PUT" }),
     );
     await writesSettled();
+  });
+
+  it("shows the New badge only on new members", async () => {
+    await renderScreen();
+    expect(await screen.findByRole("checkbox", { name: "Leo Perić" })).toBeOnTheScreen();
+    expect(screen.getAllByText(t("member.newBadge"))).toHaveLength(1);
   });
 
   it("steps to the previous session", async () => {

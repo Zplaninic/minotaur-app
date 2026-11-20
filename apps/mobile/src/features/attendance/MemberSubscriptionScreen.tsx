@@ -3,6 +3,8 @@ import { toErrorCode } from "@repo/shared/client";
 import { useRouter } from "expo-router";
 import { ActivityIndicator, StyleSheet, Text } from "react-native";
 import { useGroupAttendance, useSetMonthPaid, useSetMonthSubscription } from "../../api/attendance";
+import { useAbility } from "../../api/auth";
+import { useSetMemberNew } from "../../api/members";
 import { useSubscriptions } from "../../api/subscriptions";
 import { Button } from "../../components/Button";
 import { CheckboxList } from "../../components/CheckboxList";
@@ -33,6 +35,8 @@ export const MemberSubscriptionScreen = ({ groupId, month, memberId }: MemberSub
   const subscriptions = useSubscriptions();
   const setSubscription = useSetMonthSubscription(groupId, month, memberId);
   const setPaid = useSetMonthPaid(groupId, month, memberId);
+  const setNew = useSetMemberNew(memberId);
+  const canMarkNew = useAbility().can("update", "Member");
 
   if (attendance.isPending || subscriptions.isPending) {
     return (
@@ -97,6 +101,8 @@ export const MemberSubscriptionScreen = ({ groupId, month, memberId }: MemberSub
   const paid = setPaid.isPending ? setPaid.variables : member.paid;
   const canPay = member.subscription !== null;
   const paidError = setPaid.error ? errorMessage(toErrorCode(setPaid.error)) : undefined;
+  // While saving, show the value being saved rather than jumping back.
+  const isNew = setNew.isPending ? setNew.variables : member.isNew;
 
   const onSelect = (value: string) => {
     if (!setSubscription.isPending) {
@@ -123,6 +129,19 @@ export const MemberSubscriptionScreen = ({ groupId, month, memberId }: MemberSub
         error={paidError}
       />
       {canPay ? null : <Text style={fieldStyles.value}>{t("monthSubscriptionForm.paidNeedsSubscription")}</Text>}
+      {canMarkNew ? (
+        <CheckboxList
+          label={t("monthSubscriptionForm.newLabel")}
+          options={[{ value: "new", label: t("monthSubscriptionForm.new") }]}
+          selected={isNew ? ["new"] : []}
+          onToggle={() => {
+            if (!setNew.isPending) {
+              setNew.mutate(!isNew);
+            }
+          }}
+          error={setNew.error ? errorMessage(toErrorCode(setNew.error)) : undefined}
+        />
+      ) : null}
       <MonthCommentForm groupId={groupId} month={month} member={member} />
       <OptionList
         label={t("monthSubscriptionForm.label")}
@@ -131,7 +150,7 @@ export const MemberSubscriptionScreen = ({ groupId, month, memberId }: MemberSub
         onSelect={onSelect}
         error={error}
       />
-      {setSubscription.isPending || setPaid.isPending ? (
+      {setSubscription.isPending || setPaid.isPending || setNew.isPending ? (
         <Text style={fieldStyles.value} accessibilityLiveRegion="polite">
           {t("monthSubscriptionForm.saving")}
         </Text>

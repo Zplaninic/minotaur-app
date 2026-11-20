@@ -50,7 +50,16 @@ let online: boolean;
 beforeEach(() => {
   me = admin;
   members = [
-    { id: "4", name: "Ana", surname: "Horvat", birthday: "2014-03-12", email: null, phone: null, guardians: [] },
+    {
+      id: "4",
+      name: "Ana",
+      surname: "Horvat",
+      birthday: "2014-03-12",
+      email: null,
+      phone: null,
+      guardians: [],
+      isNew: false,
+    },
   ];
   online = true;
   mockPush.mockReset();
@@ -92,6 +101,7 @@ describe("GroupScreen", () => {
     await renderScreen();
     expect(await screen.findByText(groupName)).toBeOnTheScreen();
     expect(screen.getByText("Ana Horvat")).toBeOnTheScreen();
+    expect(screen.queryByText(t("member.newBadge"))).toBeNull();
   });
 
   it("shows each member's guardians with their email", async () => {
@@ -104,11 +114,13 @@ describe("GroupScreen", () => {
         email: null,
         phone: null,
         guardians: [{ id: "1", name: "Iva", surname: "Horvat", email: "iva@example.com", phone: null }],
+        isNew: true,
       },
     ];
     await renderScreen();
     expect(await screen.findByText("Iva Horvat")).toBeOnTheScreen();
     expect(screen.getByText("iva@example.com")).toBeOnTheScreen();
+    expect(screen.getByText(t("member.newBadge"))).toBeOnTheScreen();
   });
 
   it("shows the empty state when the group has no members", async () => {

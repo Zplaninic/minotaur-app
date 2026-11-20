@@ -34,6 +34,7 @@ const attendance: GroupAttendanceResponse = {
       subscription: { id: "1", name: "Kids 1x", sessionsPerWeek: 1, price: 3000 },
       paid: false,
       comment: null,
+      isNew: false,
     },
   ],
 };
@@ -43,6 +44,8 @@ let offline: boolean;
 let paidMonth: boolean;
 let withoutSubscription: boolean;
 let savedComment: string | null;
+let role: "admin" | "trainer" | "child";
+let isNewMember: boolean;
 
 beforeEach(() => {
   mockBack.mockReset();
@@ -51,10 +54,20 @@ beforeEach(() => {
   paidMonth = false;
   withoutSubscription = false;
   savedComment = null;
+  role = "admin";
+  isNewMember = false;
   fetchMock.mockReset();
   fetchMock.mockImplementation(async (path, _schema, init) => {
     if (offline) {
       throw new ApiError("NETWORK_ERROR");
+    }
+    if (path === "/me") {
+      return { memberId: "9", name: "Test", surname: "Admin", email: "admin@example.com", role };
+    }
+    if (path === "/members/4/new" && init?.method === "PUT") {
+      sentBody = JSON.parse(String(init.body));
+      isNewMember = (sentBody as { isNew: boolean }).isNew;
+      return undefined;
     }
     if (path === "/groups/1/attendance?month=2026-11") {
       return {
@@ -64,6 +77,7 @@ beforeEach(() => {
           paid: paidMonth,
           subscription: withoutSubscription ? null : member.subscription,
           comment: savedComment,
+          isNew: isNewMember,
         })),
       };
     }
@@ -144,6 +158,27 @@ describe("MemberSubscriptionScreen", () => {
 
     expect(screen.getByText(t("monthSubscriptionForm.paidNeedsSubscription"))).toBeOnTheScreen();
     expect(sentBody).toBeUndefined();
+  });
+
+  it("marks the member as new and removes it again", async () => {
+    await renderScreen();
+    const box = await screen.findByRole("checkbox", { name: t("monthSubscriptionForm.new") });
+    expect(box).not.toBeChecked();
+
+    await fireEvent.press(box);
+    await waitFor(() => expect(sentBody).toEqual({ isNew: true }));
+    await waitFor(() => expect(box).toBeChecked());
+
+    await fireEvent.press(box);
+    await waitFor(() => expect(sentBody).toEqual({ isNew: false }));
+    expect(mockBack).not.toHaveBeenCalled();
+  });
+
+  it("does not offer the New box to someone who cannot edit members", async () => {
+    role = "child";
+    await renderScreen();
+    expect(await screen.findByText("Leo Perić in November 2026")).toBeOnTheScreen();
+    expect(screen.queryByRole("checkbox", { name: t("monthSubscriptionForm.new") })).toBeNull();
   });
 
   it("saves a comment for the month and stays on the screen", async () => {

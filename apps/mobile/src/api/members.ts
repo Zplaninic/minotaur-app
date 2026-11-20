@@ -5,10 +5,12 @@ import {
   fetchMembersPage,
   keysToInvalidateAfterArchiveMember,
   keysToInvalidateAfterCreateMember,
+  keysToInvalidateAfterSetMemberNew,
   keysToInvalidateAfterUpdateMember,
   memberKeys,
   memberQueries,
   nextMembersPage,
+  setMemberNew,
   updateMember,
 } from "@repo/shared/client";
 import { keepPreviousData, useInfiniteQuery, useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
@@ -72,6 +74,18 @@ export const useArchiveMember = (memberId: string) => {
         keysToInvalidateAfterArchiveMember.map((queryKey) =>
           queryClient.invalidateQueries({ queryKey, predicate: (query) => JSON.stringify(query.queryKey) !== leaving }),
         ),
+      );
+    },
+  });
+};
+
+export const useSetMemberNew = (memberId: string) => {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: (isNew: boolean) => setMemberNew(api, memberId, isNew),
+    onSuccess: async () => {
+      await Promise.all(
+        keysToInvalidateAfterSetMemberNew.map((queryKey) => queryClient.invalidateQueries({ queryKey })),
       );
     },
   });
