@@ -4,7 +4,7 @@ import { email, personName, phone } from "./person.js";
 
 export const createGuardianBody = z.object({
   name: personName,
-  surname: personName,
+  surname: personName.optional(),
   email: email.optional(),
   phone: phone.optional(),
 });
@@ -13,7 +13,7 @@ export type CreateGuardianBody = z.infer<typeof createGuardianBody>;
 export const guardianResponse = z.object({
   id,
   name: z.string(),
-  surname: z.string(),
+  surname: z.string().nullable(),
   email: z.string().nullable(),
   phone: z.string().nullable(),
 });
