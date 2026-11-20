@@ -76,6 +76,12 @@ describe("createMember", () => {
     expect(await prisma.guardian.count()).toBe(2);
   });
 
+  it("creates a member without a birthday and without guardians", async () => {
+    const { birthday: _birthday, ...withoutBirthday } = adult();
+    const member = await createMember(prisma, SYSTEM_ACTOR, withoutBirthday, today);
+    expect(member).toMatchObject({ birthday: null, guardians: [] });
+  });
+
   it("rejects a minor without guardians", async () => {
     await expect(createMember(prisma, SYSTEM_ACTOR, adult({ birthday: "2014-03-12" }), today)).rejects.toMatchObject({
       code: "VALIDATION_ERROR",
@@ -147,6 +153,13 @@ describe("updateMember", () => {
     );
     expect(updated).toMatchObject({ name: "Mario", email: "mario@example.com", taxNumber: null, phone: null });
     expect(await getMember(prisma, created.id)).toEqual(updated);
+  });
+
+  it("clears the birthday when it is left out", async () => {
+    const created = await createMember(prisma, SYSTEM_ACTOR, adult(), today);
+    const { birthday: _birthday, ...withoutBirthday } = edit;
+    const updated = await updateMember(prisma, SYSTEM_ACTOR, created.id, withoutBirthday, today);
+    expect(updated.birthday).toBeNull();
   });
 
   it("replaces the guardians and keeps the unlinked guardian", async () => {

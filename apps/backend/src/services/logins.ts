@@ -21,7 +21,7 @@ export type NewLoginMember = {
   orgId: number;
   name: string;
   surname: string;
-  birthday: string;
+  birthday?: string | undefined;
   email: string;
 };
 
@@ -82,7 +82,7 @@ export const createMemberWithLogin = async (
         orgId: input.orgId,
         name: personName.parse(input.name),
         surname: personName.parse(input.surname),
-        birthday: toDbDate(input.birthday),
+        birthday: input.birthday ? toDbDate(input.birthday) : null,
         email: emailSchema.parse(input.email),
         role,
         login: { create: { passwordHash } },

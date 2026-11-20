@@ -8,7 +8,7 @@ import { readNewPassword } from "./readPassword.js";
 import { required, requiredId, runCommand } from "./run.js";
 
 const usage = `pnpm --filter @repo/backend login:create --member-id <id> --role <${LOGIN_ROLES.join("|")}>
-   or: pnpm --filter @repo/backend login:create --org-id <id> --name <name> --surname <surname> --birthday <YYYY-MM-DD> --email <email> --role <${LOGIN_ROLES.join("|")}>`;
+   or: pnpm --filter @repo/backend login:create --org-id <id> --name <name> --surname <surname> [--birthday <YYYY-MM-DD>] --email <email> --role <${LOGIN_ROLES.join("|")}>`;
 
 const loginRole = (value: string): LoginRole => {
   const role = LOGIN_ROLES.find((candidate) => candidate === value);
@@ -52,7 +52,7 @@ await runCommand(
         orgId: requiredId(values, "org-id"),
         name: required(values, "name"),
         surname: required(values, "surname"),
-        birthday: required(values, "birthday"),
+        birthday: values["birthday"],
         email: required(values, "email"),
       },
       role,

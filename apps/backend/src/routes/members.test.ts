@@ -35,6 +35,13 @@ describe("POST /members", () => {
     expect(memberResponse.parse(response.json())).toMatchObject({ name: "Marko", role: "child", guardians: [] });
   });
 
+  it("creates a member without a birthday", async () => {
+    const { birthday: _birthday, ...withoutBirthday } = body();
+    const response = await post(withoutBirthday);
+    expect(response.statusCode).toBe(201);
+    expect(memberResponse.parse(response.json()).birthday).toBeNull();
+  });
+
   it("ignores a role sent in the body", async () => {
     const response = await post({ ...body(), role: "admin" });
     expect(response.statusCode).toBe(201);

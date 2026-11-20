@@ -53,7 +53,7 @@ const toMemberResponse = (member: MemberRow): MemberResponse => ({
   orgId: toApiId(member.orgId),
   name: member.name,
   surname: member.surname,
-  birthday: toIsoDate(member.birthday),
+  birthday: member.birthday ? toIsoDate(member.birthday) : null,
   role: member.role,
   taxNumber: member.taxNumber,
   email: member.email,
@@ -91,9 +91,16 @@ export const listMembers = async (db: Db, query: ListMembersQuery, today: string
 
 type DbClient = Db | Prisma.TransactionClient;
 
-// A birthday cannot be in the future, and a minor needs a guardian. today is
+// A birthday cannot be in the future, and a minor needs a guardian. Without a
+// birthday the age is unknown, so no guardian is required. today is
 // YYYY-MM-DD at the gym; ISO dates sort like the days they stand for.
-const requireValidBirthday = (body: { birthday: string; guardians: readonly unknown[] }, today: string): void => {
+const requireValidBirthday = (
+  body: { birthday?: string | undefined; guardians: readonly unknown[] },
+  today: string,
+): void => {
+  if (body.birthday === undefined) {
+    return;
+  }
   if (body.birthday > today) {
     throw new AppError("VALIDATION_ERROR", 400, "The birthday cannot be in the future");
   }
@@ -159,7 +166,7 @@ export const createMember = async (
         orgId,
         name: body.name,
         surname: body.surname,
-        birthday: toDbDate(body.birthday),
+        birthday: body.birthday ? toDbDate(body.birthday) : null,
         role: DEFAULT_MEMBER_ROLE,
         taxNumber: body.taxNumber ?? null,
         email: body.email ?? null,
@@ -204,7 +211,7 @@ const EDITABLE_FIELDS = ["name", "surname", "birthday", "taxNumber", "email", "p
 const editableFieldsOf = (member: Prisma.MemberGetPayload<{ select: typeof editableSelect }>) => ({
   name: member.name,
   surname: member.surname,
-  birthday: toIsoDate(member.birthday),
+  birthday: member.birthday ? toIsoDate(member.birthday) : null,
   taxNumber: member.taxNumber,
   email: member.email,
   phone: member.phone,
@@ -240,7 +247,7 @@ export const updateMember = async (
       data: {
         name: body.name,
         surname: body.surname,
-        birthday: toDbDate(body.birthday),
+        birthday: body.birthday ? toDbDate(body.birthday) : null,
         taxNumber: body.taxNumber ?? null,
         email: body.email ?? null,
         phone: body.phone ?? null,

@@ -200,7 +200,7 @@ export const listGroupMembers = async (db: Db, groupId: string): Promise<ListGro
       id: toApiId(member.id),
       name: member.name,
       surname: member.surname,
-      birthday: toIsoDate(member.birthday),
+      birthday: member.birthday ? toIsoDate(member.birthday) : null,
       email: member.email,
       phone: member.phone,
       guardians: member.guardians.map((link) => toGuardianResponse(link.guardian)),

@@ -90,7 +90,7 @@ model Member {
   orgId            Int
   name             String
   surname          String
-  birthday         DateTime           @db.Date
+  birthday         DateTime?          @db.Date
   role             MemberRole         @default(child)
   taxNumber        String?
   email            String?
