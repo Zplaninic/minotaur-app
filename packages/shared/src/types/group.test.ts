@@ -6,7 +6,11 @@ const validBody = { ownerId: "1", days: ["monday", "wednesday"], from: "17:00", 
 
 describe("createGroupBody", () => {
   it("accepts an owner, days and a time range, with no age range", () => {
-    expect(createGroupBody.parse(validBody)).toEqual({ ...validBody, ageFrom: null, ageTo: null });
+    expect(createGroupBody.parse(validBody)).toEqual({ ...validBody, ageFrom: null, ageTo: null, maxMembers: null });
+  });
+
+  it("accepts a member limit", () => {
+    expect(createGroupBody.parse({ ...validBody, maxMembers: 12 })).toMatchObject({ maxMembers: 12 });
   });
 
   it("accepts an age range open at either end", () => {
@@ -27,6 +31,9 @@ describe("createGroupBody", () => {
     ["a negative age", { ageFrom: -1 }],
     ["an age past 99", { ageTo: 100 }],
     ["an upper age below the lower age", { ageFrom: 10, ageTo: 7 }],
+    ["a member limit of zero", { maxMembers: 0 }],
+    ["a fractional member limit", { maxMembers: 1.5 }],
+    ["a member limit past 999", { maxMembers: 1000 }],
   ])("rejects %s", (_label, override) => {
     expect(createGroupBody.safeParse({ ...validBody, ...override }).success).toBe(false);
   });
@@ -42,6 +49,7 @@ describe("groupResponse", () => {
       to: "18:30",
       ageFrom: 7,
       ageTo: null,
+      maxMembers: 12,
       memberCount: 3,
       createdAt: "2026-11-15T17:00:22.251Z",
       updatedAt: "2026-11-15T17:00:22.251Z",

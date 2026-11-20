@@ -1,7 +1,7 @@
 import { createGroupBody, weekday, type CreateGroupBody, type GroupResponse, type Weekday } from "../types/group.js";
 
 // Form state for the group form. Times are HH:mm, or "" when not chosen yet.
-// Ages are the typed text, "" for no bound.
+// Ages and the member limit are the typed text, "" for no bound.
 export type GroupDraft = {
   ownerId: string;
   days: readonly Weekday[];
@@ -9,19 +9,20 @@ export type GroupDraft = {
   to: string;
   ageFrom: string;
   ageTo: string;
+  maxMembers: string;
 };
 
 // Apps turn these codes into their own messages.
-export type GroupFieldError = "owner" | "days" | "from" | "to" | "timeOrder" | "age" | "ageOrder" | "invalid";
+export type GroupFieldError = "owner" | "days" | "from" | "to" | "timeOrder" | "age" | "ageOrder" | "maxMembers" | "invalid";
 
-// Keyed by field: "ownerId", "days", "from", "to", "ageFrom", "ageTo".
+// Keyed by field: "ownerId", "days", "from", "to", "ageFrom", "ageTo", "maxMembers".
 export type GroupFieldErrors = Partial<Record<string, GroupFieldError>>;
 
 export type GroupDraftValidation = { ok: true; body: CreateGroupBody } | { ok: false; errors: GroupFieldErrors };
 
-export const emptyGroupDraft: GroupDraft = { ownerId: "", days: [], from: "", to: "", ageFrom: "", ageTo: "" };
+export const emptyGroupDraft: GroupDraft = { ownerId: "", days: [], from: "", to: "", ageFrom: "", ageTo: "", maxMembers: "" };
 
-const ageToDraft = (age: number | null): string => (age === null ? "" : String(age));
+const numberToDraft = (value: number | null): string => (value === null ? "" : String(value));
 
 // The edit form starts from the saved group.
 export const groupToDraft = (group: GroupResponse): GroupDraft => ({
@@ -29,12 +30,13 @@ export const groupToDraft = (group: GroupResponse): GroupDraft => ({
   days: group.days,
   from: group.from,
   to: group.to,
-  ageFrom: ageToDraft(group.ageFrom),
-  ageTo: ageToDraft(group.ageTo),
+  ageFrom: numberToDraft(group.ageFrom),
+  ageTo: numberToDraft(group.ageTo),
+  maxMembers: numberToDraft(group.maxMembers),
 });
 
 // Text that is not a whole number becomes NaN, which the schema rejects.
-const draftToAge = (text: string): number | null => {
+const draftToNumber = (text: string): number | null => {
   const trimmed = text.trim();
   if (trimmed === "") {
     return null;
@@ -53,6 +55,7 @@ const fieldErrors: Partial<Record<string, GroupFieldError>> = {
   to: "to",
   ageFrom: "age",
   ageTo: "age",
+  maxMembers: "maxMembers",
 };
 
 // The only custom issues are the end time not being after the start, and the
@@ -70,8 +73,9 @@ const issueCode = (field: string, code: string): GroupFieldError => {
 export const validateGroupDraft = (draft: GroupDraft): GroupDraftValidation => {
   const result = createGroupBody.safeParse({
     ...draft,
-    ageFrom: draftToAge(draft.ageFrom),
-    ageTo: draftToAge(draft.ageTo),
+    ageFrom: draftToNumber(draft.ageFrom),
+    ageTo: draftToNumber(draft.ageTo),
+    maxMembers: draftToNumber(draft.maxMembers),
   });
   if (result.success) {
     return { ok: true, body: result.data };

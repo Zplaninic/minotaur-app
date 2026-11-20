@@ -11,11 +11,12 @@ const valid: GroupDraft = {
   to: "18:30",
   ageFrom: "",
   ageTo: "",
+  maxMembers: "",
 };
 
 describe("validateGroupDraft", () => {
   it("turns a complete draft into a request body", () => {
-    expect(validateGroupDraft(valid)).toEqual({ ok: true, body: { ...valid, ageFrom: null, ageTo: null } });
+    expect(validateGroupDraft(valid)).toEqual({ ok: true, body: { ...valid, ageFrom: null, ageTo: null, maxMembers: null } });
   });
 
   it.each([
@@ -26,12 +27,23 @@ describe("validateGroupDraft", () => {
   ])("accepts an age range with %s", (_label, ageFrom, ageTo, bodyFrom, bodyTo) => {
     expect(validateGroupDraft({ ...valid, ageFrom, ageTo })).toEqual({
       ok: true,
-      body: { ...valid, ageFrom: bodyFrom, ageTo: bodyTo },
+      body: { ...valid, ageFrom: bodyFrom, ageTo: bodyTo, maxMembers: null },
     });
   });
 
   it.each(["seven", "7.5", "-1", "100"])("rejects the age %s", (age) => {
     expect(validateGroupDraft({ ...valid, ageFrom: age })).toEqual({ ok: false, errors: { ageFrom: "age" } });
+  });
+
+  it("accepts a member limit", () => {
+    expect(validateGroupDraft({ ...valid, maxMembers: " 12 " })).toEqual({
+      ok: true,
+      body: { ...valid, ageFrom: null, ageTo: null, maxMembers: 12 },
+    });
+  });
+
+  it.each(["twelve", "1.5", "0", "1000"])("rejects the member limit %s", (maxMembers) => {
+    expect(validateGroupDraft({ ...valid, maxMembers })).toEqual({ ok: false, errors: { maxMembers: "maxMembers" } });
   });
 
   it("reports an upper age below the lower age", () => {
@@ -66,11 +78,12 @@ describe("groupToDraft", () => {
       to: "18:30",
       ageFrom: 7,
       ageTo: null,
+      maxMembers: 12,
       memberCount: 0,
       createdAt: "2026-11-15T17:00:22.251Z",
       updatedAt: "2026-11-15T17:00:22.251Z",
     };
-    expect(groupToDraft(group)).toEqual({ ...valid, ageFrom: "7", ageTo: "" });
+    expect(groupToDraft(group)).toEqual({ ...valid, ageFrom: "7", ageTo: "", maxMembers: "12" });
   });
 });
 

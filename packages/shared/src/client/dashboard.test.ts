@@ -10,6 +10,7 @@ const group = (id: string, ownerId: string, days: Weekday[], from: string): Grou
   to: "23:00",
   ageFrom: null,
   ageTo: null,
+  maxMembers: null,
   memberCount: 0,
   createdAt: "2026-11-15T17:00:22.251Z",
   updatedAt: "2026-11-15T17:00:22.251Z",

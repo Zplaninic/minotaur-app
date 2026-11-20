@@ -1,7 +1,14 @@
 import { describe, expect, it } from "vitest";
 import type { MemberResponse, MemberRole } from "../types/member.js";
 import type { ApiClient } from "./apiClient.js";
-import { archiveGroup, groupAgeRangeKind, groupKeys, groupMemberCandidates, updateGroup } from "./groups.js";
+import {
+  archiveGroup,
+  groupAgeRangeKind,
+  groupKeys,
+  groupMemberCandidates,
+  isGroupOverLimit,
+  updateGroup,
+} from "./groups.js";
 
 const member = (id: string, role: MemberRole): MemberResponse => ({
   id,
@@ -58,6 +65,7 @@ describe("updateGroup", () => {
       to: "18:30",
       ageFrom: 7,
       ageTo: 10,
+      maxMembers: 12,
       memberCount: 0,
       createdAt: "2026-11-15T17:00:22.251Z",
       updatedAt: "2026-11-15T17:00:22.251Z",
@@ -68,7 +76,15 @@ describe("updateGroup", () => {
         return schema.parse(response);
       },
     };
-    const body = { ownerId: "2", days: ["monday" as const], from: "17:00", to: "18:30", ageFrom: 7, ageTo: 10 };
+    const body = {
+      ownerId: "2",
+      days: ["monday" as const],
+      from: "17:00",
+      to: "18:30",
+      ageFrom: 7,
+      ageTo: 10,
+      maxMembers: 12,
+    };
     expect(await updateGroup(api, "3", body)).toEqual(response);
     expect(calls).toEqual([{ path: "/groups/3", method: "PUT", body }]);
   });
@@ -82,5 +98,16 @@ describe("groupAgeRangeKind", () => {
     [null, null, null],
   ] as const)("names %s to %s as %s", (ageFrom, ageTo, kind) => {
     expect(groupAgeRangeKind({ ageFrom, ageTo })).toBe(kind);
+  });
+});
+
+describe("isGroupOverLimit", () => {
+  it.each([
+    [null, 30, false],
+    [12, 11, false],
+    [12, 12, false],
+    [12, 13, true],
+  ] as const)("with a limit of %s and %s members is %s", (maxMembers, memberCount, over) => {
+    expect(isGroupOverLimit({ maxMembers, memberCount })).toBe(over);
   });
 });

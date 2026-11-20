@@ -25,6 +25,11 @@ export const MAX_GROUP_AGE = 99;
 // An age in whole years, as a bound of a group's age range.
 export const groupAge = z.number().int().min(0).max(MAX_GROUP_AGE);
 
+export const MAX_GROUP_MEMBERS = 999;
+
+// A group's member limit. The limit is soft: a group may go over it.
+export const groupMaxMembers = z.number().int().min(1).max(MAX_GROUP_MEMBERS);
+
 export const createGroupBody = z
   .object({
     ownerId: id,
@@ -37,6 +42,8 @@ export const createGroupBody = z
     // Either end of the age range may be left open. Left out means no bound.
     ageFrom: groupAge.nullable().default(null),
     ageTo: groupAge.nullable().default(null),
+    // Left out means no limit.
+    maxMembers: groupMaxMembers.nullable().default(null),
   })
   // HH:mm strings sort like the times they stand for.
   .refine((group) => group.from < group.to, { path: ["to"], message: "The end must be after the start" })
@@ -65,6 +72,7 @@ export const groupResponse = z.object({
   to: timeOfDay,
   ageFrom: groupAge.nullable(),
   ageTo: groupAge.nullable(),
+  maxMembers: groupMaxMembers.nullable(),
   memberCount: z.number().int().min(0),
   createdAt: z.iso.datetime(),
   updatedAt: z.iso.datetime(),

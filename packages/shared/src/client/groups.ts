@@ -97,3 +97,8 @@ export const groupAgeRangeKind = (group: Pick<GroupResponse, "ageFrom" | "ageTo"
   }
   return group.ageTo === null ? null : "to";
 };
+
+// Whether a group has more members than its limit. The limit is soft, so the
+// apps warn instead of blocking.
+export const isGroupOverLimit = (group: Pick<GroupResponse, "maxMembers" | "memberCount">): boolean =>
+  group.maxMembers !== null && group.memberCount > group.maxMembers;
