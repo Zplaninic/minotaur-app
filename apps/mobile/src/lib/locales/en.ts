@@ -74,7 +74,7 @@ export const en = {
   "members.editLabel": "Edit {name}",
   "members.offlineTitle": "No connection",
   "members.birthday": "Born {date}",
-  "members.guardians": "Guardians: {names}",
+  "members.guardians": "Guardians",
 
   "memberForm.title": "Add member",
   "memberForm.editTitle": "Edit member",

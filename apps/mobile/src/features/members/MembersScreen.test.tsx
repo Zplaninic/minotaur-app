@@ -3,7 +3,7 @@ import { fireEvent, render, screen, waitFor } from "@testing-library/react-nativ
 import { api } from "../../api/client";
 import { translate as t } from "../../lib/messages";
 import { MembersScreen } from "./MembersScreen";
-import { admin, ana, Providers } from "./testUtils";
+import { admin, ana, iva, Providers } from "./testUtils";
 
 jest.mock("../../api/client", () => ({ api: { fetch: jest.fn() } }));
 jest.mock("../../lib/sessionToken", () => ({ clearSessionToken: jest.fn(), saveSessionToken: jest.fn() }));
@@ -31,10 +31,13 @@ const renderScreen = () =>
 
 describe("MembersScreen", () => {
   it("lists members with their guardians", async () => {
-    membersAnswer(async () => ({ items: [ana], page: 1, pageSize: 20, total: 1 }));
+    const withEmail = { ...ana, guardians: [{ ...iva, email: "iva@example.com" }] };
+    membersAnswer(async () => ({ items: [withEmail], page: 1, pageSize: 20, total: 1 }));
     await renderScreen();
     expect(await screen.findByText("Ana Horvat")).toBeOnTheScreen();
-    expect(screen.getByText(t("members.guardians", { names: "Iva Horvat" }))).toBeOnTheScreen();
+    expect(screen.getByText(t("members.guardians"))).toBeOnTheScreen();
+    expect(screen.getByText("Iva Horvat")).toBeOnTheScreen();
+    expect(screen.getByText("iva@example.com")).toBeOnTheScreen();
     expect(fetchMock).toHaveBeenCalledWith("/members?page=1&pageSize=20", expect.anything());
   });
 

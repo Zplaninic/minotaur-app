@@ -1,6 +1,7 @@
 import type { GroupMemberResponse } from "@repo/shared";
 import { StyleSheet, Text, View } from "react-native";
 import { Button } from "../../components/Button";
+import { GuardianList } from "../../components/GuardianList";
 import { formatPersonName } from "../../lib/format";
 import { useMessages } from "../../lib/messages";
 import { bodyLineHeight, colors, fonts, fontSizes, minTouchSize, radii, shadows, spacing } from "../../theme/tokens";
@@ -16,7 +17,10 @@ export const GroupMemberRow = ({ member, onRemove, disabled = false }: GroupMemb
   const { t } = useMessages();
   return (
     <View style={styles.row}>
-      <Text style={styles.name}>{formatPersonName(member)}</Text>
+      <View style={styles.details}>
+        <Text style={styles.name}>{formatPersonName(member)}</Text>
+        <GuardianList guardians={member.guardians} />
+      </View>
       {onRemove ? (
         <Button
           label={t("groupMembers.remove")}
@@ -46,8 +50,11 @@ const styles = StyleSheet.create({
     ...shadows.raised,
     backgroundColor: colors.beige10,
   },
-  name: {
+  details: {
     flexShrink: 1,
+    gap: spacing[1],
+  },
+  name: {
     color: colors.greenDark,
     fontFamily: fonts.bodySemibold,
     fontSize: fontSizes.md,

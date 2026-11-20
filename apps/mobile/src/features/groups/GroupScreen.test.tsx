@@ -93,6 +93,23 @@ describe("GroupScreen", () => {
     expect(screen.getByText("Ana Horvat")).toBeOnTheScreen();
   });
 
+  it("shows each member's guardians with their email", async () => {
+    members = [
+      {
+        id: "4",
+        name: "Ana",
+        surname: "Horvat",
+        birthday: "2014-03-12",
+        email: null,
+        phone: null,
+        guardians: [{ id: "1", name: "Iva", surname: "Horvat", email: "iva@example.com", phone: null }],
+      },
+    ];
+    await renderScreen();
+    expect(await screen.findByText("Iva Horvat")).toBeOnTheScreen();
+    expect(screen.getByText("iva@example.com")).toBeOnTheScreen();
+  });
+
   it("shows the empty state when the group has no members", async () => {
     members = [];
     await renderScreen();
