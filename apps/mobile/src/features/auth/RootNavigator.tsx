@@ -1,7 +1,7 @@
 import { toErrorCode } from "@repo/shared/client";
 import { Stack } from "expo-router";
 import { ActivityIndicator, StyleSheet, Text, View } from "react-native";
-import { useMe } from "../../api/auth";
+import { useAbility, useMe } from "../../api/auth";
 import { Button } from "../../components/Button";
 import { Logo } from "../../components/Logo";
 import { Screen } from "../../components/Screen";
@@ -9,7 +9,8 @@ import { useMessages } from "../../lib/messages";
 import { bodyLineHeight, colors, fonts, fontSizes, headingLineHeight, spacing } from "../../theme/tokens";
 
 // Shows the login screen when logged out and the app screens when logged in.
-// Protected screens cannot be opened without a login, not even by a link.
+// Protected screens cannot be opened without a login, not even by a link,
+// and screens the member's role does not allow cannot be opened either.
 export const RootNavigator = () => {
   const { errorMessage, t } = useMessages();
   // Native headers only on the list and form screens; other screens draw their own heading.
@@ -22,6 +23,7 @@ export const RootNavigator = () => {
     headerRight: () => <Logo variant="app" label={t("app.name")} compact />,
   } as const;
   const me = useMe();
+  const ability = useAbility();
 
   if (me.isPending) {
     return (
@@ -85,16 +87,18 @@ export const RootNavigator = () => {
           name="groups/[id]/member-subscription"
           options={{ ...headerOptions, title: t("monthSubscriptionForm.title"), presentation: "modal" }}
         />
-        <Stack.Screen name="subscriptions/index" options={{ ...headerOptions, title: t("subscriptions.title") }} />
-        <Stack.Screen name="subscriptions/payments" options={{ ...headerOptions, title: t("payments.title") }} />
-        <Stack.Screen
-          name="subscriptions/new"
-          options={{ ...headerOptions, title: t("subscriptionForm.title"), presentation: "modal" }}
-        />
-        <Stack.Screen
-          name="subscriptions/[id]/edit"
-          options={{ ...headerOptions, title: t("subscriptionForm.editTitle"), presentation: "modal" }}
-        />
+        <Stack.Protected guard={ability.can("read", "Subscription")}>
+          <Stack.Screen name="subscriptions/index" options={{ ...headerOptions, title: t("subscriptions.title") }} />
+          <Stack.Screen name="subscriptions/payments" options={{ ...headerOptions, title: t("payments.title") }} />
+          <Stack.Screen
+            name="subscriptions/new"
+            options={{ ...headerOptions, title: t("subscriptionForm.title"), presentation: "modal" }}
+          />
+          <Stack.Screen
+            name="subscriptions/[id]/edit"
+            options={{ ...headerOptions, title: t("subscriptionForm.editTitle"), presentation: "modal" }}
+          />
+        </Stack.Protected>
       </Stack.Protected>
       <Stack.Protected guard={!loggedIn}>
         <Stack.Screen name="login" />

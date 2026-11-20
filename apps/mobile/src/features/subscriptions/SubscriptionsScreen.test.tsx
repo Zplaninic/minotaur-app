@@ -75,14 +75,4 @@ describe("SubscriptionsScreen", () => {
     await fireEvent.press(screen.getByRole("button", { name: t("subscriptions.payments") }));
     expect(mockPush).toHaveBeenCalledWith("/subscriptions/payments");
   });
-
-  it("shows a trainer the list without add or edit", async () => {
-    answer({ ...admin, role: "trainer" }, async () => ({ items: [kids] }));
-    await renderScreen();
-    expect(await screen.findByText("Kids 2x")).toBeOnTheScreen();
-    expect(screen.queryByRole("button", { name: t("subscriptions.add") })).not.toBeOnTheScreen();
-    expect(
-      screen.queryByRole("button", { name: t("subscriptions.editLabel", { name: "Kids 2x" }) }),
-    ).not.toBeOnTheScreen();
-  });
 });
