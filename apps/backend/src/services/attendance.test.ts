@@ -15,7 +15,7 @@ import {
   unmarkAttendance,
 } from "./attendance.js";
 import { trainingDates } from "./dates.js";
-import { addGroupMember, archiveGroup, createGroup, removeGroupMember } from "./groups.js";
+import { addGroupMember, archiveGroup, createGroup, listGroupMembers, removeGroupMember } from "./groups.js";
 import { createSubscription, updateSubscription } from "./subscriptions.js";
 
 let orgId: string;
@@ -195,6 +195,8 @@ describe("markAttendance and unmarkAttendance", () => {
   });
 });
 
+const monthOnly = { joinGroup: false, today: TODAY };
+
 describe("month rosters", () => {
   const rosterIds = async (month: string) =>
     (await getGroupAttendance(prisma, groupId, month)).members.map((member) => member.id);
@@ -238,13 +240,13 @@ describe("month rosters", () => {
     await removeMonthMember(prisma, { groupId, month: "2026-11", memberId: childId });
     expect(await rosterIds("2026-11")).toEqual([]);
 
-    await addMonthMember(prisma, { groupId, month: "2026-11", memberId: childId });
-    await addMonthMember(prisma, { groupId, month: "2026-11", memberId: childId });
+    await addMonthMember(prisma, { groupId, month: "2026-11", memberId: childId }, monthOnly);
+    await addMonthMember(prisma, { groupId, month: "2026-11", memberId: childId }, monthOnly);
     expect(await rosterIds("2026-11")).toEqual([childId]);
   });
 
   it("only adds to a month that has sessions", async () => {
-    await expect(addMonthMember(prisma, { groupId, month: "2027-05", memberId: childId })).rejects.toMatchObject({
+    await expect(addMonthMember(prisma, { groupId, month: "2027-05", memberId: childId }, monthOnly)).rejects.toMatchObject({
       code: "VALIDATION_ERROR",
     });
     expect(await rosterIds("2027-05")).toEqual([]);
@@ -258,11 +260,36 @@ describe("month rosters", () => {
     await expect(unmarkAttendance(prisma, target)).rejects.toMatchObject({ code: "NOT_FOUND" });
   });
 
-  it("only adds members of the group", async () => {
-    const outsider = await newChild("outsider@example.com");
-    await expect(addMonthMember(prisma, { groupId, month: "2026-11", memberId: outsider })).rejects.toMatchObject({
-      code: "VALIDATION_ERROR",
-    });
+  it("adds a member who is not in the group to that month only", async () => {
+    await createMonthSessions(prisma, groupId, "2026-11", TODAY);
+    await createMonthSessions(prisma, groupId, "2026-12", TODAY);
+    const visitor = await newChild("visitor@example.com");
+    await addMonthMember(prisma, { groupId, month: "2026-11", memberId: visitor }, monthOnly);
+
+    expect(await rosterIds("2026-11")).toEqual([childId, visitor].toSorted());
+    expect(await rosterIds("2026-12")).toEqual([childId]);
+    expect((await listGroupMembers(prisma, groupId)).items.map((member) => member.id)).toEqual([childId]);
+  });
+
+  it("adds a member to a past month and to the group", async () => {
+    await createMonthSessions(prisma, groupId, "2026-10", "2026-10-01");
+    await createMonthSessions(prisma, groupId, "2026-11", TODAY);
+    await createMonthSessions(prisma, groupId, "2026-12", TODAY);
+    const newcomer = await newChild("new@example.com");
+    await addMonthMember(prisma, { groupId, month: "2026-10", memberId: newcomer }, { joinGroup: true, today: TODAY });
+
+    for (const month of ["2026-10", "2026-11", "2026-12"]) {
+      expect(await rosterIds(month)).toContain(newcomer);
+    }
+    expect((await listGroupMembers(prisma, groupId)).items.map((member) => member.id)).toContain(newcomer);
+  });
+
+  it("only adds children and members", async () => {
+    await createMonthSessions(prisma, groupId, "2026-11", TODAY);
+    const trainer = String((await createLoginMember(prisma, orgId, "trainer", "t2@example.com")).memberId);
+    const add = (memberId: string) => addMonthMember(prisma, { groupId, month: "2026-11", memberId }, monthOnly);
+    await expect(add(trainer)).rejects.toMatchObject({ code: "VALIDATION_ERROR" });
+    await expect(add("999999")).rejects.toMatchObject({ code: "NOT_FOUND" });
   });
 
   it("refuses to remove a member with ticks that month", async () => {
@@ -334,7 +361,7 @@ describe("month subscriptions", () => {
     await setMonthSubscription(prisma, target("2026-10"), subscription.id);
     await createMonthSessions(prisma, groupId, "2026-11", TODAY);
     await removeMonthMember(prisma, target("2026-11"));
-    await addMonthMember(prisma, target("2026-11"));
+    await addMonthMember(prisma, target("2026-11"), monthOnly);
 
     expect((await subscriptionIn("2026-11"))?.id).toBe(subscription.id);
   });

@@ -12,7 +12,7 @@ import {
 import type { Db } from "../db/client.js";
 import { AppError } from "../errors.js";
 import type { Prisma } from "../generated/prisma/client.js";
-import { ensureMemberMonths, monthsFrom } from "./attendance.js";
+import { joinGroup } from "./attendance.js";
 import { monthOf, monthStart, toIsoDate } from "./dates.js";
 import { guardianSelect, toGuardianResponse } from "./guardians.js";
 import { toApiId, toDbId } from "./ids.js";
@@ -169,9 +169,8 @@ export const listGroupMembers = async (db: Db, groupId: string): Promise<ListGro
   };
 };
 
-// Adding a member who is already in the group changes nothing. The member
-// also joins the roster of the current month and of later months with
-// sessions; past months stay as they were. today is YYYY-MM-DD at the gym.
+// Adding a member who is already in the group changes nothing. See joinGroup
+// for the month rosters. today is YYYY-MM-DD at the gym.
 export const addGroupMember = async (db: Db, groupId: string, memberId: string, today: string): Promise<void> => {
   const groupDbId = requireGroupId(groupId);
   const memberDbId = toDbId(memberId);
@@ -191,19 +190,7 @@ export const addGroupMember = async (db: Db, groupId: string, memberId: string, 
       throw new AppError("VALIDATION_ERROR", 400, "Only children and members can be added to a group");
     }
 
-    await tx.groupMember.upsert({
-      where: { groupId_memberId: { groupId: groupDbId, memberId: memberDbId } },
-      create: { groupId: groupDbId, memberId: memberDbId },
-      update: {},
-    });
-    const months = await monthsFrom(tx, groupDbId, monthOf(today));
-    for (const month of months) {
-      await ensureMemberMonths(tx, month, [memberDbId]);
-    }
-    await tx.groupMonthMember.createMany({
-      data: months.map((month) => ({ groupId: groupDbId, month: monthStart(month), memberId: memberDbId })),
-      skipDuplicates: true,
-    });
+    await joinGroup(tx, groupDbId, memberDbId, today);
   });
 };
 

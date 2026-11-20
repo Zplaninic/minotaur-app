@@ -1,8 +1,9 @@
-import type {
-  GroupAttendanceResponse,
-  Month,
-  MonthMemberSubscription,
-  TrainingSessionResponse,
+import {
+  isGroupMemberRole,
+  type GroupAttendanceResponse,
+  type Month,
+  type MonthMemberSubscription,
+  type TrainingSessionResponse,
 } from "@repo/shared";
 import type { Db } from "../db/client.js";
 import { AppError } from "../errors.js";
@@ -322,23 +323,32 @@ export const unmarkAttendance = async (db: Db, target: AttendanceTarget): Promis
 
 type MonthMemberTarget = { groupId: string; month: Month; memberId: string };
 
-// Adding a member who is already on the roster changes nothing. Only the
-// group's members can be added, and only to a month that has sessions.
-export const addMonthMember = async (db: Db, target: MonthMemberTarget): Promise<void> => {
+// Adding a member who is already on the roster changes nothing. Any child or
+// member can be added, and only to a month that has sessions. With joinGroup
+// they also join the group, as joinGroup below describes. today is YYYY-MM-DD
+// at the gym.
+export const addMonthMember = async (
+  db: Db,
+  target: MonthMemberTarget,
+  options: { joinGroup: boolean; today: string },
+): Promise<void> => {
   const groupDbId = requireDbId(target.groupId, "Group not found");
   const memberDbId = requireDbId(target.memberId, "Member not found");
 
   await db.$transaction(async (tx) => {
     await requireGroup(tx, groupDbId);
-    const inGroup = await tx.groupMember.findUnique({
-      where: { groupId_memberId: { groupId: groupDbId, memberId: memberDbId } },
-      select: { memberId: true },
-    });
-    if (!inGroup) {
-      await refuseMember(tx, memberDbId, "The member is not in the group");
+    const member = await tx.member.findUnique({ where: { id: memberDbId, deletedAt: null }, select: { role: true } });
+    if (!member) {
+      throw memberNotFound();
+    }
+    if (!isGroupMemberRole(member.role)) {
+      throw new AppError("VALIDATION_ERROR", 400, "Only children and members can be added to a month");
     }
     if ((await countMonthSessions(tx, groupDbId, target.month)) === 0) {
       throw new AppError("VALIDATION_ERROR", 400, "The month has no sessions");
+    }
+    if (options.joinGroup) {
+      await joinGroup(tx, groupDbId, memberDbId, options.today);
     }
     await ensureMemberMonths(tx, target.month, [memberDbId]);
     await tx.groupMonthMember.upsert({
@@ -456,4 +466,23 @@ export const monthsFrom = async (db: DbClient, groupId: number, fromMonth: Month
     select: { date: true },
   });
   return [...new Set(sessions.map((session) => monthOf(toIsoDate(session.date))))].toSorted();
+};
+
+// Makes the member a member of the group and puts them on the roster of the
+// current month and of later months with sessions; past months stay as they
+// were. Joining twice changes nothing. today is YYYY-MM-DD at the gym.
+export const joinGroup = async (db: DbClient, groupId: number, memberId: number, today: string): Promise<void> => {
+  await db.groupMember.upsert({
+    where: { groupId_memberId: { groupId, memberId } },
+    create: { groupId, memberId },
+    update: {},
+  });
+  const months = await monthsFrom(db, groupId, monthOf(today));
+  for (const month of months) {
+    await ensureMemberMonths(db, month, [memberId]);
+  }
+  await db.groupMonthMember.createMany({
+    data: months.map((month) => ({ groupId, month: monthStart(month), memberId })),
+    skipDuplicates: true,
+  });
 };

@@ -1,4 +1,10 @@
-import { errorResponse, groupAttendanceResponse, MAX_MONTH_COMMENT_LENGTH, trainingSessionResponse } from "@repo/shared";
+import {
+  errorResponse,
+  groupAttendanceResponse,
+  listGroupMembersResponse,
+  MAX_MONTH_COMMENT_LENGTH,
+  trainingSessionResponse,
+} from "@repo/shared";
 import type { FastifyInstance } from "fastify";
 import { afterAll, beforeAll, beforeEach, describe, expect, it } from "vitest";
 import { authHeaders, createLoginMember, createOrg, resetDb } from "../../test/db.js";
@@ -22,6 +28,7 @@ let app: FastifyInstance;
 let trainer: { authorization: string };
 let groupId: string;
 let childId: string;
+let orgId: string;
 
 beforeAll(async () => {
   app = await buildServer();
@@ -29,7 +36,7 @@ beforeAll(async () => {
 
 beforeEach(async () => {
   await resetDb(app.db);
-  const orgId = await createOrg(app.db);
+  orgId = await createOrg(app.db);
   const trainerMember = await createLoginMember(app.db, orgId, "trainer");
   trainer = await authHeaders(app.db, trainerMember.memberId);
   groupId = (
@@ -166,14 +173,39 @@ describe("PUT and DELETE /groups/:id/months/:month/members/:memberId", () => {
     expect((await app.inject({ method: "DELETE", url, headers: trainer })).statusCode).toBe(204);
     expect(groupAttendanceResponse.parse((await getMonth(thisMonth)).json()).members).toEqual([]);
 
-    expect((await app.inject({ method: "PUT", url, headers: trainer })).statusCode).toBe(204);
+    const response = await app.inject({ method: "PUT", url, payload: { joinGroup: false }, headers: trainer });
+    expect(response.statusCode).toBe(204);
     expect(groupAttendanceResponse.parse((await getMonth(thisMonth)).json()).members).toHaveLength(1);
+  });
+
+  it("adds a member who is not in the group, and to the group when asked", async () => {
+    await addSession(firstOfThisMonth);
+    const visitorId = String((await createLoginMember(app.db, orgId, "child", "visitor@example.com")).memberId);
+    const url = `/groups/${groupId}/months/${thisMonth}/members/${visitorId}`;
+
+    const response = await app.inject({ method: "PUT", url, payload: { joinGroup: true }, headers: trainer });
+    expect(response.statusCode).toBe(204);
+    expect(groupAttendanceResponse.parse((await getMonth(thisMonth)).json()).members).toHaveLength(2);
+    const groupMembers = await app.inject({ method: "GET", url: `/groups/${groupId}/members`, headers: trainer });
+    expect(listGroupMembersResponse.parse(groupMembers.json()).items.map((member) => member.id)).toContain(visitorId);
+  });
+
+  it("rejects a missing body", async () => {
+    await addSession(firstOfThisMonth);
+    const response = await app.inject({
+      method: "PUT",
+      url: `/groups/${groupId}/months/${thisMonth}/members/${childId}`,
+      headers: trainer,
+    });
+    expect(response.statusCode).toBe(400);
+    expect(errorResponse.parse(response.json()).code).toBe("VALIDATION_ERROR");
   });
 
   it("rejects a month that is not YYYY-MM", async () => {
     const response = await app.inject({
       method: "PUT",
       url: `/groups/${groupId}/months/${firstOfThisMonth}/members/${childId}`,
+      payload: { joinGroup: false },
       headers: trainer,
     });
     expect(response.statusCode).toBe(400);

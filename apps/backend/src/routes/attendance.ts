@@ -1,4 +1,5 @@
 import {
+  addMonthMemberBody,
   attendanceParams,
   createMonthSessionsBody,
   createTrainingSessionBody,
@@ -146,12 +147,17 @@ export const attendanceRoutes: FastifyPluginAsync = async (app) => {
       onRequest: app.requireAbility("update", "Attendance"),
       schema: {
         params: monthMemberParams,
+        body: addMonthMemberBody,
         response: { 204: z.undefined(), ...guardedErrorResponses(400, 404) },
       },
     },
     async (request, reply) => {
       const { id, month, memberId } = request.params;
-      await addMonthMember(app.db, { groupId: id, month, memberId });
+      await addMonthMember(
+        app.db,
+        { groupId: id, month, memberId },
+        { joinGroup: request.body.joinGroup, today: isoDateIn(new Date(), config.GYM_TIME_ZONE) },
+      );
       return reply.status(204).send();
     },
   );
