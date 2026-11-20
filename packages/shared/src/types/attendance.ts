@@ -76,6 +76,10 @@ export type AttendanceParams = z.infer<typeof attendanceParams>;
 export const monthMemberParams = z.object({ id, month, memberId: id });
 export type MonthMemberParams = z.infer<typeof monthMemberParams>;
 
+// joinGroup also makes the member a member of the group, not only of the month.
+export const addMonthMemberBody = z.object({ joinGroup: z.boolean() });
+export type AddMonthMemberBody = z.infer<typeof addMonthMemberBody>;
+
 // null clears the member's subscription for the month.
 export const setMonthSubscriptionBody = z.object({ subscriptionId: id.nullable() });
 export type SetMonthSubscriptionBody = z.infer<typeof setMonthSubscriptionBody>;

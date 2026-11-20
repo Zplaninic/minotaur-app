@@ -1,4 +1,6 @@
 import { z } from "zod";
+import { isGroupMemberRole } from "../types/group.js";
+import type { MemberRole } from "../types/member.js";
 import {
   FIRST_MONTH,
   groupAttendanceResponse,
@@ -61,8 +63,12 @@ const monthMemberPath = (groupId: string, month: Month, memberId: string): strin
   `/groups/${encodeURIComponent(groupId)}/months/${encodeURIComponent(month)}/members/${encodeURIComponent(memberId)}`;
 
 // The server answers 204 with no body.
-export const addMonthMember = (api: ApiClient, groupId: string, month: Month, memberId: string) =>
-  api.fetch(monthMemberPath(groupId, month, memberId), z.undefined(), { method: "PUT" });
+export const addMonthMember = (api: ApiClient, groupId: string, month: Month, memberId: string, joinGroup: boolean) =>
+  api.fetch(monthMemberPath(groupId, month, memberId), z.undefined(), {
+    method: "PUT",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({ joinGroup }),
+  });
 
 // The server answers 204 with no body.
 export const removeMonthMember = (api: ApiClient, groupId: string, month: Month, memberId: string) =>
@@ -104,13 +110,21 @@ export const setMonthComment = (
     body: JSON.stringify({ comment }),
   });
 
-// The group's members who are not on the month's roster yet.
-export const monthRosterCandidates = <Member extends { id: string }>(
-  groupMembers: readonly Member[],
+export type MonthRosterCandidate<Member> = { member: Member; inGroup: boolean };
+
+// The members who may train and are not on the month's roster yet: the
+// group's members first, then everyone else, each in the order of everyone.
+export const monthRosterCandidates = <Member extends { id: string; role: MemberRole }>(
+  everyone: readonly Member[],
+  groupMembers: readonly { id: string }[],
   roster: readonly { id: string }[],
-): Member[] => {
+): MonthRosterCandidate<Member>[] => {
+  const inGroup = new Set(groupMembers.map((member) => member.id));
   const onRoster = new Set(roster.map((member) => member.id));
-  return groupMembers.filter((member) => !onRoster.has(member.id));
+  const candidates = everyone
+    .filter((member) => isGroupMemberRole(member.role) && !onRoster.has(member.id))
+    .map((member) => ({ member, inGroup: inGroup.has(member.id) }));
+  return [...candidates.filter((candidate) => candidate.inGroup), ...candidates.filter((candidate) => !candidate.inGroup)];
 };
 
 // Only members without ticks in the month can be removed from its roster.

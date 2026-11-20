@@ -118,13 +118,23 @@ describe("format", () => {
 });
 
 describe("monthRosterCandidates", () => {
-  it("keeps group members who are not on the roster", () => {
-    const group = [
-      { id: "4", name: "Leo" },
-      { id: "5", name: "Nora" },
-      { id: "6", name: "Mia" },
+  it("lists group members first, then other members who may train, skipping the roster", () => {
+    const everyone = [
+      { id: "3", role: "member" as const },
+      { id: "4", role: "child" as const },
+      { id: "5", role: "child" as const },
+      { id: "6", role: "member" as const },
+      { id: "7", role: "trainer" as const },
+      { id: "8", role: "admin" as const },
     ];
-    expect(monthRosterCandidates(group, [{ id: "5" }]).map((member) => member.id)).toEqual(["4", "6"]);
+    const group = [{ id: "4" }, { id: "5" }, { id: "6" }];
+    expect(
+      monthRosterCandidates(everyone, group, [{ id: "5" }]).map(({ member, inGroup }) => [member.id, inGroup]),
+    ).toEqual([
+      ["4", true],
+      ["6", true],
+      ["3", false],
+    ]);
   });
 });
 
