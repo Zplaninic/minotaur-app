@@ -47,7 +47,14 @@ jobs:
 
       - run: pnpm install --frozen-lockfile
 
-      # The apps consume shared through its build output.
+      # The apps consume enrollment and shared through their build output.
+      - name: enrollment
+        run: |
+          pnpm --filter @repo/enrollment build
+          pnpm --filter @repo/enrollment typecheck
+          pnpm --filter @repo/enrollment lint
+          pnpm --filter @repo/enrollment test
+
       - name: shared
         run: |
           pnpm --filter @repo/shared build

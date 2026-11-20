@@ -20,6 +20,7 @@ docker compose up -d
 cp apps/backend/.env.example apps/backend/.env
 cp apps/mobile/.env.example apps/mobile/.env
 pnpm --filter @repo/shared build
+pnpm --filter @repo/enrollment build
 pnpm --filter @repo/backend prisma migrate deploy
 pnpm --filter @repo/backend db:seed
 pnpm --filter @repo/backend login:create --org-id 1 --name <name> --surname <surname> --email <email> --role admin

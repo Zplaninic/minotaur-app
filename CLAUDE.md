@@ -59,6 +59,12 @@ packages/
         <resource>.ts       query keys, query options, requests for one resource
         <name>Draft.ts      form logic: draft to request body, field error codes
       index.ts              re-exports types/
+  enrollment/               @repo/enrollment: enrollment form emails to
+                            requests, group recommendation. No dependencies,
+                            kept self-contained to be open-sourced later
+    src/
+      parse.ts              parseEnrollmentEmail: form labels to parent and children
+      recommend.ts          recommendGroups: rank groups by age and free spots
 ```
 
 ## Boundaries
@@ -67,6 +73,9 @@ packages/
   imports only zod and @casl/ability, and must run in the browser, Node, and
   React Native.
 - The backend imports only `@repo/shared`, never `@repo/shared/client`.
+- Apps may import `@repo/enrollment`. It imports nothing: no other workspace
+  package, no Prisma, Fastify, React, or DOM APIs. Its tests use fake data
+  only.
 - Code that frontend and mobile both need, and that does not touch the DOM,
   React Native, or React, goes in shared `client/` instead of being copied.
 - All API request/response schemas live in shared as zod schemas. Types are
@@ -96,8 +105,10 @@ Always run per package, never for the whole repo.
   4. pnpm --filter @repo/mobile typecheck
   If an app reports a shared type or export that looks wrong, rebuild shared
   before debugging the app.
+- The same holds for enrollment: after a change, run
+  `pnpm --filter @repo/enrollment build`, then typecheck backend and frontend.
 - Tests use Vitest. Mobile is the exception: Jest with the `jest-expo` preset.
-- Single test file or test, Vitest packages (shared, backend, frontend):
+- Single test file or test, Vitest packages (shared, enrollment, backend, frontend):
   pnpm --filter @repo/<pkg> test <path/to/file.test.ts> -t "<test name>"
 - Single test file or test, mobile (Jest):
   pnpm --filter @repo/mobile test <path/to/file.test.tsx> -t "<test name>"
