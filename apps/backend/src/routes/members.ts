@@ -29,7 +29,13 @@ export const memberRoutes: FastifyPluginAsync = async (app) => {
         response: { 200: listMembersResponse, ...guardedErrorResponses(400) },
       },
     },
-    async (request) => listMembers(app.db, request.query, todayAtGym()),
+    async (request) => {
+      // Who has not paid is payment data.
+      if (request.query.unpaid && !request.auth?.ability.can("read", "Subscription")) {
+        throw new AppError("FORBIDDEN", 403, "Not allowed");
+      }
+      return listMembers(app.db, request.query, todayAtGym());
+    },
   );
 
   routes.post(

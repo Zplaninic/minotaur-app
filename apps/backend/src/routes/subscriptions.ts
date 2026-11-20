@@ -26,7 +26,8 @@ export const subscriptionRoutes: FastifyPluginAsync = async (app) => {
   routes.get(
     "/",
     {
-      onRequest: app.requireAbility("read", "Subscription"),
+      // Whoever sets a member's subscription for a month picks it from this list.
+      onRequest: app.requireAbility("update", "Attendance"),
       schema: {
         response: { 200: listSubscriptionsResponse, ...guardedErrorResponses() },
       },

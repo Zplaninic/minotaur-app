@@ -141,14 +141,20 @@ describe("PUT /subscriptions/:id", () => {
 });
 
 describe("GET /subscriptions/summary", () => {
-  it("lets a trainer read a month's totals", async () => {
-    const response = await app.inject({ method: "GET", url: "/subscriptions/summary?month=2026-11", headers: trainer });
+  it("lets an admin read a month's totals", async () => {
+    const response = await app.inject({ method: "GET", url: "/subscriptions/summary?month=2026-11", headers: admin });
     expect(response.statusCode).toBe(200);
     expect(subscriptionSummaryResponse.parse(response.json())).toMatchObject({ month: "2026-11", members: 0 });
   });
 
+  it("answers FORBIDDEN for a trainer", async () => {
+    const response = await app.inject({ method: "GET", url: "/subscriptions/summary?month=2026-11", headers: trainer });
+    expect(response.statusCode).toBe(403);
+    expect(errorCode(response)).toBe("FORBIDDEN");
+  });
+
   it.each(["", "?month=2026-8", "?month=2026-08"])("rejects %j", async (query) => {
-    const response = await app.inject({ method: "GET", url: `/subscriptions/summary${query}`, headers: trainer });
+    const response = await app.inject({ method: "GET", url: `/subscriptions/summary${query}`, headers: admin });
     expect(response.statusCode).toBe(400);
     expect(errorCode(response)).toBe("VALIDATION_ERROR");
   });
@@ -160,10 +166,16 @@ describe("GET /subscriptions/summary", () => {
 });
 
 describe("GET /subscriptions/overdue", () => {
-  it("lets a trainer read the overdue list", async () => {
-    const response = await app.inject({ method: "GET", url: "/subscriptions/overdue", headers: trainer });
+  it("lets an admin read the overdue list", async () => {
+    const response = await app.inject({ method: "GET", url: "/subscriptions/overdue", headers: admin });
     expect(response.statusCode).toBe(200);
     expect(overduePaymentsResponse.parse(response.json())).toEqual({ items: [], total: 0 });
+  });
+
+  it("answers FORBIDDEN for a trainer", async () => {
+    const response = await app.inject({ method: "GET", url: "/subscriptions/overdue", headers: trainer });
+    expect(response.statusCode).toBe(403);
+    expect(errorCode(response)).toBe("FORBIDDEN");
   });
 
   it("answers UNAUTHORIZED without a session", async () => {

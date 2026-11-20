@@ -209,6 +209,13 @@ describe("GET /members?unpaid=true", () => {
     expect(listMembersResponse.parse(all.json()).total).toBeGreaterThanOrEqual(3);
   });
 
+  it("answers FORBIDDEN for a trainer", async () => {
+    const trainer = await loggedInAs(app.db, orgId, "trainer");
+    const response = await app.inject({ method: "GET", url: "/members?unpaid=true", headers: trainer });
+    expect(response.statusCode).toBe(403);
+    expect(errorResponse.parse(response.json()).code).toBe("FORBIDDEN");
+  });
+
   it("rejects a filter value that is not true or false", async () => {
     const response = await app.inject({ method: "GET", url: "/members?unpaid=maybe", headers });
     expect(response.statusCode).toBe(400);
