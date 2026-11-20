@@ -8,6 +8,7 @@ import { ConfirmDialog } from "../components/ConfirmDialog";
 import { Dialog } from "../components/Dialog";
 import { AddGroupMemberForm } from "../features/groups/AddGroupMemberForm";
 import { GroupForm } from "../features/groups/GroupForm";
+import { GroupMemberCount } from "../features/groups/GroupMemberCount";
 import { GroupMembersTable } from "../features/groups/GroupMembersTable";
 import { groupAgeRange, groupName } from "../features/groups/groupName";
 import { formatPersonName, formatTimeOfDay } from "../lib/format";
@@ -96,6 +97,12 @@ export const GroupPage = () => {
             <div>
               <dt>{t("group.age")}</dt>
               <dd>{groupAgeRange(group.data, t) ?? t("common.empty")}</dd>
+            </div>
+            <div>
+              <dt>{t("group.members")}</dt>
+              <dd>
+                <GroupMemberCount group={group.data} />
+              </dd>
             </div>
           </dl>
 

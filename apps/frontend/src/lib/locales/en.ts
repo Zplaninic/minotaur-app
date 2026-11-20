@@ -191,6 +191,8 @@ export const en = {
   "groups.table.time": "Time",
   "groups.table.members": "Members",
   "groups.timeRange": "{from} – {to}",
+  "groups.memberLimit": "{count} / {max}",
+  "groups.overLimit": "Over limit",
 
   "group.back": "All groups",
   "group.loading": "Loading the group…",
@@ -198,6 +200,7 @@ export const en = {
   "group.days": "Days",
   "group.time": "Time",
   "group.age": "Age",
+  "group.members": "Members",
   "group.edit": "Edit group",
   "group.delete": "Delete group",
   "group.deleteConfirmTitle": "Delete this group?",
@@ -302,6 +305,7 @@ export const en = {
   "groupForm.to": "To",
   "groupForm.ageFrom": "Age from",
   "groupForm.ageTo": "Age to",
+  "groupForm.maxMembers": "Max members",
   "groupForm.submit": "Save group",
   "groupForm.submitting": "Saving…",
 
@@ -312,6 +316,7 @@ export const en = {
   "groupForm.error.timeOrder": "The end time must be after the start time.",
   "groupForm.error.age": "Enter a whole number of years from 0 to 99.",
   "groupForm.error.ageOrder": "The upper age must not be below the lower age.",
+  "groupForm.error.maxMembers": "Enter a whole number from 1 to 999.",
   "groupForm.error.invalid": "Check this field.",
 
   "subscriptions.title": "Subscriptions",
@@ -435,6 +440,7 @@ export const en = {
   "activity.field.to": "End",
   "activity.field.ageFrom": "Age from",
   "activity.field.ageTo": "Age to",
+  "activity.field.maxMembers": "Max members",
   "activity.field.sessions": "Sessions",
   "activity.field.sessionsPerWeek": "Sessions per week",
   "activity.field.price": "Price",

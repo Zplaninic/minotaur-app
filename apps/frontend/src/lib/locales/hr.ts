@@ -195,6 +195,8 @@ export const hr: Record<keyof typeof en, string> = {
   "groups.table.time": "Vrijeme",
   "groups.table.members": "Članovi",
   "groups.timeRange": "{from} – {to}",
+  "groups.memberLimit": "{count} / {max}",
+  "groups.overLimit": "Preko limita",
 
   "group.back": "Sve grupe",
   "group.loading": "Učitavanje grupe…",
@@ -202,6 +204,7 @@ export const hr: Record<keyof typeof en, string> = {
   "group.days": "Dani",
   "group.time": "Vrijeme",
   "group.age": "Dob",
+  "group.members": "Članovi",
   "group.edit": "Uredi grupu",
   "group.delete": "Obriši grupu",
   "group.deleteConfirmTitle": "Obrisati ovu grupu?",
@@ -306,6 +309,7 @@ export const hr: Record<keyof typeof en, string> = {
   "groupForm.to": "Do",
   "groupForm.ageFrom": "Dob od",
   "groupForm.ageTo": "Dob do",
+  "groupForm.maxMembers": "Najviše članova",
   "groupForm.submit": "Spremi grupu",
   "groupForm.submitting": "Spremanje…",
 
@@ -316,6 +320,7 @@ export const hr: Record<keyof typeof en, string> = {
   "groupForm.error.timeOrder": "Vrijeme završetka mora biti nakon vremena početka.",
   "groupForm.error.age": "Unesite cijeli broj godina od 0 do 99.",
   "groupForm.error.ageOrder": "Gornja dob ne smije biti manja od donje.",
+  "groupForm.error.maxMembers": "Unesite cijeli broj od 1 do 999.",
   "groupForm.error.invalid": "Provjerite ovo polje.",
 
   "subscriptions.title": "Članarine",
@@ -439,6 +444,7 @@ export const hr: Record<keyof typeof en, string> = {
   "activity.field.to": "Kraj",
   "activity.field.ageFrom": "Dob od",
   "activity.field.ageTo": "Dob do",
+  "activity.field.maxMembers": "Najviše članova",
   "activity.field.sessions": "Treninzi",
   "activity.field.sessionsPerWeek": "Treninga tjedno",
   "activity.field.price": "Cijena",

@@ -127,6 +127,17 @@ export const GroupForm = ({ group, onCancel, onSaved }: GroupFormProps) => {
           optional
         />
       </div>
+      <div className={styles.grid}>
+        <TextField
+          label={t("groupForm.maxMembers")}
+          inputMode="numeric"
+          autoComplete="off"
+          value={draft.maxMembers}
+          onChange={(maxMembers) => update({ maxMembers })}
+          error={fieldError("maxMembers")}
+          optional
+        />
+      </div>
 
       {formError ? (
         <p role="alert" className={styles.formError}>

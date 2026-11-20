@@ -36,6 +36,7 @@ const mondayGroup: GroupResponse = {
   to: "18:30",
   ageFrom: null,
   ageTo: null,
+  maxMembers: null,
   memberCount: 3,
   createdAt: "2026-11-15T17:00:00.000Z",
   updatedAt: "2026-11-15T17:00:00.000Z",
@@ -97,6 +98,15 @@ describe("GroupsPage", () => {
     expect(within(row as HTMLElement).getByRole("link")).toHaveAttribute("href", "/groups/1");
   });
 
+  it("shows the member count against the limit, and a badge when over it", async () => {
+    groups = [{ ...mondayGroup, maxMembers: 3 }, { ...fridayGroup, maxMembers: 2 }];
+    renderPage();
+    const full = (await screen.findByText("3 / 3")).closest("tr") as HTMLElement;
+    expect(within(full).queryByText(t("groups.overLimit"))).not.toBeInTheDocument();
+    const over = screen.getByText("3 / 2").closest("tr") as HTMLElement;
+    expect(within(over).getByText(t("groups.overLimit"))).toBeInTheDocument();
+  });
+
   it("shows the empty state when there are no groups", async () => {
     groups = [];
     renderPage();
@@ -146,6 +156,17 @@ describe("GroupsPage", () => {
     expect(within(dialog).getByText(t("groupForm.error.ageOrder"))).toBeInTheDocument();
   });
 
+  it("asks for a member limit from 1 to 999", async () => {
+    renderPage();
+    const dialog = await openDialog();
+    fireEvent.change(within(dialog).getByLabelText(t("groupForm.maxMembers"), { exact: false }), {
+      target: { value: "0" },
+    });
+    save(dialog);
+
+    expect(within(dialog).getByText(t("groupForm.error.maxMembers"))).toBeInTheDocument();
+  });
+
   it("saves a group, closes the popup and shows the new row", async () => {
     renderPage();
     const dialog = await openDialog();
@@ -156,6 +177,9 @@ describe("GroupsPage", () => {
     fireEvent.change(within(dialog).getByLabelText(t("groupForm.ageFrom"), { exact: false }), {
       target: { value: "7" },
     });
+    fireEvent.change(within(dialog).getByLabelText(t("groupForm.maxMembers"), { exact: false }), {
+      target: { value: "12" },
+    });
     save(dialog);
 
     await waitFor(() => expect(screen.queryByRole("dialog")).not.toBeInTheDocument());
@@ -164,7 +188,15 @@ describe("GroupsPage", () => {
       expect.anything(),
       expect.objectContaining({
         method: "POST",
-        body: JSON.stringify({ ownerId: "2", days: ["friday"], from: "09:00", to: "10:00", ageFrom: 7, ageTo: null }),
+        body: JSON.stringify({
+          ownerId: "2",
+          days: ["friday"],
+          from: "09:00",
+          to: "10:00",
+          ageFrom: 7,
+          ageTo: null,
+          maxMembers: 12,
+        }),
       }),
     );
     expect(await screen.findByText("9:00 AM – 10:00 AM")).toBeInTheDocument();
