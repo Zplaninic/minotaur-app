@@ -9,6 +9,21 @@
   gap: var(--space-4);
 }
 
+.toggle {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--space-2);
+  min-height: var(--space-12);
+  cursor: pointer;
+}
+
+.toggle input {
+  width: var(--space-4);
+  height: var(--space-4);
+  margin: 0;
+  accent-color: var(--color-green-dark);
+}
+
 .formError {
   border-radius: var(--radius-md);
   padding: var(--space-3) var(--space-4);

@@ -3,7 +3,25 @@ import styles from "./Field.module.css";
 import { FieldLabel } from "./FieldLabel";
 import { FieldMessage } from "./FieldMessage";
 
-type Option = { value: string; label: string };
+// Consecutive options with the same group go into one <optgroup>.
+type Option = { value: string; label: string; group?: string };
+
+const toRuns = (options: readonly Option[]): { group: string | undefined; options: Option[] }[] =>
+  options.reduce<{ group: string | undefined; options: Option[] }[]>((runs, option) => {
+    const last = runs.at(-1);
+    if (last && last.group === option.group) {
+      last.options.push(option);
+    } else {
+      runs.push({ group: option.group, options: [option] });
+    }
+    return runs;
+  }, []);
+
+const renderOption = (option: Option) => (
+  <option key={option.value} value={option.value}>
+    {option.label}
+  </option>
+);
 
 type SelectFieldProps = {
   label: string;
@@ -31,11 +49,15 @@ export const SelectField = ({ label, value, onChange, options, placeholder, erro
         aria-describedby={error ? errorId : undefined}
       >
         <option value="">{placeholder}</option>
-        {options.map((option) => (
-          <option key={option.value} value={option.value}>
-            {option.label}
-          </option>
-        ))}
+        {toRuns(options).map((run) =>
+          run.group === undefined ? (
+            run.options.map(renderOption)
+          ) : (
+            <optgroup key={run.group} label={run.group}>
+              {run.options.map(renderOption)}
+            </optgroup>
+          ),
+        )}
       </select>
       <FieldMessage id={errorId} error={error} />
     </div>

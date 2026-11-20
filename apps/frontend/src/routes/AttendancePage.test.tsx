@@ -3,6 +3,8 @@ import {
   type GroupAttendanceResponse,
   type GroupResponse,
   type MeResponse,
+  type MemberResponse,
+  type MemberRole,
   type SubscriptionResponse,
 } from "@repo/shared";
 import { ApiError } from "@repo/shared/client";
@@ -17,6 +19,28 @@ import { createAppRouter } from "./router";
 vi.mock("../api/client", () => ({ api: { fetch: vi.fn() } }));
 
 const fetchMock = vi.mocked(api.fetch);
+
+const member = (id: string, name: string, surname: string, role: MemberRole): MemberResponse => ({
+  id,
+  orgId: "1",
+  name,
+  surname,
+  birthday: "2020-03-12",
+  role,
+  taxNumber: null,
+  email: null,
+  phone: null,
+  guardians: [],
+  createdAt: "2026-11-15T17:00:00.000Z",
+});
+
+const everyone = [
+  member("4", "Leo", "Perić", "child"),
+  member("5", "Nora", "Jurić", "child"),
+  member("6", "Mia", "Novak", "child"),
+  member("7", "Ivo", "Babić", "member"),
+  member("9", "Ana", "Trener", "trainer"),
+];
 
 const trainer: MeResponse = { memberId: "9", name: "Ana", surname: "Trener", email: "ana@example.com", role: "trainer" };
 
@@ -203,6 +227,9 @@ beforeEach(() => {
             : attendance.members.filter((member) => member.id !== memberId),
       };
       return undefined;
+    }
+    if (path.startsWith("/members?")) {
+      return { items: everyone, page: 1, pageSize: 100, total: everyone.length };
     }
     if (path === "/groups/1/sessions/18" && init?.method === "DELETE") {
       attendance = { ...attendance, sessions: attendance.sessions.filter((session) => session.id !== "18") };
@@ -399,8 +426,10 @@ describe("AttendancePage, wide screens", () => {
     expect(within(select).getAllByRole("option").map((option) => option.textContent)).toEqual([
       t("monthMemberForm.memberPlaceholder"),
       "Novak Mia",
+      "Babić Ivo",
     ]);
     fireEvent.change(select, { target: { value: "6" } });
+    expect(within(dialog).queryByRole("checkbox", { name: t("monthMemberForm.joinGroup") })).not.toBeInTheDocument();
     fireEvent.click(within(dialog).getByRole("button", { name: t("monthMemberForm.submit") }));
     expect(await box("Mia Novak", "Wed, Nov 11")).toBeInTheDocument();
 
@@ -420,6 +449,25 @@ describe("AttendancePage, wide screens", () => {
       "/groups/1/months/2026-11/members/6",
       expect.anything(),
       expect.objectContaining({ method: "DELETE" }),
+    );
+  });
+
+  it("adds a member who is not in the group to the month and to the group", async () => {
+    renderAt("/groups/1/attendance?month=2026-11");
+    await box("Leo Perić", "Wed, Nov 11");
+
+    fireEvent.click(screen.getByRole("button", { name: t("attendance.addMember") }));
+    const dialog = screen.getByRole("dialog", { name: t("monthMemberForm.title") });
+    fireEvent.change(await within(dialog).findByLabelText(t("monthMemberForm.member")), { target: { value: "7" } });
+    fireEvent.click(within(dialog).getByRole("checkbox", { name: t("monthMemberForm.joinGroup") }));
+    fireEvent.click(within(dialog).getByRole("button", { name: t("monthMemberForm.submit") }));
+
+    await waitFor(() =>
+      expect(fetchMock).toHaveBeenCalledWith(
+        "/groups/1/months/2026-11/members/7",
+        expect.anything(),
+        expect.objectContaining({ method: "PUT", body: JSON.stringify({ joinGroup: true }) }),
+      ),
     );
   });
 
