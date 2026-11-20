@@ -83,6 +83,7 @@ export const GuardianFields = ({
             onChangeText={(surname) => update({ surname })}
             error={errorFor("surname")}
             autoCapitalize="words"
+            optional
           />
           <TextField
             label={t("memberForm.email")}
