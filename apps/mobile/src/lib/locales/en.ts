@@ -199,7 +199,10 @@ export const en = {
   "monthMemberForm.title": "Add member to this month",
   "monthMemberForm.hint": "Tap a member to add them to {month}.",
   "monthMemberForm.membersLoading": "Loading members…",
-  "monthMemberForm.membersEmpty": "Every member of the group is already on this month's list.",
+  "monthMemberForm.membersEmpty": "Every member is already on this month's list.",
+  "monthMemberForm.groupMembers": "In this group",
+  "monthMemberForm.otherMembers": "Other members",
+  "monthMemberForm.joinGroup": "Also add them to the group",
   "monthMemberForm.offlineTitle": "No connection",
   "monthMemberForm.addLabel": "Add {name} to {month}",
 

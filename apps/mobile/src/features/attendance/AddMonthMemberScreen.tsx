@@ -1,30 +1,36 @@
 import type { Month } from "@repo/shared";
 import { monthRosterCandidates, toErrorCode } from "@repo/shared/client";
 import { useRouter } from "expo-router";
-import { ActivityIndicator, FlatList, StyleSheet, Text, View } from "react-native";
+import { useState } from "react";
+import { ActivityIndicator, SectionList, StyleSheet, Text, View } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
 import { useAddMonthMember, useGroupAttendance } from "../../api/attendance";
 import { useGroupMembers } from "../../api/groups";
+import { useAllMembers } from "../../api/members";
 import { Button } from "../../components/Button";
 import { formatMonth, formatPersonName } from "../../lib/format";
 import { useMessages } from "../../lib/messages";
 import { bodyLineHeight, colors, fonts, fontSizes, headingLineHeight, radii, spacing } from "../../theme/tokens";
 import { GroupMemberCandidateRow } from "../groups/GroupMemberCandidateRow";
+import { JoinGroupToggle } from "./JoinGroupToggle";
 
 type AddMonthMemberScreenProps = {
   groupId: string;
   month: Month;
 };
 
-// The group's members who are not on the month's roster; a tap adds one.
+// The members who are not on the month's roster, the group's members first;
+// a tap adds one. Members from outside the group can also join it.
 export const AddMonthMemberScreen = ({ groupId, month }: AddMonthMemberScreenProps) => {
   const { errorMessage, t } = useMessages();
   const router = useRouter();
+  const everyone = useAllMembers();
   const groupMembers = useGroupMembers(groupId);
   const attendance = useGroupAttendance(groupId, month);
   const addMember = useAddMonthMember(groupId, month);
+  const [joinGroup, setJoinGroup] = useState(false);
 
-  if (groupMembers.isPending || attendance.isPending) {
+  if (everyone.isPending || groupMembers.isPending || attendance.isPending) {
     return (
       <SafeAreaView style={styles.safeArea} edges={["right", "bottom", "left"]}>
         <View style={styles.state} accessibilityLiveRegion="polite">
@@ -34,8 +40,8 @@ export const AddMonthMemberScreen = ({ groupId, month }: AddMonthMemberScreenPro
       </SafeAreaView>
     );
   }
-  if (groupMembers.isError || attendance.isError) {
-    const code = toErrorCode(groupMembers.error ?? attendance.error);
+  if (everyone.isError || groupMembers.isError || attendance.isError) {
+    const code = toErrorCode(everyone.error ?? groupMembers.error ?? attendance.error);
     return (
       <SafeAreaView style={styles.safeArea} edges={["right", "bottom", "left"]}>
         <View style={styles.state} accessibilityLiveRegion="polite">
@@ -48,28 +54,52 @@ export const AddMonthMemberScreen = ({ groupId, month }: AddMonthMemberScreenPro
           <Button
             label={t("common.retry")}
             variant="secondary"
-            onPress={() => void Promise.all([groupMembers.refetch(), attendance.refetch()])}
+            onPress={() => void Promise.all([everyone.refetch(), groupMembers.refetch(), attendance.refetch()])}
           />
         </View>
       </SafeAreaView>
     );
   }
 
-  const candidates = monthRosterCandidates(groupMembers.data.items, attendance.data.members);
+  const candidates = monthRosterCandidates(everyone.data, groupMembers.data.items, attendance.data.members);
+  const sections = [
+    { key: "group", title: t("monthMemberForm.groupMembers"), data: candidates.filter(({ inGroup }) => inGroup) },
+    { key: "others", title: t("monthMemberForm.otherMembers"), data: candidates.filter(({ inGroup }) => !inGroup) },
+  ].filter((section) => section.data.length > 0);
 
   return (
     <SafeAreaView style={styles.safeArea} edges={["right", "bottom", "left"]}>
-      <FlatList
-        data={candidates}
-        keyExtractor={(member) => member.id}
-        renderItem={({ item }) => (
+      <SectionList
+        sections={sections}
+        keyExtractor={({ member }) => member.id}
+        stickySectionHeadersEnabled={false}
+        renderSectionHeader={({ section }) => (
+          <View style={styles.sectionHeader}>
+            <Text accessibilityRole="header" style={styles.sectionTitle}>
+              {section.title}
+            </Text>
+            {section.key === "others" ? (
+              <JoinGroupToggle
+                label={t("monthMemberForm.joinGroup")}
+                checked={joinGroup}
+                onToggle={() => setJoinGroup((checked) => !checked)}
+              />
+            ) : null}
+          </View>
+        )}
+        renderItem={({ item: { member, inGroup } }) => (
           <GroupMemberCandidateRow
-            member={item}
+            member={member}
             accessibilityLabel={t("monthMemberForm.addLabel", {
-              name: formatPersonName(item),
+              name: formatPersonName(member),
               month: formatMonth(month),
             })}
-            onAdd={() => addMember.mutate(item.id, { onSuccess: () => router.back() })}
+            onAdd={() =>
+              addMember.mutate(
+                { memberId: member.id, joinGroup: !inGroup && joinGroup },
+                { onSuccess: () => router.back() },
+              )
+            }
             disabled={addMember.isPending}
           />
         )}
@@ -105,6 +135,18 @@ const styles = StyleSheet.create({
     flexGrow: 1,
     paddingTop: spacing[4],
     paddingBottom: spacing[6],
+  },
+  sectionHeader: {
+    gap: spacing[1],
+    paddingHorizontal: spacing[4],
+    paddingTop: spacing[2],
+    paddingBottom: spacing[2],
+  },
+  sectionTitle: {
+    color: colors.greenDark,
+    fontFamily: fonts.bodySemibold,
+    fontSize: fontSizes.md,
+    lineHeight: bodyLineHeight(fontSizes.md),
   },
   header: {
     gap: spacing[3],

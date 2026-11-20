@@ -8,6 +8,7 @@ import {
   createMonthSessions,
   deleteTrainingSession,
   keysToInvalidateAfterAttendanceChange,
+  keysToInvalidateAfterGroupMemberChange,
   keysToInvalidateAfterMonthPaymentChange,
   markAttendance,
   removeMonthMember,
@@ -86,8 +87,14 @@ export const useSetAttendance = (groupId: string, month: Month) => {
 export const useAddMonthMember = (groupId: string, month: Month) => {
   const queryClient = useQueryClient();
   return useMutation({
-    mutationFn: (memberId: string) => addMonthMember(api, groupId, month, memberId),
-    onSuccess: () => invalidateAttendance(queryClient),
+    mutationFn: ({ memberId, joinGroup }: { memberId: string; joinGroup: boolean }) =>
+      addMonthMember(api, groupId, month, memberId, joinGroup),
+    onSuccess: (_, { joinGroup }) =>
+      joinGroup
+        ? Promise.all(
+            keysToInvalidateAfterGroupMemberChange.map((queryKey) => queryClient.invalidateQueries({ queryKey })),
+          )
+        : invalidateAttendance(queryClient),
   });
 };
 

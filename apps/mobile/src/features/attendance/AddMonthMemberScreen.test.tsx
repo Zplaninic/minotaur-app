@@ -1,9 +1,9 @@
-import type { GroupAttendanceResponse, GroupMemberResponse } from "@repo/shared";
+import type { GroupAttendanceResponse, GroupMemberResponse, MemberResponse } from "@repo/shared";
 import { ApiError } from "@repo/shared/client";
 import { fireEvent, render, screen, waitFor } from "@testing-library/react-native";
 import { api } from "../../api/client";
 import { translate as t } from "../../lib/messages";
-import { admin, Providers } from "../members/testUtils";
+import { admin, ana, Providers } from "../members/testUtils";
 import { AddMonthMemberScreen } from "./AddMonthMemberScreen";
 
 jest.mock("../../api/client", () => ({ api: { fetch: jest.fn() } }));
@@ -24,6 +24,22 @@ const groupMember = (id: string, name: string, surname: string): GroupMemberResp
   guardians: [],
 });
 
+const everyoneMember = (id: string, name: string, surname: string, role: MemberResponse["role"]): MemberResponse => ({
+  ...ana,
+  id,
+  name,
+  surname,
+  role,
+  guardians: [],
+});
+
+const everyone = [
+  everyoneMember("4", "Leo", "Perić", "child"),
+  everyoneMember("6", "Mia", "Novak", "child"),
+  everyoneMember("7", "Ivo", "Babić", "member"),
+  everyoneMember("9", "Petra", "Kovač", "trainer"),
+];
+
 const attendance: GroupAttendanceResponse = {
   sessions: [{ id: "11", date: "2026-11-11" }],
   members: [{ id: "4", name: "Leo", surname: "Perić", attendedSessionIds: [], subscription: null, paid: false, comment: null }],
@@ -36,13 +52,16 @@ beforeEach(() => {
     if (path === "/me") {
       return admin;
     }
+    if (path.startsWith("/members?")) {
+      return { items: everyone, page: 1, pageSize: 100, total: everyone.length };
+    }
     if (path === "/groups/1/members") {
       return { items: [groupMember("4", "Leo", "Perić"), groupMember("6", "Mia", "Novak")] };
     }
     if (path === "/groups/1/attendance?month=2026-11") {
       return attendance;
     }
-    if (path === "/groups/1/months/2026-11/members/6" && init?.method === "PUT") {
+    if (/^\/groups\/1\/months\/2026-11\/members\/[67]$/.test(path) && init?.method === "PUT") {
       return undefined;
     }
     throw new ApiError("NOT_FOUND", 404);
@@ -61,12 +80,35 @@ describe("AddMonthMemberScreen", () => {
     });
     expect(screen.queryByText("Perić Leo")).not.toBeOnTheScreen();
 
-    fireEvent.press(add);
+    await fireEvent.press(add);
     await waitFor(() => expect(mockBack).toHaveBeenCalled());
     expect(fetchMock).toHaveBeenCalledWith(
       "/groups/1/months/2026-11/members/6",
       expect.anything(),
-      expect.objectContaining({ method: "PUT" }),
+      expect.objectContaining({ method: "PUT", body: JSON.stringify({ joinGroup: false }) }),
+    );
+  });
+
+  it("adds a member from outside the group to the month and the group", async () => {
+    await render(
+      <Providers>
+        <AddMonthMemberScreen groupId="1" month="2026-11" />
+      </Providers>,
+    );
+    const add = await screen.findByRole("button", {
+      name: t("monthMemberForm.addLabel", { name: "Ivo Babić", month: "November 2026" }),
+    });
+    expect(screen.getByText(t("monthMemberForm.otherMembers"))).toBeOnTheScreen();
+    expect(screen.queryByText("Kovač Petra")).not.toBeOnTheScreen();
+
+    await fireEvent.press(screen.getByRole("checkbox", { name: t("monthMemberForm.joinGroup") }));
+    expect(screen.getByRole("checkbox", { name: t("monthMemberForm.joinGroup") })).toBeChecked();
+    await fireEvent.press(add);
+    await waitFor(() => expect(mockBack).toHaveBeenCalled());
+    expect(fetchMock).toHaveBeenCalledWith(
+      "/groups/1/months/2026-11/members/7",
+      expect.anything(),
+      expect.objectContaining({ method: "PUT", body: JSON.stringify({ joinGroup: true }) }),
     );
   });
 });
