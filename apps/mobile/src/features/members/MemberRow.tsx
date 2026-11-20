@@ -26,7 +26,9 @@ export const MemberRow = ({ member, onEdit }: MemberRowProps) => {
         <Text style={styles.name}>{formatSortedName(member)}</Text>
         {member.role === "trainer" ? <Text style={styles.label}>{t("members.trainerLabel")}</Text> : null}
       </View>
-      <Text style={styles.detail}>{t("members.birthday", { date: formatCalendarDate(member.birthday) })}</Text>
+      {member.birthday ? (
+        <Text style={styles.detail}>{t("members.birthday", { date: formatCalendarDate(member.birthday) })}</Text>
+      ) : null}
       {member.email ? <Text style={styles.detail}>{member.email}</Text> : null}
       {member.phone ? <Text style={styles.detail}>{member.phone}</Text> : null}
       {member.guardians.length > 0 ? (

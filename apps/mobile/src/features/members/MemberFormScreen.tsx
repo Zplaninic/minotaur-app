@@ -170,6 +170,7 @@ export const MemberFormScreen = ({ member, onCreated }: MemberFormScreenProps) =
           placeholder={t("memberForm.birthdayPlaceholder")}
           initialDate={yearsAgo(today, ADULT_AGE * 2)}
           maximumDate={today}
+          optional
           error={fieldError("birthday")}
         />
         <TextField

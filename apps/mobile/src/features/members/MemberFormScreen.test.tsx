@@ -66,7 +66,7 @@ describe("MemberFormScreen", () => {
     await save();
 
     expect(screen.getByText(t("memberForm.error.name"))).toBeOnTheScreen();
-    expect(screen.getByText(t("memberForm.error.birthday"))).toBeOnTheScreen();
+    expect(screen.queryByText(t("memberForm.error.birthday"))).not.toBeOnTheScreen();
     expect(postedBody).toBeUndefined();
   });
 
@@ -79,6 +79,18 @@ describe("MemberFormScreen", () => {
 
     expect(screen.getByText(t("memberForm.error.guardianRequired", { age: ADULT_AGE }))).toBeOnTheScreen();
     expect(postedBody).toBeUndefined();
+  });
+
+  it("saves a member without a birthday after removing the chosen one", async () => {
+    await renderScreen();
+    await type(t("memberForm.name"), "Marko");
+    await type(t("memberForm.surname"), "Babić");
+    await pickBirthday(new Date(2016, 5, 1));
+    await fireEvent.press(screen.getByRole("button", { name: `${t("common.remove")}: ${t("memberForm.birthday")}` }));
+    await save();
+
+    await waitFor(() => expect(mockBack).toHaveBeenCalled());
+    expect(postedBody).toEqual({ orgId: "1", name: "Marko", surname: "Babić", guardians: [] });
   });
 
   it("saves a minor with an existing guardian and goes back to the list", async () => {

@@ -18,6 +18,8 @@ type DateFieldProps = {
   // Where the picker starts when nothing is chosen yet.
   initialDate: Date;
   maximumDate: Date;
+  // An optional date can be removed again once chosen.
+  optional?: boolean;
   error?: string | undefined;
   testID?: string;
 };
@@ -31,6 +33,7 @@ export const DateField = ({
   placeholder,
   initialDate,
   maximumDate,
+  optional = false,
   error,
   testID,
 }: DateFieldProps) => {
@@ -54,7 +57,7 @@ export const DateField = ({
 
   return (
     <View style={fieldStyles.field}>
-      <FieldLabel label={label} optional={false} />
+      <FieldLabel label={label} optional={optional} />
       <Pressable
         onPress={open}
         accessibilityRole="button"
@@ -88,6 +91,17 @@ export const DateField = ({
             }}
           />
         </>
+      ) : null}
+      {optional && value ? (
+        <Button
+          label={t("common.remove")}
+          accessibilityLabel={`${t("common.remove")}: ${label}`}
+          variant="secondary"
+          onPress={() => {
+            setIosPickerOpen(false);
+            onChange("");
+          }}
+        />
       ) : null}
       <FieldError error={error} />
     </View>
