@@ -18,8 +18,10 @@ export const defineAbilityFor = (user: AbilityUser): AppAbility => {
       break;
     case "trainer":
       can("manage", "all");
-      // Trainers see groups and subscriptions; only admins set them up.
-      cannot(["create", "update", "delete"], ["Group", "Subscription"]);
+      // Trainers see groups; only admins set them up.
+      cannot(["create", "update", "delete"], "Group");
+      // Subscriptions and payments are for admins only.
+      cannot("manage", "Subscription");
       break;
     case "member":
     case "child":

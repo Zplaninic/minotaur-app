@@ -29,9 +29,9 @@ describe("defineAbilityFor", () => {
     expect(ability.can("update", "Subscription")).toBe(true);
   });
 
-  it("lets a trainer read subscriptions but not change them", () => {
+  it("gives a trainer no access to subscriptions", () => {
     const ability = defineAbilityFor({ memberId: "1", role: "trainer" });
-    expect(ability.can("read", "Subscription")).toBe(true);
+    expect(ability.can("read", "Subscription")).toBe(false);
     expect(ability.can("create", "Subscription")).toBe(false);
     expect(ability.can("update", "Subscription")).toBe(false);
     expect(ability.can("delete", "Subscription")).toBe(false);
