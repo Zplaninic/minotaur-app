@@ -11,6 +11,10 @@ import { TableSkeleton } from "../../components/TableSkeleton";
 // What the event is about: the member, group, subscription and when, one per line.
 const targetLines = (event: AuditEventResponse, t: Translate): string[] => [
   ...(event.member ? [formatPersonName(event.member)] : []),
+  // Once accepted, the child is the member above; before that only the request knows them.
+  ...(event.enrollmentChild && !event.member
+    ? [t("activity.target.enrollmentChild", { name: event.enrollmentChild.name })]
+    : []),
   ...(event.group
     ? [
         t("groups.name", {

@@ -36,6 +36,8 @@ const event = (id: string, overrides: Partial<AuditEventResponse> = {}): AuditEv
   member: { id: "7", name: "Mia", surname: "Kid" },
   group: null,
   subscription: { id: "1", name: "Kids 2x" },
+  enrollmentRequestId: null,
+  enrollmentChild: null,
   month: "2026-11",
   date: null,
   changes: { paid: { from: false, to: true } },

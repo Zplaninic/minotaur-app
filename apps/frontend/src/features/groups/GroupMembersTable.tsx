@@ -8,6 +8,7 @@ import { ConfirmDialog } from "../../components/ConfirmDialog";
 import { GuardianList } from "../../components/GuardianList";
 import { formatCalendarDate, formatPersonName } from "../../lib/format";
 import { useMessages } from "../../lib/messages";
+import { NewBadge } from "../../components/NewBadge";
 import styles from "./GroupMembersTable.module.css";
 import { TableSkeleton } from "../../components/TableSkeleton";
 
@@ -64,7 +65,15 @@ export const GroupMembersTable = ({ groupId }: GroupMembersTableProps) => {
           <tbody>
             {members.data.items.map((member) => (
               <tr key={member.id}>
-                <th scope="row">{formatPersonName(member)}</th>
+                <th scope="row">
+                  {formatPersonName(member)}
+                  {member.isNew ? (
+                    <>
+                      {" "}
+                      <NewBadge />
+                    </>
+                  ) : null}
+                </th>
                 <td className={styles.nowrap}>{member.birthday ? formatCalendarDate(member.birthday) : t("common.empty")}</td>
                 <td>{member.email ?? t("common.empty")}</td>
                 <td className={styles.nowrap}>{member.phone ?? t("common.empty")}</td>

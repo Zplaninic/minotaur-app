@@ -4,12 +4,14 @@ import { useState } from "react";
 import { useAbility } from "../../api/auth";
 import { useDeleteTrainingSession, useRemoveMonthMember } from "../../api/attendance";
 import { ConfirmDialog } from "../../components/ConfirmDialog";
+import { NewBadge } from "../../components/NewBadge";
 import { formatMonth, formatPersonName, formatSessionDate } from "../../lib/format";
 import { useMessages } from "../../lib/messages";
 import { AttendanceCheckbox } from "./AttendanceCheckbox";
 import { MonthCommentInput } from "./MonthCommentInput";
 import { MonthPaidCheckbox } from "./MonthPaidCheckbox";
 import { MonthSubscriptionSelect } from "./MonthSubscriptionSelect";
+import { NewMemberToggle } from "./NewMemberToggle";
 import { UnpaidBadge } from "./UnpaidBadge";
 import styles from "./AttendanceGrid.module.css";
 
@@ -27,6 +29,7 @@ export const AttendanceGrid = ({ groupId, month, data, today }: AttendanceGridPr
   const deleteSession = useDeleteTrainingSession(groupId);
   const removeMember = useRemoveMonthMember(groupId, month);
   const canTick = ability.can("update", "Attendance");
+  const canMarkNew = ability.can("update", "Member");
   const canDelete = ability.can("delete", "Attendance");
   // What the open confirmation is about.
   const [confirming, setConfirming] = useState<
@@ -82,8 +85,10 @@ export const AttendanceGrid = ({ groupId, month, data, today }: AttendanceGridPr
                   <span className={styles.memberName}>
                     <span className={styles.nameAndBadge}>
                       {formatPersonName(member)}
+                      {member.isNew ? <NewBadge /> : null}
                       <UnpaidBadge memberId={member.id} />
                     </span>
+                    {canMarkNew ? <NewMemberToggle member={member} /> : null}
                     {canTick && !memberHasAttendance(member) ? (
                       <button
                         type="button"

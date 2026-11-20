@@ -4,6 +4,7 @@ import { z } from "zod";
 import { ActivityPage } from "./ActivityPage";
 import { AppLayout } from "./AppLayout";
 import { AttendancePage } from "./AttendancePage";
+import { EnrollmentsPage } from "./EnrollmentsPage";
 import { GroupPage } from "./GroupPage";
 import { GroupsPage } from "./GroupsPage";
 import { HomePage } from "./HomePage";
@@ -67,6 +68,12 @@ const activityRoute = createRoute({
   component: ActivityPage,
 });
 
+const enrollmentsRoute = createRoute({
+  getParentRoute: () => appRoute,
+  path: "/enrollments",
+  component: EnrollmentsPage,
+});
+
 // A missing or malformed month means the current one.
 const attendanceRoute = createRoute({
   getParentRoute: () => appRoute,
@@ -77,7 +84,7 @@ const attendanceRoute = createRoute({
 
 const routeTree = rootRoute.addChildren([
   loginRoute,
-  appRoute.addChildren([homeRoute, membersRoute, groupsRoute, groupRoute, attendanceRoute, subscriptionsRoute, activityRoute]),
+  appRoute.addChildren([homeRoute, membersRoute, groupsRoute, groupRoute, attendanceRoute, subscriptionsRoute, enrollmentsRoute, activityRoute]),
 ]);
 
 export const createAppRouter = (history?: RouterHistory) =>

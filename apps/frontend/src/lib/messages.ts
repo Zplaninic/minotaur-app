@@ -1,6 +1,9 @@
-import type { AuditAction, ImportRowProblem, ImportRowStatus, MemberRole, Weekday } from "@repo/shared";
+import type { AuditAction, EnrollmentChildStatus, EnrollmentRequestState, ImportRowProblem, ImportRowStatus, MemberRole, Weekday } from "@repo/shared";
+import type { ParseProblem } from "@repo/enrollment";
 import type {
+  AcceptEnrollmentFieldError,
   ClientErrorCode,
+  EnrollmentFieldError,
   GroupAgeRangeKind,
   GroupFieldError,
   ImportField,
@@ -11,7 +14,7 @@ import type {
 } from "@repo/shared/client";
 import { useMemo } from "react";
 import { useTranslation } from "react-i18next";
-import { i18n } from "./i18n";
+import { i18n, type Language } from "./i18n";
 import type { en } from "./locales/en";
 
 // All user-facing text lives in locales/, one file per language, referenced by key.
@@ -23,6 +26,12 @@ export type Translate = (key: MessageKey, params?: MessageParams) => string;
 // renders, and tests. Components use useMessages(), which re-renders them when
 // the language changes.
 export const translate: Translate = (key, params = {}) => i18n.t(key, params);
+
+// Text in a fixed language, whatever the app is shown in, e.g. for an email to a parent.
+export const translateIn =
+  (language: Language): Translate =>
+  (key, params = {}) =>
+    i18n.t(key, { ...params, lng: language });
 
 export const useMessages = () => {
   const { t: translateIn } = useTranslation();
@@ -68,3 +77,17 @@ export const auditFieldKey = (field: string): MessageKey | undefined => {
   const key = `activity.field.${field}`;
   return isMessageKey(key) ? key : undefined;
 };
+
+export const enrollmentFieldErrorKey = (code: EnrollmentFieldError): MessageKey => `enrollmentForm.error.${code}` as const;
+
+// A missing field is named; the other problems are about the children.
+export const enrollmentProblemKey = (problem: ParseProblem): MessageKey =>
+  problem.code === "missing" ? (`enrollmentForm.problem.missing.${problem.field}` as const) : `enrollmentForm.problem.${problem.code}`;
+
+export const enrollmentStatusKey = (status: EnrollmentChildStatus): MessageKey => `enrollments.status.${status}` as const;
+
+export const acceptFieldErrorKey = (code: AcceptEnrollmentFieldError): MessageKey => `acceptForm.error.${code}` as const;
+
+export const enrollmentStateKey = (state: EnrollmentRequestState): MessageKey => `enrollments.${state}` as const;
+
+export const enrollmentEmptyKey = (state: EnrollmentRequestState): MessageKey => `enrollments.empty.${state}` as const;

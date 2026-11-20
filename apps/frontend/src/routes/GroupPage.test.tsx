@@ -65,6 +65,7 @@ beforeEach(() => {
       email: null,
       phone: "+385 91 123 4567",
       guardians: [{ id: "1", name: "Iva", surname: "Horvat", email: "iva@example.com", phone: null }],
+      isNew: true,
     },
   ];
   fetchMock.mockReset();
@@ -91,7 +92,16 @@ beforeEach(() => {
     if (path === "/groups/1/members/5" && init?.method === "PUT") {
       groupMembers = [
         ...groupMembers,
-        { id: "5", name: "Marko", surname: "Novak", birthday: "2014-03-12", email: null, phone: null, guardians: [] },
+        {
+          id: "5",
+          name: "Marko",
+          surname: "Novak",
+          birthday: "2014-03-12",
+          email: null,
+          phone: null,
+          guardians: [],
+          isNew: false,
+        },
       ];
       return undefined;
     }
@@ -119,11 +129,12 @@ describe("GroupPage", () => {
     expect(
       await screen.findByRole("heading", { level: 1, name: "Petra Kovač - Monday, Wednesday - 5:00 PM - 6:30 PM" }),
     ).toBeInTheDocument();
-    const row = (await screen.findByRole("rowheader", { name: "Ana Horvat" })).closest("tr");
+    const row = (await screen.findByRole("rowheader", { name: /^Ana Horvat/ })).closest("tr");
     expect(within(row as HTMLElement).getByText("Mar 12, 2014")).toBeInTheDocument();
     expect(within(row as HTMLElement).getByText("+385 91 123 4567")).toBeInTheDocument();
     expect(within(row as HTMLElement).getByText("Iva Horvat")).toBeInTheDocument();
     expect(within(row as HTMLElement).getByText("iva@example.com")).toBeInTheDocument();
+    expect(within(row as HTMLElement).getByText(t("member.newBadge"))).toBeInTheDocument();
   });
 
   it("names the group with its age range", async () => {
@@ -236,14 +247,14 @@ describe("GroupPage", () => {
     fireEvent.click(within(confirm).getByRole("button", { name: t("common.cancel") }));
 
     await waitFor(() => expect(screen.queryByRole("dialog")).not.toBeInTheDocument());
-    expect(screen.getByRole("rowheader", { name: "Ana Horvat" })).toBeInTheDocument();
+    expect(screen.getByRole("rowheader", { name: /^Ana Horvat/ })).toBeInTheDocument();
     expect(fetchMock).not.toHaveBeenCalledWith(expect.anything(), expect.anything(), expect.objectContaining({ method: "DELETE" }));
   });
 
   it("shows a trainer the members without the add and remove buttons", async () => {
     me = { ...admin, role: "trainer" };
     renderAt("/groups/1");
-    expect(await screen.findByRole("rowheader", { name: "Ana Horvat" })).toBeInTheDocument();
+    expect(await screen.findByRole("rowheader", { name: /^Ana Horvat/ })).toBeInTheDocument();
     expect(screen.queryByRole("button", { name: t("groupMembers.add") })).not.toBeInTheDocument();
     expect(screen.queryByRole("button", { name: /Remove/ })).not.toBeInTheDocument();
     expect(screen.queryByRole("button", { name: t("group.delete") })).not.toBeInTheDocument();

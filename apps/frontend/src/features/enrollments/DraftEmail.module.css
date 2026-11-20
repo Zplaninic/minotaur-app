@@ -1,0 +1,41 @@
+.form {
+  display: grid;
+  gap: var(--space-4);
+  min-width: 0;
+}
+
+.body {
+  min-height: calc(var(--space-16) * 4);
+  resize: vertical;
+}
+
+.copyState:empty {
+  display: none;
+}
+
+.actions {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: flex-end;
+  gap: var(--space-3);
+}
+
+/* A link that looks like the primary button: it opens the mail app. */
+.mailLink {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-height: var(--space-12);
+  padding: var(--space-2) var(--space-6);
+  border: var(--border-width) solid var(--color-green-dark);
+  border-radius: var(--radius-pill);
+  background-color: var(--color-green-dark);
+  color: var(--color-beige-10);
+  font-weight: var(--weight-semibold);
+  text-decoration: none;
+  transition: background-color var(--duration-fast) ease;
+}
+
+.mailLink:hover {
+  background-color: var(--color-green-dark-90);
+}

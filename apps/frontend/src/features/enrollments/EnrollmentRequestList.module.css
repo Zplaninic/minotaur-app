@@ -1,0 +1,21 @@
+.list {
+  display: grid;
+  gap: var(--space-6);
+}
+
+.state {
+  display: grid;
+  gap: var(--space-3);
+  padding: var(--space-6);
+  border: var(--border-width) dashed var(--color-green-dark-30);
+  border-radius: var(--radius-lg);
+  background-color: var(--color-beige-10);
+}
+
+.pager {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: center;
+  gap: var(--space-4);
+}

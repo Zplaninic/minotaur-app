@@ -65,6 +65,11 @@ export const AppLayout = () => {
               {t("nav.subscriptions")}
             </Link>
           ) : null}
+          {ability.can("read", "EnrollmentRequest") ? (
+            <Link to="/enrollments" className={styles.link} activeProps={{ "aria-current": "page" }}>
+              {t("nav.enrollments")}
+            </Link>
+          ) : null}
           {ability.can("read", "AuditEvent") ? (
             <Link to="/activity" className={styles.link} activeProps={{ "aria-current": "page" }}>
               {t("nav.activity")}

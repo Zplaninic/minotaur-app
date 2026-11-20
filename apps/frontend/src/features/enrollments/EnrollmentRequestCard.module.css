@@ -1,0 +1,127 @@
+.card {
+  display: grid;
+  gap: var(--space-4);
+  min-width: 0;
+  padding: var(--space-6);
+  border: var(--border-width) solid var(--color-green-dark-20);
+  border-radius: var(--radius-lg);
+  background-color: var(--color-beige-10);
+  box-shadow: var(--shadow-raised);
+}
+
+.header {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: var(--space-4);
+}
+
+.parent {
+  font-size: var(--text-xl);
+}
+
+.received {
+  font-size: var(--text-sm);
+}
+
+.actions,
+.childActions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--space-3);
+}
+
+.contact {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--space-2) var(--space-8);
+  margin: 0;
+}
+
+.contact dt {
+  font-size: var(--text-sm);
+  font-weight: var(--weight-semibold);
+}
+
+.contact dd {
+  margin: 0;
+  overflow-wrap: anywhere;
+}
+
+.children {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(min(100%, 18rem), 1fr));
+  gap: var(--space-4);
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.child {
+  display: grid;
+  gap: var(--space-3);
+  align-content: start;
+  padding: var(--space-4);
+  border: var(--border-width) solid var(--color-green-dark-20);
+  border-radius: var(--radius-md);
+}
+
+.childHeader {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--space-2);
+}
+
+.childName {
+  font-size: var(--text-lg);
+}
+
+.status {
+  display: inline-block;
+  padding: 0 var(--space-3);
+  border: var(--border-width) solid var(--color-green-dark-30);
+  border-radius: var(--radius-pill);
+  font-size: var(--text-xs);
+  font-weight: var(--weight-semibold);
+  white-space: nowrap;
+}
+
+.pending {
+  background-color: var(--color-beige);
+}
+
+.accepted {
+  border-color: var(--color-green-light);
+  background-color: var(--color-green-light-30);
+}
+
+.rejected {
+  border-color: var(--color-red-50);
+  background-color: var(--color-red-10);
+}
+
+.raw summary {
+  cursor: pointer;
+  font-weight: var(--weight-semibold);
+}
+
+.raw pre {
+  margin: var(--space-2) 0 0;
+  padding: var(--space-3) var(--space-4);
+  border-radius: var(--radius-md);
+  background-color: var(--color-beige-40);
+  font-family: inherit;
+  font-size: var(--text-sm);
+  white-space: pre-wrap;
+  overflow-wrap: anywhere;
+}
+
+.rowError {
+  padding: var(--space-1) var(--space-2);
+  border-radius: var(--radius-sm);
+  background-color: var(--color-red-10);
+  font-size: var(--text-sm);
+}

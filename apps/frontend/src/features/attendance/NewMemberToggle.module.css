@@ -1,0 +1,26 @@
+.toggle {
+  border-radius: var(--radius-pill);
+  padding: var(--space-1) var(--space-3);
+  border: var(--border-width) solid var(--color-green-dark-60);
+  background-color: var(--color-beige-10);
+  color: var(--color-green-dark);
+  font: inherit;
+  font-size: var(--text-xs);
+  cursor: pointer;
+}
+
+.toggle:hover:not(:disabled) {
+  background-color: var(--color-green-light-30);
+}
+
+.toggle:disabled {
+  cursor: progress;
+  opacity: 0.6;
+}
+
+.error {
+  padding: var(--space-1) var(--space-2);
+  border-radius: var(--radius-sm);
+  background-color: var(--color-red-10);
+  font-size: var(--text-xs);
+}

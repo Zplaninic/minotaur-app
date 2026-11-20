@@ -77,8 +77,18 @@ const november = (): GroupAttendanceResponse => ({
       subscription: { id: "1", name: "Kids 1x", sessionsPerWeek: 1, price: 3000 },
       paid: true,
       comment: "Injured knee",
+      isNew: true,
     },
-    { id: "5", name: "Nora", surname: "Jurić", attendedSessionIds: [], subscription: null, paid: false, comment: null },
+    {
+      id: "5",
+      name: "Nora",
+      surname: "Jurić",
+      attendedSessionIds: [],
+      subscription: null,
+      paid: false,
+      comment: null,
+      isNew: false,
+    },
   ],
 });
 
@@ -165,6 +175,16 @@ beforeEach(() => {
       };
       return undefined;
     }
+    const memberNew = /^\/members\/(\d+)\/new$/.exec(path);
+    if (memberNew && init?.method === "PUT") {
+      const [, memberId = ""] = memberNew;
+      const { isNew } = JSON.parse(String(init.body)) as { isNew: boolean };
+      attendance = {
+        ...attendance,
+        members: attendance.members.map((member) => (member.id === memberId ? { ...member, isNew } : member)),
+      };
+      return undefined;
+    }
     const monthComment = /^\/groups\/1\/months\/2026-11\/members\/(\d+)\/comment$/.exec(path);
     if (monthComment) {
       const [, memberId = ""] = monthComment;
@@ -229,6 +249,7 @@ beforeEach(() => {
                   subscription: null,
                   paid: false,
                   comment: null,
+                  isNew: false,
                 },
               ]
             : attendance.members.filter((member) => member.id !== memberId),
@@ -359,6 +380,27 @@ describe("AttendancePage, wide screens", () => {
       ),
     );
     await waitFor(() => expect(leo).not.toBeChecked());
+  });
+
+  it("shows the New badge and lets a member be marked as new or unmarked", async () => {
+    renderAt("/groups/1/attendance?month=2026-11");
+    const leoRow = (await screen.findByRole("rowheader", { name: /Leo Perić/ })) as HTMLElement;
+    expect(within(leoRow).getByText(t("member.newBadge"))).toBeInTheDocument();
+    const noraRow = screen.getByRole("rowheader", { name: /Nora Jurić/ });
+    expect(within(noraRow).queryByText(t("member.newBadge"))).not.toBeInTheDocument();
+
+    fireEvent.click(screen.getByRole("button", { name: t("attendance.markNewLabel", { name: "Nora Jurić" }) }));
+    await waitFor(() =>
+      expect(fetchMock).toHaveBeenCalledWith(
+        "/members/5/new",
+        expect.anything(),
+        expect.objectContaining({ method: "PUT", body: JSON.stringify({ isNew: true }) }),
+      ),
+    );
+    expect(await within(noraRow).findByText(t("member.newBadge"))).toBeInTheDocument();
+
+    fireEvent.click(screen.getByRole("button", { name: t("attendance.removeNewLabel", { name: "Leo Perić" }) }));
+    await waitFor(() => expect(within(leoRow).queryByText(t("member.newBadge"))).not.toBeInTheDocument());
   });
 
   it("shows each member's comment for the month and saves an edit on blur", async () => {

@@ -1,9 +1,11 @@
 import type { CreateMemberBody, ImportMembersBody, UpdateMemberBody } from "@repo/shared";
 import {
   archiveMember,
+  setMemberNew,
   createMember,
   importMembers,
   keysToInvalidateAfterArchiveMember,
+  keysToInvalidateAfterSetMemberNew,
   keysToInvalidateAfterCreateMember,
   keysToInvalidateAfterImportMembers,
   keysToInvalidateAfterUpdateMember,
@@ -54,6 +56,18 @@ export const useArchiveMember = () => {
     onSuccess: async () => {
       await Promise.all(
         keysToInvalidateAfterArchiveMember.map((queryKey) => queryClient.invalidateQueries({ queryKey })),
+      );
+    },
+  });
+};
+
+export const useSetMemberNew = (memberId: string) => {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: (isNew: boolean) => setMemberNew(api, memberId, isNew),
+    onSuccess: async () => {
+      await Promise.all(
+        keysToInvalidateAfterSetMemberNew.map((queryKey) => queryClient.invalidateQueries({ queryKey })),
       );
     },
   });
