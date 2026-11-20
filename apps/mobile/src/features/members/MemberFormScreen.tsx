@@ -5,7 +5,6 @@ import {
   memberDraftFrom,
   newGuardianDraft,
   toErrorCode,
-  toUpdateMemberBody,
   validateMemberDraft,
   type GuardianDraft,
   type MemberDraft,
@@ -16,12 +15,10 @@ import { useRef, useState } from "react";
 import { StyleSheet, Text, View } from "react-native";
 import { useGuardians } from "../../api/guardians";
 import { useCreateMember, useUpdateMember } from "../../api/members";
-import { useOrgs } from "../../api/orgs";
 import { Button } from "../../components/Button";
 import { DateField } from "../../components/DateField";
 import { FieldError } from "../../components/FieldError";
 import { fieldStyles } from "../../components/fieldStyles";
-import { OptionList } from "../../components/OptionList";
 import { Screen } from "../../components/Screen";
 import { TextField } from "../../components/TextField";
 import { confirmRemove } from "../../lib/confirmRemove";
@@ -44,7 +41,6 @@ type MemberFormScreenProps = {
 export const MemberFormScreen = ({ member, onCreated }: MemberFormScreenProps) => {
   const { errorMessage, t } = useMessages();
   const router = useRouter();
-  const orgs = useOrgs();
   const guardians = useGuardians();
   const createMember = useCreateMember();
   const updateMember = useUpdateMember(member?.id ?? "");
@@ -56,12 +52,9 @@ export const MemberFormScreen = ({ member, onCreated }: MemberFormScreenProps) =
   // React list keys for guardian entries; crypto.randomUUID is not available in React Native.
   const nextGuardianKey = useRef(0);
 
-  // With a single club there is nothing to choose, so it is preselected.
-  const onlyOrg = orgs.data?.items.length === 1 ? orgs.data.items[0] : undefined;
-  const effectiveDraft: MemberDraft = { ...draft, orgId: draft.orgId || (onlyOrg?.id ?? "") };
   // A trainer or admin logs in with their email, so it cannot be cleared.
   const emailRequired = member !== undefined && isLoginRole(member.role);
-  const validation = validateMemberDraft(effectiveDraft, today, { emailRequired });
+  const validation = validateMemberDraft(draft, today, { emailRequired });
   const errors = submitted && !validation.ok ? validation.errors : {};
   const serverCode = saving.error ? toErrorCode(saving.error) : undefined;
 
@@ -99,36 +92,11 @@ export const MemberFormScreen = ({ member, onCreated }: MemberFormScreenProps) =
       return;
     }
     if (member) {
-      updateMember.mutate(toUpdateMemberBody(validation.body), { onSuccess: () => router.back() });
+      updateMember.mutate(validation.body, { onSuccess: () => router.back() });
     } else {
       createMember.mutate(validation.body, { onSuccess: (created) => (onCreated ? onCreated(created) : router.back()) });
     }
   };
-
-  if (orgs.isPending) {
-    return (
-      <Screen belowHeader>
-        <Text style={fieldStyles.value}>{t("memberForm.orgsLoading")}</Text>
-      </Screen>
-    );
-  }
-  if (orgs.isError) {
-    return (
-      <Screen belowHeader>
-        <Text style={fieldStyles.value} accessibilityLiveRegion="polite">
-          {errorMessage(toErrorCode(orgs.error))}
-        </Text>
-        <Button label={t("common.retry")} onPress={() => void orgs.refetch()} />
-      </Screen>
-    );
-  }
-  if (orgs.data.items.length === 0) {
-    return (
-      <Screen belowHeader>
-        <Text style={fieldStyles.value}>{t("memberForm.orgsEmpty")}</Text>
-      </Screen>
-    );
-  }
 
   const guardiansState = guardians.isPending ? "loading" : guardians.isError ? "error" : "ready";
 
@@ -138,15 +106,6 @@ export const MemberFormScreen = ({ member, onCreated }: MemberFormScreenProps) =
         <Text accessibilityRole="header" style={styles.sectionTitle}>
           {t("memberForm.member")}
         </Text>
-        {onlyOrg || member ? null : (
-          <OptionList
-            label={t("memberForm.org")}
-            options={orgs.data.items.map((org) => ({ value: org.id, label: org.name }))}
-            selected={effectiveDraft.orgId}
-            onSelect={(orgId) => update({ orgId })}
-            error={fieldError("orgId")}
-          />
-        )}
         <TextField
           label={t("memberForm.name")}
           value={draft.name}

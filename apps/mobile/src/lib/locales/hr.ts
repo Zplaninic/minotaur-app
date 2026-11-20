@@ -90,9 +90,6 @@ export const hr: Record<keyof typeof en, string> = {
   "memberForm.offlineTitle": "Nema veze",
   "memberForm.error.taken": "Drugi član već ima ovaj OIB ili e-poštu za prijavu.",
   "memberForm.member": "Član",
-  "memberForm.org": "Klub",
-  "memberForm.orgsLoading": "Učitavanje klubova…",
-  "memberForm.orgsEmpty": "Još nema nijednog kluba pa nije moguće dodati člana.",
   "memberForm.name": "Ime",
   "memberForm.surname": "Prezime",
   "memberForm.birthday": "Datum rođenja",
@@ -120,7 +117,6 @@ export const hr: Record<keyof typeof en, string> = {
   "memberForm.submit": "Spremi člana",
   "memberForm.submitting": "Spremanje…",
 
-  "memberForm.error.org": "Odaberite klub.",
   "memberForm.error.name": "Unesite ime.",
   "memberForm.error.surname": "Unesite prezime.",
   "memberForm.error.birthday": "Odaberite datum rođenja.",

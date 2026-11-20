@@ -36,4 +36,5 @@ export const admin: MeResponse = {
   surname: "Admin",
   email: "admin@example.com",
   role: "admin",
+  org: { id: "1", name: "SPK Minotaur" },
 };

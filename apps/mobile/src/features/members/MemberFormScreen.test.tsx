@@ -28,9 +28,6 @@ beforeEach(() => {
   postedBody = undefined;
   fetchMock.mockReset();
   fetchMock.mockImplementation(async (path, _schema, init) => {
-    if (path === "/orgs") {
-      return { items: [{ id: "1", name: "SPK Minotaur" }] };
-    }
     if (path === "/guardians") {
       return { items: [iva] };
     }
@@ -90,7 +87,7 @@ describe("MemberFormScreen", () => {
     await save();
 
     await waitFor(() => expect(mockBack).toHaveBeenCalled());
-    expect(postedBody).toEqual({ orgId: "1", name: "Marko", surname: "Babić", guardians: [] });
+    expect(postedBody).toEqual({ name: "Marko", surname: "Babić", guardians: [] });
   });
 
   it("saves a minor with an existing guardian and goes back to the list", async () => {
@@ -105,7 +102,6 @@ describe("MemberFormScreen", () => {
 
     await waitFor(() => expect(mockBack).toHaveBeenCalled());
     expect(postedBody).toEqual({
-      orgId: "1",
       name: "Luka",
       surname: "Horvat",
       birthday: "2016-06-01",

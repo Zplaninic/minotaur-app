@@ -87,9 +87,6 @@ export const en = {
   "memberForm.offlineTitle": "No connection",
   "memberForm.error.taken": "Another member already has this tax number or login email.",
   "memberForm.member": "Member",
-  "memberForm.org": "Club",
-  "memberForm.orgsLoading": "Loading clubs…",
-  "memberForm.orgsEmpty": "There is no club yet, so no member can be added.",
   "memberForm.name": "Name",
   "memberForm.surname": "Surname",
   "memberForm.birthday": "Birthday",
@@ -116,7 +113,6 @@ export const en = {
   "memberForm.submit": "Save member",
   "memberForm.submitting": "Saving…",
 
-  "memberForm.error.org": "Choose a club.",
   "memberForm.error.name": "Enter a name.",
   "memberForm.error.surname": "Enter a surname.",
   "memberForm.error.birthday": "Choose a birthday.",

@@ -45,9 +45,6 @@ beforeEach(() => {
     if (path === "/me") {
       return admin;
     }
-    if (path === "/orgs") {
-      return { items: [{ id: "1", name: "SPK Minotaur" }] };
-    }
     if (path === "/members/1" && init?.method === "DELETE") {
       return undefined;
     }
