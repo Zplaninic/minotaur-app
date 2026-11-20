@@ -29,7 +29,7 @@ type MemberFormProps = {
   // Set to edit this member; without it the form adds a new one.
   member?: MemberResponse;
   onCancel: () => void;
-  onSaved: () => void;
+  onSaved: (member: MemberResponse) => void;
 };
 
 export const MemberForm = ({ member, onCancel, onSaved }: MemberFormProps) => {

@@ -24,6 +24,7 @@ import { AttendanceGrid } from "../features/attendance/AttendanceGrid";
 import { CreateMonthSessions } from "../features/attendance/CreateMonthSessions";
 import { SessionChecklist } from "../features/attendance/SessionChecklist";
 import { groupName } from "../features/groups/groupName";
+import { MemberForm } from "../features/members/MemberForm";
 import { formatMonth, formatSessionDate } from "../lib/format";
 import { useMessages } from "../lib/messages";
 import { useNarrowScreen } from "../lib/useNarrowScreen";
@@ -46,8 +47,13 @@ export const AttendancePage = () => {
   const attendance = useGroupAttendance(groupId, month);
   // Which session the phone layout shows; the wide grid shows them all.
   const [pick, setPick] = useState<SessionPick>({ kind: "latest" });
-  const [dialog, setDialog] = useState<"session" | "member" | undefined>();
-  const closeDialog = () => setDialog(undefined);
+  const [dialog, setDialog] = useState<"session" | "member" | "newMember" | undefined>();
+  // A member just created from the month's picker, chosen when it reopens.
+  const [createdMemberId, setCreatedMemberId] = useState<string | undefined>();
+  const closeDialog = () => {
+    setDialog(undefined);
+    setCreatedMemberId(undefined);
+  };
 
   if (!ability.can("read", "Attendance")) {
     return <p role="alert">{t("auth.noAccess")}</p>;
@@ -164,7 +170,25 @@ export const AttendancePage = () => {
       />
 
       <Dialog open={dialog === "member"} onClose={closeDialog} title={t("monthMemberForm.title")}>
-        <AddMonthMemberForm groupId={groupId} month={month} onCancel={closeDialog} onSaved={closeDialog} />
+        <AddMonthMemberForm
+          key={createdMemberId}
+          groupId={groupId}
+          month={month}
+          initialMemberId={createdMemberId}
+          onNewMember={() => setDialog("newMember")}
+          onCancel={closeDialog}
+          onSaved={closeDialog}
+        />
+      </Dialog>
+
+      <Dialog open={dialog === "newMember"} onClose={closeDialog} title={t("memberForm.title")}>
+        <MemberForm
+          onCancel={() => setDialog("member")}
+          onSaved={(created) => {
+            setCreatedMemberId(created.id);
+            setDialog("member");
+          }}
+        />
       </Dialog>
 
       <Dialog open={dialog === "session"} onClose={closeDialog} title={t("sessionForm.title")}>

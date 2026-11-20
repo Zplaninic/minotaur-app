@@ -34,13 +34,15 @@ const member = (id: string, name: string, surname: string, role: MemberRole): Me
   createdAt: "2026-11-15T17:00:00.000Z",
 });
 
-const everyone = [
+const club = [
   member("4", "Leo", "Perić", "child"),
   member("5", "Nora", "Jurić", "child"),
   member("6", "Mia", "Novak", "child"),
   member("7", "Ivo", "Babić", "member"),
   member("9", "Ana", "Trener", "trainer"),
 ];
+
+let everyone: MemberResponse[];
 
 const trainer: MeResponse = { memberId: "9", name: "Ana", surname: "Trener", email: "ana@example.com", role: "trainer" };
 
@@ -102,6 +104,7 @@ beforeEach(() => {
   vi.useFakeTimers({ toFake: ["Date"] });
   vi.setSystemTime(new Date(2026, 10, 16, 18, 30));
   attendance = november();
+  everyone = club;
   fetchMock.mockReset();
   fetchMock.mockImplementation(async (path, _schema, init) => {
     if (path === "/me") {
@@ -230,6 +233,17 @@ beforeEach(() => {
     }
     if (path.startsWith("/members?")) {
       return { items: everyone, page: 1, pageSize: 100, total: everyone.length };
+    }
+    if (path === "/orgs") {
+      return { items: [{ id: "1", name: "SPK Minotaur" }] };
+    }
+    if (path === "/guardians") {
+      return { items: [] };
+    }
+    if (path === "/members" && init?.method === "POST") {
+      const created = member("8", "Marko", "Babić", "member");
+      everyone = [...everyone, created];
+      return created;
     }
     if (path === "/groups/1/sessions/18" && init?.method === "DELETE") {
       attendance = { ...attendance, sessions: attendance.sessions.filter((session) => session.id !== "18") };
@@ -465,6 +479,38 @@ describe("AttendancePage, wide screens", () => {
     await waitFor(() =>
       expect(fetchMock).toHaveBeenCalledWith(
         "/groups/1/months/2026-11/members/7",
+        expect.anything(),
+        expect.objectContaining({ method: "PUT", body: JSON.stringify({ joinGroup: true }) }),
+      ),
+    );
+  });
+
+  it("creates a new member and adds them to the month and the group", async () => {
+    renderAt("/groups/1/attendance?month=2026-11");
+    await box("Leo Perić", "Wed, Nov 11");
+
+    fireEvent.click(screen.getByRole("button", { name: t("attendance.addMember") }));
+    const picker = screen.getByRole("dialog", { name: t("monthMemberForm.title") });
+    fireEvent.click(await within(picker).findByRole("button", { name: t("monthMemberForm.newMember") }));
+
+    const form = screen.getByRole("dialog", { name: t("memberForm.title") });
+    const fill = (label: string, value: string) =>
+      fireEvent.change(within(form).getByLabelText(label), { target: { value } });
+    await within(form).findByLabelText(t("memberForm.name"));
+    fill(t("memberForm.name"), "Marko");
+    fill(t("memberForm.surname"), "Babić");
+    fill(t("memberForm.birthday"), "1990-05-01");
+    fireEvent.click(within(form).getByRole("button", { name: t("memberForm.submit") }));
+
+    const reopened = await screen.findByRole("dialog", { name: t("monthMemberForm.title") });
+    const select = await within(reopened).findByLabelText<HTMLSelectElement>(t("monthMemberForm.member"));
+    await waitFor(() => expect(select.value).toBe("8"));
+    fireEvent.click(await within(reopened).findByRole("checkbox", { name: t("monthMemberForm.joinGroup") }));
+    fireEvent.click(within(reopened).getByRole("button", { name: t("monthMemberForm.submit") }));
+
+    await waitFor(() =>
+      expect(fetchMock).toHaveBeenCalledWith(
+        "/groups/1/months/2026-11/members/8",
         expect.anything(),
         expect.objectContaining({ method: "PUT", body: JSON.stringify({ joinGroup: true }) }),
       ),

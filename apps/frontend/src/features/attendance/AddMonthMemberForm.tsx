@@ -13,19 +13,29 @@ import styles from "../groups/GroupForm.module.css";
 type AddMonthMemberFormProps = {
   groupId: string;
   month: Month;
+  // Chosen when the form opens, e.g. a member just created from it.
+  initialMemberId?: string | undefined;
+  onNewMember: () => void;
   onCancel: () => void;
   onSaved: () => void;
 };
 
 // Picks a member who is not on the month's roster yet: the group's members
 // first, then everyone else, who can also join the group.
-export const AddMonthMemberForm = ({ groupId, month, onCancel, onSaved }: AddMonthMemberFormProps) => {
+export const AddMonthMemberForm = ({
+  groupId,
+  month,
+  initialMemberId,
+  onNewMember,
+  onCancel,
+  onSaved,
+}: AddMonthMemberFormProps) => {
   const { errorMessage, t } = useMessages();
   const everyone = useAllMembers();
   const groupMembers = useGroupMembers(groupId);
   const attendance = useGroupAttendance(groupId, month);
   const addMember = useAddMonthMember(groupId, month);
-  const [memberId, setMemberId] = useState("");
+  const [memberId, setMemberId] = useState(initialMemberId ?? "");
   const [joinGroup, setJoinGroup] = useState(false);
   const [submitted, setSubmitted] = useState(false);
 
@@ -52,7 +62,19 @@ export const AddMonthMemberForm = ({ groupId, month, onCancel, onSaved }: AddMon
 
   const candidates = monthRosterCandidates(everyone.data, groupMembers.data.items, attendance.data.members);
   if (candidates.length === 0) {
-    return <p>{t("monthMemberForm.membersEmpty")}</p>;
+    return (
+      <div className={styles.form}>
+        <p>{t("monthMemberForm.membersEmpty")}</p>
+        <div className={styles.actions}>
+          <Button variant="secondary" onClick={onCancel}>
+            {t("common.cancel")}
+          </Button>
+          <Button variant="secondary" onClick={onNewMember}>
+            {t("monthMemberForm.newMember")}
+          </Button>
+        </div>
+      </div>
+    );
   }
   const picked = candidates.find((candidate) => candidate.member.id === memberId);
   const canJoinGroup = picked !== undefined && !picked.inGroup;
@@ -97,6 +119,9 @@ export const AddMonthMemberForm = ({ groupId, month, onCancel, onSaved }: AddMon
       <div className={styles.actions}>
         <Button variant="secondary" onClick={onCancel}>
           {t("common.cancel")}
+        </Button>
+        <Button variant="secondary" onClick={onNewMember}>
+          {t("monthMemberForm.newMember")}
         </Button>
         <Button type="submit" disabled={addMember.isPending}>
           {addMember.isPending ? t("monthMemberForm.submitting") : t("monthMemberForm.submit")}

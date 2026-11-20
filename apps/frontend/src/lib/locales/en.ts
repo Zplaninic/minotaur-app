@@ -226,6 +226,7 @@ export const en = {
   "monthMemberForm.groupMembers": "In this group",
   "monthMemberForm.otherMembers": "Other members",
   "monthMemberForm.joinGroup": "Also add to the group",
+  "monthMemberForm.newMember": "New member",
   "monthMemberForm.submit": "Add to month",
   "monthMemberForm.submitting": "Adding…",
   "monthMemberForm.error.member": "Choose a member.",
