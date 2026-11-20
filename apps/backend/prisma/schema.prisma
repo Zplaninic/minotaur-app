@@ -75,7 +75,7 @@ model Org {
 model Guardian {
   id        Int              @id @default(autoincrement())
   name      String
-  surname   String
+  surname   String?
   email     String?
   phone     String?
   createdAt DateTime         @default(now()) @db.Timestamptz

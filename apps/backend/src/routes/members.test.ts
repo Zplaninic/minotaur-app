@@ -1,4 +1,4 @@
-import { errorResponse, listMembersResponse, memberResponse } from "@repo/shared";
+import { errorResponse, importMembersResponse, listMembersResponse, memberResponse } from "@repo/shared";
 import type { FastifyInstance } from "fastify";
 import { afterAll, beforeAll, beforeEach, describe, expect, it } from "vitest";
 import { createOrg, loggedInAs, resetDb } from "../../test/db.js";
@@ -248,5 +248,39 @@ describe("GET /members?unpaid=true", () => {
     const response = await app.inject({ method: "GET", url: "/members?unpaid=maybe", headers });
     expect(response.statusCode).toBe(400);
     expect(errorResponse.parse(response.json()).code).toBe("VALIDATION_ERROR");
+  });
+});
+
+describe("POST /members/import", () => {
+  const rows = [{ name: "Lovro", surname: "Golub", birthday: "2016-04-02", guardianName: "Iva Golub" }];
+  const postImport = (payload: object, as = headers) =>
+    app.inject({ method: "POST", url: "/members/import", payload, headers: as });
+
+  it("imports members for an admin", async () => {
+    const response = await postImport({ orgId, rows, dryRun: false });
+    expect(response.statusCode).toBe(200);
+    expect(importMembersResponse.parse(response.json())).toEqual({
+      imported: true,
+      rows: [{ status: "create", problems: [] }],
+    });
+  });
+
+  it("rejects a row with an invalid birthday", async () => {
+    const response = await postImport({ orgId, rows: [{ ...rows[0], birthday: "2.4.2016." }], dryRun: true });
+    expect(response.statusCode).toBe(400);
+    expect(errorResponse.parse(response.json()).code).toBe("VALIDATION_ERROR");
+  });
+
+  it("rejects an empty import", async () => {
+    expect((await postImport({ orgId, rows: [], dryRun: true })).statusCode).toBe(400);
+  });
+
+  it("is for admins only", async () => {
+    const trainer = await loggedInAs(app.db, orgId, "trainer");
+    expect((await postImport({ orgId, rows, dryRun: true }, trainer)).statusCode).toBe(403);
+  });
+
+  it("answers 401 when logged out", async () => {
+    expect((await app.inject({ method: "POST", url: "/members/import", payload: {} })).statusCode).toBe(401);
   });
 });

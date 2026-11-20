@@ -70,7 +70,7 @@ const noSubscription: MonthSubscriptionFields = {
   subscriptionSessionsPerWeek: null,
 };
 
-const subscriptionFields = (subscription: {
+export const subscriptionFields = (subscription: {
   id: number;
   price: number;
   sessionsPerWeek: number;

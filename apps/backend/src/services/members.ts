@@ -145,7 +145,7 @@ const linkGuardians = async (db: DbClient, memberId: number, guardians: readonly
             await db.guardian.create({
               data: {
                 name: guardian.name,
-                surname: guardian.surname,
+                surname: guardian.surname ?? null,
                 email: guardian.email ?? null,
                 phone: guardian.phone ?? null,
               },

@@ -1,5 +1,7 @@
 import {
   createMemberBody,
+  importMembersBody,
+  importMembersResponse,
   listMembersQuery,
   listMembersResponse,
   memberParams,
@@ -12,6 +14,7 @@ import { z } from "zod";
 import { config } from "../config.js";
 import { AppError } from "../errors.js";
 import { isoDateIn } from "../services/dates.js";
+import { importMembers } from "../services/memberImport.js";
 import { archiveMember, createMember, getMember, listMembers, updateMember } from "../services/members.js";
 import { actorOf } from "./actor.js";
 import { guardedErrorResponses } from "./responses.js";
@@ -51,6 +54,23 @@ export const memberRoutes: FastifyPluginAsync = async (app) => {
     },
     async (request, reply) =>
       reply.status(201).send(await createMember(app.db, actorOf(request), request.body, todayAtGym())),
+  );
+
+  routes.post(
+    "/import",
+    {
+      // Imported members bring guardians and this month's subscriptions, which only admins set.
+      onRequest: [
+        app.requireAbility("create", "Member"),
+        app.requireAbility("create", "Guardian"),
+        app.requireAbility("manage", "Subscription"),
+      ],
+      schema: {
+        body: importMembersBody,
+        response: { 200: importMembersResponse, ...guardedErrorResponses(400, 404) },
+      },
+    },
+    async (request) => importMembers(app.db, actorOf(request), request.body, todayAtGym()),
   );
 
   routes.get(
