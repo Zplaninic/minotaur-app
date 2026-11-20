@@ -1,7 +1,7 @@
 import type { LoginBody, MeResponse } from "@repo/shared";
 import { LOGIN_ROLES } from "@repo/shared/auth";
 import { unusedPasswordHash, verifyPassword } from "../auth/password.js";
-import { createSession, type SessionMember } from "../auth/sessions.js";
+import { createSession, sessionMemberSelect, type SessionMember } from "../auth/sessions.js";
 import type { Db } from "../db/client.js";
 import { AppError } from "../errors.js";
 import { toApiId } from "./ids.js";
@@ -12,6 +12,7 @@ export const toMeResponse = (member: SessionMember): MeResponse => ({
   surname: member.surname,
   email: member.email ?? "",
   role: member.role,
+  org: { id: toApiId(member.org.id), name: member.org.name },
 });
 
 export type LoginResult = { me: MeResponse; token: string; expiresAt: Date };
@@ -23,14 +24,7 @@ const invalidCredentials = () => new AppError("UNAUTHORIZED", 401, "Email or pas
 export const login = async (db: Db, body: Pick<LoginBody, "email" | "password">, now: Date): Promise<LoginResult> => {
   const member = await db.member.findFirst({
     where: { email: body.email, deletedAt: null, role: { in: [...LOGIN_ROLES] }, login: { isNot: null } },
-    select: {
-      id: true,
-      name: true,
-      surname: true,
-      email: true,
-      role: true,
-      login: { select: { passwordHash: true } },
-    },
+    select: { ...sessionMemberSelect, login: { select: { passwordHash: true } } },
   });
 
   const valid = await verifyPassword(body.password, member?.login?.passwordHash ?? unusedPasswordHash);

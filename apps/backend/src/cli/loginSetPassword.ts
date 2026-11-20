@@ -1,14 +1,13 @@
-import { SYSTEM_ACTOR } from "../services/audit.js";
 import { setLoginPassword } from "../services/logins.js";
 import { readNewPassword } from "./readPassword.js";
-import { requiredId, runCommand } from "./run.js";
+import { requiredId, runCommand, systemActorFor } from "./run.js";
 
 await runCommand(
   "pnpm --filter @repo/backend login:set-password --member-id <id>",
   { "member-id": { type: "string" } },
   async (db, values) => {
     const memberId = requiredId(values, "member-id");
-    await setLoginPassword(db, SYSTEM_ACTOR, memberId, await readNewPassword());
+    await setLoginPassword(db, await systemActorFor(db, memberId), memberId, await readNewPassword());
     return `New password set for member ${memberId}; their existing sessions were ended.`;
   },
 );

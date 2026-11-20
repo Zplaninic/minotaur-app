@@ -9,7 +9,7 @@ import {
   setMonthSubscription,
   unmarkAttendance,
 } from "./attendance.js";
-import { diff, initial, listAuditEvents, SYSTEM_ACTOR, type Actor } from "./audit.js";
+import { diff, initial, listAuditEvents, systemActor, type Actor } from "./audit.js";
 import { addGroupMember, createGroup, updateGroup } from "./groups.js";
 import { createMember, updateMember } from "./members.js";
 import { createSubscription, updateSubscription } from "./subscriptions.js";
@@ -18,13 +18,15 @@ const TODAY = "2026-11-16";
 const MONTH = "2026-11";
 
 let orgId: string;
+let actor: Actor;
 let admin: Actor;
 let trainerId: string;
 
 beforeEach(async () => {
   await resetDb(prisma);
   orgId = await createOrg(prisma);
-  admin = { memberId: (await createLoginMember(prisma, orgId, "admin")).memberId };
+  actor = systemActor(Number(orgId));
+  admin = { orgId: actor.orgId, memberId: (await createLoginMember(prisma, orgId, "admin")).memberId };
   trainerId = String((await createLoginMember(prisma, orgId, "trainer")).memberId);
 });
 
@@ -32,8 +34,8 @@ afterAll(async () => {
   await prisma.$disconnect();
 });
 
-const list = (query: Partial<Parameters<typeof listAuditEvents>[1]> = {}) =>
-  listAuditEvents(prisma, { limit: 50, ...query });
+const list = (query: Partial<Parameters<typeof listAuditEvents>[2]> = {}) =>
+  listAuditEvents(prisma, actor.orgId, { limit: 50, ...query });
 
 const group = {
   ownerId: "",
@@ -62,7 +64,7 @@ describe("recording", () => {
     const member = await createMember(
       prisma,
       admin,
-      { orgId, name: "Marko", surname: "Babić", birthday: "1990-05-01", guardians: [] },
+      { name: "Marko", surname: "Babić", birthday: "1990-05-01", guardians: [] },
       TODAY,
     );
     await updateMember(
@@ -85,7 +87,7 @@ describe("recording", () => {
 
   it("records nothing for an edit that changes nothing", async () => {
     const body = { name: "Marko", surname: "Babić", birthday: "1990-05-01", guardians: [] };
-    const member = await createMember(prisma, admin, { orgId, ...body }, TODAY);
+    const member = await createMember(prisma, admin, body, TODAY);
     await updateMember(prisma, admin, member.id, body, TODAY);
     expect((await list({ action: "member_updated" })).items).toEqual([]);
   });
@@ -114,12 +116,12 @@ describe("recording", () => {
     let subscriptionId: string;
 
     beforeEach(async () => {
-      groupId = (await createGroup(prisma, SYSTEM_ACTOR, { ...group, ownerId: trainerId })).id;
+      groupId = (await createGroup(prisma, actor, { ...group, ownerId: trainerId })).id;
       childId = String((await createLoginMember(prisma, orgId, "child")).memberId);
-      await addGroupMember(prisma, SYSTEM_ACTOR, groupId, childId, TODAY);
-      sessionId = (await addTrainingSession(prisma, SYSTEM_ACTOR, groupId, "2026-11-16", TODAY)).id;
+      await addGroupMember(prisma, actor, groupId, childId, TODAY);
+      sessionId = (await addTrainingSession(prisma, actor, groupId, "2026-11-16", TODAY)).id;
       const subscription = { name: "Kids 2x", sessionsPerWeek: 2, price: 4500 };
-      subscriptionId = (await createSubscription(prisma, SYSTEM_ACTOR, subscription)).id;
+      subscriptionId = (await createSubscription(prisma, actor, subscription)).id;
     });
 
     const target = () => ({ groupId, month: MONTH, memberId: childId });
@@ -196,7 +198,7 @@ describe("listAuditEvents", () => {
   });
 
   it("shows the system as no actor", async () => {
-    await createSubscription(prisma, SYSTEM_ACTOR, { name: "D", sessionsPerWeek: 1, price: 1000 });
+    await createSubscription(prisma, actor, { name: "D", sessionsPerWeek: 1, price: 1000 });
     expect((await list({ limit: 1 })).items[0]?.actor).toBeNull();
   });
 });

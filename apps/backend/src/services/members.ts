@@ -75,8 +75,14 @@ const searchWhere = (search: string | undefined): Prisma.MemberWhereInput[] =>
 // With unpaid, only members who had a subscription in a month before the
 // current one and did not pay for it. today is YYYY-MM-DD at the gym.
 
-export const listMembers = async (db: Db, query: ListMembersQuery, today: string): Promise<ListMembersResponse> => {
+export const listMembers = async (
+  db: Db,
+  orgId: number,
+  query: ListMembersQuery,
+  today: string,
+): Promise<ListMembersResponse> => {
   const where: Prisma.MemberWhereInput = {
+    orgId,
     deletedAt: null,
     AND: searchWhere(query.search),
     ...(query.role ? { role: query.role } : {}),
@@ -128,15 +134,24 @@ const resolveGuardians = (guardians: readonly MemberGuardianInput[]): ResolvedGu
       : guardian,
   );
 
-const requireExistingGuardians = async (db: DbClient, guardians: readonly ResolvedGuardian[]): Promise<void> => {
+const requireExistingGuardians = async (
+  db: DbClient,
+  orgId: number,
+  guardians: readonly ResolvedGuardian[],
+): Promise<void> => {
   const existingIds = guardians.flatMap((guardian) => (guardian.kind === "existing" ? [guardian.id] : []));
-  if ((await db.guardian.count({ where: { id: { in: existingIds } } })) !== existingIds.length) {
+  if ((await db.guardian.count({ where: { orgId, id: { in: existingIds } } })) !== existingIds.length) {
     throw new AppError("NOT_FOUND", 404, "Guardian not found");
   }
 };
 
 // Creates the new guardians and links every guardian to the member.
-const linkGuardians = async (db: DbClient, memberId: number, guardians: readonly ResolvedGuardian[]): Promise<void> => {
+const linkGuardians = async (
+  db: DbClient,
+  orgId: number,
+  memberId: number,
+  guardians: readonly ResolvedGuardian[],
+): Promise<void> => {
   for (const guardian of guardians) {
     const guardianId =
       guardian.kind === "existing"
@@ -144,6 +159,7 @@ const linkGuardians = async (db: DbClient, memberId: number, guardians: readonly
         : (
             await db.guardian.create({
               data: {
+                orgId,
                 name: guardian.name,
                 surname: guardian.surname ?? null,
                 email: guardian.email ?? null,
@@ -163,15 +179,11 @@ export const createMember = async (
   today: string,
 ): Promise<MemberResponse> => {
   requireValidBirthday(body, today);
-  const orgId = requireDbId(body.orgId, "Org not found");
+  const { orgId } = actor;
   const guardians = resolveGuardians(body.guardians);
 
   return db.$transaction(async (tx) => {
-    const org = await tx.org.findUnique({ where: { id: orgId }, select: { id: true } });
-    if (!org) {
-      throw new AppError("NOT_FOUND", 404, "Org not found");
-    }
-    await requireExistingGuardians(tx, guardians);
+    await requireExistingGuardians(tx, orgId, guardians);
 
     const member = await tx.member.create({
       data: {
@@ -186,16 +198,16 @@ export const createMember = async (
       },
       select: { id: true },
     });
-    await linkGuardians(tx, member.id, guardians);
+    await linkGuardians(tx, orgId, member.id, guardians);
     await recordEvent(tx, actor, { action: "member_created", memberId: member.id });
 
     return toMemberResponse(await tx.member.findUniqueOrThrow({ where: { id: member.id }, select: memberSelect }));
   });
 };
 
-export const getMember = async (db: Db, memberId: string): Promise<MemberResponse> => {
+export const getMember = async (db: Db, orgId: number, memberId: string): Promise<MemberResponse> => {
   const member = await db.member.findUnique({
-    where: { id: requireDbId(memberId, "Member not found"), deletedAt: null },
+    where: { id: requireDbId(memberId, "Member not found"), orgId, deletedAt: null },
     select: memberSelect,
   });
   if (!member) {
@@ -243,7 +255,7 @@ export const updateMember = async (
 
   return db.$transaction(async (tx) => {
     const member = await tx.member.findUnique({
-      where: { id: memberDbId, deletedAt: null },
+      where: { id: memberDbId, orgId: actor.orgId, deletedAt: null },
       select: { role: true, ...editableSelect },
     });
     if (!member) {
@@ -252,7 +264,7 @@ export const updateMember = async (
     if (isLoginRole(member.role) && !body.email) {
       throw new AppError("VALIDATION_ERROR", 400, "A member who logs in needs an email");
     }
-    await requireExistingGuardians(tx, guardians);
+    await requireExistingGuardians(tx, actor.orgId, guardians);
 
     await tx.member.update({
       where: { id: memberDbId },
@@ -266,7 +278,7 @@ export const updateMember = async (
       },
     });
     await tx.memberGuardian.deleteMany({ where: { memberId: memberDbId } });
-    await linkGuardians(tx, memberDbId, guardians);
+    await linkGuardians(tx, actor.orgId, memberDbId, guardians);
 
     const after = await tx.member.findUniqueOrThrow({ where: { id: memberDbId }, select: editableSelect });
     const changes = diff(editableFieldsOf(member), editableFieldsOf(after), EDITABLE_FIELDS);
@@ -282,7 +294,10 @@ export const updateMember = async (
 export const setMemberNew = async (db: Db, actor: Actor, memberId: string, isNew: boolean): Promise<void> => {
   const id = requireDbId(memberId, "Member not found");
   await db.$transaction(async (tx) => {
-    const before = await tx.member.findUnique({ where: { id, deletedAt: null }, select: { isNew: true } });
+    const before = await tx.member.findUnique({
+      where: { id, orgId: actor.orgId, deletedAt: null },
+      select: { isNew: true },
+    });
     if (!before) {
       throw new AppError("NOT_FOUND", 404, "Member not found");
     }
@@ -312,13 +327,13 @@ export const archiveMember = async (
   today: string,
 ): Promise<void> => {
   const memberDbId = requireDbId(memberId, "Member not found");
-  if (memberDbId === actor?.memberId) {
+  if (memberDbId === actor.memberId) {
     throw new AppError("FORBIDDEN", 403, "You cannot delete yourself");
   }
 
   await db.$transaction(async (tx) => {
     const { count } = await tx.member.updateMany({
-      where: { id: memberDbId, deletedAt: null },
+      where: { id: memberDbId, orgId: actor.orgId, deletedAt: null },
       data: { deletedAt: now },
     });
     if (count === 0) {

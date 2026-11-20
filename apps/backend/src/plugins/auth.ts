@@ -7,10 +7,13 @@ import fp from "fastify-plugin";
 import { SESSION_COOKIE, validateSession } from "../auth/sessions.js";
 import { config } from "../config.js";
 import { AppError } from "../errors.js";
+import type { Actor } from "../services/audit.js";
 import { toMeResponse } from "../services/auth.js";
 
 export type AuthContext = {
   me: MeResponse;
+  // The member and their org as database ids: every service call is scoped by it.
+  actor: Actor;
   ability: AppAbility;
   token: string;
   transport: "cookie" | "token";
@@ -78,6 +81,7 @@ const authenticate = async (request: FastifyRequest, reply: FastifyReply): Promi
   const me = toMeResponse(session.member);
   const auth: AuthContext = {
     me,
+    actor: { orgId: session.member.org.id, memberId: session.member.id },
     ability: defineAbilityFor({ memberId: me.memberId, role: me.role }),
     token: found.token,
     transport: found.transport,

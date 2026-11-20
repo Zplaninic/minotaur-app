@@ -2,8 +2,7 @@ import type { ImportMemberRow } from "@repo/shared";
 import { afterAll, beforeEach, describe, expect, it } from "vitest";
 import { createOrg, resetDb } from "../../test/db.js";
 import { prisma } from "../db/client.js";
-import { AppError } from "../errors.js";
-import { SYSTEM_ACTOR } from "./audit.js";
+import { systemActor, type Actor } from "./audit.js";
 import { importMembers } from "./memberImport.js";
 import { archiveMember, createMember } from "./members.js";
 import { createSubscription } from "./subscriptions.js";
@@ -12,10 +11,12 @@ import { createSubscription } from "./subscriptions.js";
 const today = "2026-11-15";
 
 let orgId: string;
+let actor: Actor;
 
 beforeEach(async () => {
   await resetDb(prisma);
   orgId = await createOrg(prisma);
+  actor = systemActor(Number(orgId));
 });
 
 afterAll(async () => {
@@ -32,7 +33,7 @@ const child = (overrides: Partial<ImportMemberRow> = {}): ImportMemberRow => ({
 });
 
 const run = (rows: ImportMemberRow[], dryRun = false) =>
-  importMembers(prisma, SYSTEM_ACTOR, { orgId, rows, dryRun }, today);
+  importMembers(prisma, actor, { rows, dryRun }, today);
 
 const membersWithGuardians = () =>
   prisma.member.findMany({
@@ -58,7 +59,7 @@ describe("importMembers", () => {
 
   it("shares a guardian between siblings and links an existing guardian by email", async () => {
     const existing = await prisma.guardian.create({
-      data: { name: "Marko", surname: "Babić", email: "marko@example.com" },
+      data: { orgId: actor.orgId, name: "Marko", surname: "Babić", email: "marko@example.com" },
       select: { id: true },
     });
     await run([
@@ -73,14 +74,14 @@ describe("importMembers", () => {
   });
 
   it("skips active members and repeated rows, but not archived members", async () => {
-    await createMember(prisma, SYSTEM_ACTOR, { orgId, name: "ana", surname: "HORVAT", birthday: "1990-01-01", guardians: [] }, today);
+    await createMember(prisma, actor, { name: "ana", surname: "HORVAT", birthday: "1990-01-01", guardians: [] }, today);
     const archived = await createMember(
       prisma,
-      SYSTEM_ACTOR,
-      { orgId, name: "Ivo", surname: "Kos", guardians: [] },
+      actor,
+      { name: "Ivo", surname: "Kos", guardians: [] },
       today,
     );
-    await archiveMember(prisma, SYSTEM_ACTOR, archived.id, new Date("2026-11-15T12:00:00.000Z"), today);
+    await archiveMember(prisma, actor, archived.id, new Date("2026-11-15T12:00:00.000Z"), today);
 
     const result = await run([
       { name: "Ana", surname: "Horvat", birthday: "1990-01-01" },
@@ -118,7 +119,7 @@ describe("importMembers", () => {
   });
 
   it("sets the subscription on the member's current month", async () => {
-    const subscription = await createSubscription(prisma, SYSTEM_ACTOR, {
+    const subscription = await createSubscription(prisma, actor, {
       name: "Kids 2x",
       sessionsPerWeek: 2,
       price: 4500,
@@ -137,11 +138,5 @@ describe("importMembers", () => {
       },
     ]);
     expect(await prisma.auditEvent.count({ where: { action: "month_subscription_set" } })).toBe(1);
-  });
-
-  it("answers NOT_FOUND for an unknown org", async () => {
-    await expect(
-      importMembers(prisma, SYSTEM_ACTOR, { orgId: "999", rows: [child()], dryRun: true }, today),
-    ).rejects.toThrow(AppError);
   });
 });

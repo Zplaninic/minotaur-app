@@ -31,7 +31,7 @@ import {
   unmarkAttendance,
 } from "../services/attendance.js";
 import { isoDateIn } from "../services/dates.js";
-import { actorOf } from "./actor.js";
+import { actorOf, orgIdOf } from "./actor.js";
 import { guardedErrorResponses } from "./responses.js";
 
 // Registered under /groups, next to the group routes.
@@ -48,7 +48,7 @@ export const attendanceRoutes: FastifyPluginAsync = async (app) => {
         response: { 200: groupAttendanceResponse, ...guardedErrorResponses(400, 404) },
       },
     },
-    async (request) => getGroupAttendance(app.db, request.params.id, request.query.month),
+    async (request) => getGroupAttendance(app.db, orgIdOf(request), request.params.id, request.query.month),
   );
 
   routes.post(

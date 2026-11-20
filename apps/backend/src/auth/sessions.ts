@@ -19,7 +19,17 @@ export type SessionMember = {
   surname: string;
   email: string | null;
   role: MemberRole;
+  org: { id: number; name: string };
 };
+
+export const sessionMemberSelect = {
+  id: true,
+  name: true,
+  surname: true,
+  email: true,
+  role: true,
+  org: { select: { id: true, name: true } },
+} as const;
 
 export type ValidSession = {
   member: SessionMember;
@@ -46,7 +56,7 @@ export const validateSession = async (db: Db, token: string, now: Date): Promise
     where: { id },
     select: {
       expiresAt: true,
-      member: { select: { id: true, name: true, surname: true, email: true, role: true } },
+      member: { select: sessionMemberSelect },
     },
   });
   if (!session) {

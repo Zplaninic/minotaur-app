@@ -103,9 +103,10 @@ const stateWhere: Record<EnrollmentRequestState, Prisma.EnrollmentRequestWhereIn
 
 export const listEnrollmentRequests = async (
   db: Db,
+  orgId: number,
   query: ListEnrollmentRequestsQuery,
 ): Promise<ListEnrollmentRequestsResponse> => {
-  const where = stateWhere[query.state];
+  const where = { orgId, ...stateWhere[query.state] };
   const [total, requests] = await db.$transaction([
     db.enrollmentRequest.count({ where }),
     db.enrollmentRequest.findMany({
@@ -122,30 +123,30 @@ export const listEnrollmentRequests = async (
     pageSize: query.pageSize,
     total,
     waitingByGroup: Object.fromEntries(
-      [...(await pendingByGroup(db))].map(([groupId, count]) => [toApiId(groupId), count]),
+      [...(await pendingByGroup(db, orgId))].map(([groupId, count]) => [toApiId(groupId), count]),
     ),
   };
 };
 
 // Waiting children recommended to each active group, by group id.
-const pendingByGroup = async (db: Db | Tx): Promise<Map<number, number>> => {
+const pendingByGroup = async (db: Db | Tx, orgId: number): Promise<Map<number, number>> => {
   const rows = await db.enrollmentChild.groupBy({
     by: ["groupId"],
-    where: { status: "pending", group: { deletedAt: null } },
+    where: { status: "pending", group: { orgId, deletedAt: null } },
     _count: { _all: true },
   });
   return new Map(rows.flatMap((row) => (row.groupId === null ? [] : [[row.groupId, row._count._all] as const])));
 };
 
 // Active groups with their members and the pending children already sent to them.
-const loadCapacities = async (tx: Tx): Promise<GroupCapacity<number>[]> => {
+const loadCapacities = async (tx: Tx, orgId: number): Promise<GroupCapacity<number>[]> => {
   const [groups, pending] = await Promise.all([
     tx.group.findMany({
-      where: { deletedAt: null },
+      where: { orgId, deletedAt: null },
       select: { id: true, ageFrom: true, ageTo: true, maxMembers: true, _count: { select: { members: true } } },
       orderBy: { id: "asc" },
     }),
-    pendingByGroup(tx),
+    pendingByGroup(tx, orgId),
   ]);
   return groups.map((group) => ({
     id: group.id,
@@ -178,13 +179,13 @@ const recommendForChildren = (
 // The same email saved twice, or a parent writing again before the first
 // request was handled: an open request from the same contact already has a
 // waiting child with one of these names.
-const requireNoOpenDuplicate = async (tx: Tx, body: CreateEnrollmentRequestBody): Promise<void> => {
+const requireNoOpenDuplicate = async (tx: Tx, orgId: number, body: CreateEnrollmentRequestBody): Promise<void> => {
   const contact = { email: body.parentEmail ?? null, phone: body.parentPhone ?? null };
   if (contact.email === null && phoneDigits(contact.phone) === null) {
     return;
   }
   const open = await tx.enrollmentRequest.findMany({
-    where: withChild("pending"),
+    where: { orgId, ...withChild("pending") },
     select: { parentEmail: true, parentPhone: true, children: { where: { status: "pending" }, select: { name: true } } },
   });
   const duplicate = open.some(
@@ -203,10 +204,11 @@ export const createEnrollmentRequest = async (
   body: CreateEnrollmentRequestBody,
 ): Promise<EnrollmentRequestResponse> =>
   db.$transaction(async (tx) => {
-    await requireNoOpenDuplicate(tx, body);
-    const groupIds = recommendForChildren(body.children, await loadCapacities(tx));
+    await requireNoOpenDuplicate(tx, actor.orgId, body);
+    const groupIds = recommendForChildren(body.children, await loadCapacities(tx, actor.orgId));
     const request = await tx.enrollmentRequest.create({
       data: {
+        orgId: actor.orgId,
         parentName: body.parentName,
         parentSurname: body.parentSurname ?? null,
         parentPhone: body.parentPhone ?? null,
@@ -226,21 +228,26 @@ export const createEnrollmentRequest = async (
     return toRequestResponse(request);
   });
 
-const requireActiveGroup = async (tx: Tx, groupId: string): Promise<number> => {
+const requireActiveGroup = async (tx: Tx, orgId: number, groupId: string): Promise<number> => {
   const id = requireDbId(groupId, "Group not found");
-  if (!(await tx.group.findUnique({ where: { id, deletedAt: null }, select: { id: true } }))) {
+  if (!(await tx.group.findUnique({ where: { id, orgId, deletedAt: null }, select: { id: true } }))) {
     throw groupNotFound();
   }
   return id;
 };
 
+// A request of the org, as a filter on its children.
+const inRequest = (orgId: number, requestId: number) =>
+  ({ requestId, request: { orgId } }) satisfies Prisma.EnrollmentChildWhereInput;
+
 // Why a conditional update of a child changed nothing: NOT_FOUND for a child
 // that is not in the request, otherwise the given error about its status.
-const missingChildError = async (tx: Tx, requestId: number, childId: number, wrongStatus: AppError) => {
-  if (await tx.enrollmentChild.findFirst({ where: { id: childId, requestId }, select: { id: true } })) {
+const missingChildError = async (tx: Tx, orgId: number, requestId: number, childId: number, wrongStatus: AppError) => {
+  const where = { id: childId, ...inRequest(orgId, requestId) };
+  if (await tx.enrollmentChild.findFirst({ where, select: { id: true } })) {
     return wrongStatus;
   }
-  const request = await tx.enrollmentRequest.findUnique({ where: { id: requestId }, select: { id: true } });
+  const request = await tx.enrollmentRequest.findUnique({ where: { id: requestId, orgId }, select: { id: true } });
   return request ? childNotFound() : requestNotFound();
 };
 
@@ -248,15 +255,16 @@ const missingChildError = async (tx: Tx, requestId: number, childId: number, wro
 // that is no longer pending.
 const requirePendingChild = async (
   tx: Tx,
+  orgId: number,
   requestId: number,
   childId: number,
 ): Promise<{ name: string; age: number }> => {
   const child = await tx.enrollmentChild.findFirst({
-    where: { id: childId, requestId, status: "pending" },
+    where: { id: childId, ...inRequest(orgId, requestId), status: "pending" },
     select: { name: true, age: true },
   });
   if (!child) {
-    throw await missingChildError(tx, requestId, childId, notPending());
+    throw await missingChildError(tx, orgId, requestId, childId, notPending());
   }
   return { name: child.name, age: child.age.toNumber() };
 };
@@ -271,14 +279,14 @@ export const setEnrollmentChildGroup = async (
   const requestDbId = requireRequestId(requestId);
   const childDbId = requireChildId(childId);
   return db.$transaction(async (tx) => {
-    const groupDbId = groupId === null ? null : await requireActiveGroup(tx, groupId);
+    const groupDbId = groupId === null ? null : await requireActiveGroup(tx, actor.orgId, groupId);
     // Only a pending child is changed, so a child accepted meanwhile keeps its group.
     const { count } = await tx.enrollmentChild.updateMany({
-      where: { id: childDbId, requestId: requestDbId, status: "pending" },
+      where: { id: childDbId, ...inRequest(actor.orgId, requestDbId), status: "pending" },
       data: { groupId: groupDbId },
     });
     if (count === 0) {
-      throw await missingChildError(tx, requestDbId, childDbId, notPending());
+      throw await missingChildError(tx, actor.orgId, requestDbId, childDbId, notPending());
     }
     await recordEvent(tx, actor, {
       action: "enrollment_child_group_set",
@@ -291,10 +299,10 @@ export const setEnrollmentChildGroup = async (
 };
 
 // A guardian already in the club with the parent's email or phone.
-const existingGuardian = async (tx: Tx, contact: Contact): Promise<number | undefined> => {
+const existingGuardian = async (tx: Tx, orgId: number, contact: Contact): Promise<number | undefined> => {
   if (contact.email !== null) {
     const byEmail = await tx.guardian.findFirst({
-      where: { email: { equals: contact.email, mode: "insensitive" } },
+      where: { orgId, email: { equals: contact.email, mode: "insensitive" } },
       select: { id: true },
       orderBy: { id: "asc" },
     });
@@ -308,7 +316,7 @@ const existingGuardian = async (tx: Tx, contact: Contact): Promise<number | unde
   }
   // Phones are stored as typed, so they are compared by digits here. A club has few guardians.
   const withPhone = await tx.guardian.findMany({
-    where: { phone: { not: null } },
+    where: { orgId, phone: { not: null } },
     select: { id: true, phone: true },
     orderBy: { id: "asc" },
   });
@@ -317,7 +325,7 @@ const existingGuardian = async (tx: Tx, contact: Contact): Promise<number | unde
 
 // The parent as a guardian: the one a sibling already got, else one already in
 // the club with the same email or phone, else a new one.
-const requestGuardian = async (tx: Tx, requestId: number): Promise<number> => {
+const requestGuardian = async (tx: Tx, orgId: number, requestId: number): Promise<number> => {
   // Writing the request first locks its row until the transaction ends, so
   // two siblings accepted at once wait for each other and share one guardian.
   const request = await tx.enrollmentRequest.update({
@@ -328,13 +336,14 @@ const requestGuardian = async (tx: Tx, requestId: number): Promise<number> => {
   if (request.guardianId !== null) {
     return request.guardianId;
   }
-  const existing = await existingGuardian(tx, { email: request.parentEmail, phone: request.parentPhone });
+  const existing = await existingGuardian(tx, orgId, { email: request.parentEmail, phone: request.parentPhone });
   if (existing !== undefined) {
     await tx.enrollmentRequest.update({ where: { id: requestId }, data: { guardianId: existing } });
     return existing;
   }
   const guardian = await tx.guardian.create({
     data: {
+      orgId,
       name: request.parentName,
       surname: request.parentSurname,
       email: request.parentEmail,
@@ -348,8 +357,15 @@ const requestGuardian = async (tx: Tx, requestId: number): Promise<number> => {
 
 // The child is already an active member: one with the same name and surname
 // came from a request with the same contact, or has a guardian with it.
-const requireNotMemberYet = async (tx: Tx, contact: Contact, name: string, surname: string): Promise<void> => {
+const requireNotMemberYet = async (
+  tx: Tx,
+  orgId: number,
+  contact: Contact,
+  name: string,
+  surname: string,
+): Promise<void> => {
   const sameNameMember = {
+    orgId,
     deletedAt: null,
     name: { equals: name, mode: "insensitive" },
     surname: { equals: surname, mode: "insensitive" },
@@ -377,8 +393,9 @@ const requireNotMemberYet = async (tx: Tx, contact: Contact, name: string, surna
 // as guardian. Ages count in whole years.
 const roleForAge = (age: number): MemberRole => (Math.floor(age) >= ADULT_AGE ? "member" : DEFAULT_MEMBER_ROLE);
 
-// Makes the child a member and adds them to the group, all or nothing. A
-// child under 18 gets the parent as guardian. today is YYYY-MM-DD at the gym.
+// Makes the child a member of the actor's org and adds them to the group, all
+// or nothing. A child under 18 gets the parent as guardian. today is
+// YYYY-MM-DD at the gym.
 export const acceptEnrollmentChild = async (
   db: Db,
   actor: Actor,
@@ -389,20 +406,18 @@ export const acceptEnrollmentChild = async (
 ): Promise<EnrollmentRequestResponse> => {
   const requestDbId = requireRequestId(requestId);
   const childDbId = requireChildId(childId);
-  const orgId = requireDbId(body.orgId, "Org not found");
+  const { orgId } = actor;
   return db.$transaction(async (tx) => {
-    const child = await requirePendingChild(tx, requestDbId, childDbId);
-    const groupId = await requireActiveGroup(tx, body.groupId);
-    if (!(await tx.org.findUnique({ where: { id: orgId }, select: { id: true } }))) {
-      throw new AppError("NOT_FOUND", 404, "Org not found");
-    }
+    const child = await requirePendingChild(tx, orgId, requestDbId, childDbId);
+    const groupId = await requireActiveGroup(tx, orgId, body.groupId);
     const request = await tx.enrollmentRequest.findUniqueOrThrow({
       where: { id: requestDbId },
       select: { parentEmail: true, parentPhone: true },
     });
-    await requireNotMemberYet(tx, { email: request.parentEmail, phone: request.parentPhone }, child.name, body.surname);
+    const contact = { email: request.parentEmail, phone: request.parentPhone };
+    await requireNotMemberYet(tx, orgId, contact, child.name, body.surname);
     const role = roleForAge(child.age);
-    const guardianId = role === "member" ? null : await requestGuardian(tx, requestDbId);
+    const guardianId = role === "member" ? null : await requestGuardian(tx, orgId, requestDbId);
 
     // Only a pending child is updated, so a second accept of the same child
     // in a parallel request finds nothing to change.
@@ -446,11 +461,11 @@ export const rejectEnrollmentChild = async (
   const childDbId = requireChildId(childId);
   return db.$transaction(async (tx) => {
     const { count } = await tx.enrollmentChild.updateMany({
-      where: { id: childDbId, requestId: requestDbId, status: "pending" },
+      where: { id: childDbId, ...inRequest(actor.orgId, requestDbId), status: "pending" },
       data: { status: "rejected" },
     });
     if (count === 0) {
-      throw await missingChildError(tx, requestDbId, childDbId, notPending());
+      throw await missingChildError(tx, actor.orgId, requestDbId, childDbId, notPending());
     }
     await recordEvent(tx, actor, {
       action: "enrollment_child_rejected",
@@ -472,12 +487,13 @@ export const reopenEnrollmentChild = async (
   const childDbId = requireChildId(childId);
   return db.$transaction(async (tx) => {
     const { count } = await tx.enrollmentChild.updateMany({
-      where: { id: childDbId, requestId: requestDbId, status: "rejected" },
+      where: { id: childDbId, ...inRequest(actor.orgId, requestDbId), status: "rejected" },
       data: { status: "pending" },
     });
     if (count === 0) {
       throw await missingChildError(
         tx,
+        actor.orgId,
         requestDbId,
         childDbId,
         new AppError("CONFLICT", 409, "Only a rejected child can be put back to waiting"),
@@ -497,7 +513,7 @@ export const reopenEnrollmentChild = async (
 export const deleteEnrollmentRequest = async (db: Db, actor: Actor, requestId: string): Promise<void> => {
   const id = requireRequestId(requestId);
   await db.$transaction(async (tx) => {
-    const { count } = await tx.enrollmentRequest.deleteMany({ where: { id } });
+    const { count } = await tx.enrollmentRequest.deleteMany({ where: { id, orgId: actor.orgId } });
     if (count === 0) {
       throw requestNotFound();
     }

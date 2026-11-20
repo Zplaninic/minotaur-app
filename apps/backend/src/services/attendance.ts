@@ -27,8 +27,12 @@ const sessionNotFound = (): AppError => new AppError("NOT_FOUND", 404, "Session 
 const memberNotFound = (): AppError => new AppError("NOT_FOUND", 404, "Member not found");
 const subscriptionNotFound = (): AppError => new AppError("NOT_FOUND", 404, "Subscription not found");
 
-const requireGroup = async (db: DbClient, groupId: number) => {
-  const group = await db.group.findUnique({ where: { id: groupId, deletedAt: null }, select: { id: true, days: true } });
+// A group of another org is as unknown as one that does not exist.
+const requireGroup = async (db: DbClient, orgId: number, groupId: number) => {
+  const group = await db.group.findUnique({
+    where: { id: groupId, orgId, deletedAt: null },
+    select: { id: true, days: true },
+  });
   if (!group) {
     throw groupNotFound();
   }
@@ -119,9 +123,14 @@ export const ensureMemberMonths = async (
   });
 };
 
-export const getGroupAttendance = async (db: Db, groupId: string, month: Month): Promise<GroupAttendanceResponse> => {
+export const getGroupAttendance = async (
+  db: Db,
+  orgId: number,
+  groupId: string,
+  month: Month,
+): Promise<GroupAttendanceResponse> => {
   const group = await db.group.findUnique({
-    where: { id: requireDbId(groupId, "Group not found"), deletedAt: null },
+    where: { id: requireDbId(groupId, "Group not found"), orgId, deletedAt: null },
     select: {
       sessions: {
         where: { date: monthRange(month) },
@@ -205,7 +214,7 @@ export const createMonthSessions = async (
   month: Month,
   today: string,
 ): Promise<void> => {
-  const group = await requireGroup(db, requireDbId(groupId, "Group not found"));
+  const group = await requireGroup(db, actor.orgId, requireDbId(groupId, "Group not found"));
   requireCreatableMonth(month, today);
   await db.$transaction(async (tx) => {
     const before = await countMonthSessions(tx, group.id, month);
@@ -236,7 +245,7 @@ export const addTrainingSession = async (
   date: string,
   today: string,
 ): Promise<TrainingSessionResponse> => {
-  const group = await requireGroup(db, requireDbId(groupId, "Group not found"));
+  const group = await requireGroup(db, actor.orgId, requireDbId(groupId, "Group not found"));
   requireCreatableMonth(monthOf(date), today);
   return db.$transaction(async (tx) => {
     const before = await countMonthSessions(tx, group.id, monthOf(date));
@@ -263,7 +272,7 @@ export const deleteTrainingSession = async (
   const sessionDbId = requireDbId(sessionId, "Session not found");
 
   await db.$transaction(async (tx) => {
-    const session = await requireSession(tx, groupDbId, sessionDbId);
+    const session = await requireSession(tx, actor.orgId, groupDbId, sessionDbId);
     // The attendance check is in the delete itself, so a tick that arrives
     // meanwhile cannot be deleted with it.
     const { count } = await tx.trainingSession.deleteMany({ where: { id: sessionDbId, attendance: { none: {} } } });
@@ -283,34 +292,40 @@ export const deleteTrainingSession = async (
 type AttendanceTarget = { groupId: string; sessionId: string; memberId: string };
 
 // A session of an archived group is as gone as the group.
-const requireSession = async (db: DbClient, groupId: number, sessionId: number) => {
+const requireSession = async (db: DbClient, orgId: number, groupId: number, sessionId: number) => {
   const session = await db.trainingSession.findFirst({
-    where: { id: sessionId, groupId, group: { deletedAt: null } },
+    where: { id: sessionId, groupId, group: { orgId, deletedAt: null } },
     select: { id: true, date: true },
   });
   if (!session) {
-    await requireGroup(db, groupId);
+    await requireGroup(db, orgId, groupId);
     throw sessionNotFound();
   }
   return session;
 };
 
 // A member who is not where the request needs them: NOT_FOUND when the member
-// does not exist at all, otherwise a validation error with the reason.
-const refuseMember = async (db: DbClient, memberId: number, reason: string): Promise<never> => {
-  if (!(await db.member.findUnique({ where: { id: memberId, deletedAt: null }, select: { id: true } }))) {
+// does not exist in the org at all, otherwise a validation error with the reason.
+const refuseMember = async (db: DbClient, orgId: number, memberId: number, reason: string): Promise<never> => {
+  if (!(await db.member.findUnique({ where: { id: memberId, orgId, deletedAt: null }, select: { id: true } }))) {
     throw memberNotFound();
   }
   throw new AppError("VALIDATION_ERROR", 400, reason);
 };
 
-const requireOnRoster = async (db: DbClient, groupId: number, month: Month, memberId: number): Promise<void> => {
+const requireOnRoster = async (
+  db: DbClient,
+  orgId: number,
+  groupId: number,
+  month: Month,
+  memberId: number,
+): Promise<void> => {
   const onRoster = await db.groupMonthMember.findUnique({
     where: { groupId_month_memberId: { groupId, month: monthStart(month), memberId } },
     select: { memberId: true },
   });
   if (!onRoster) {
-    await refuseMember(db, memberId, "The member is not on this month's roster");
+    await refuseMember(db, orgId, memberId, "The member is not on this month's roster");
   }
 };
 
@@ -321,13 +336,13 @@ export const markAttendance = async (db: Db, actor: Actor, target: AttendanceTar
   const memberDbId = requireDbId(target.memberId, "Member not found");
 
   await db.$transaction(async (tx) => {
-    const session = await requireSession(tx, groupDbId, sessionDbId);
+    const session = await requireSession(tx, actor.orgId, groupDbId, sessionDbId);
     if (toIsoDate(session.date) > today) {
       throw new AppError("VALIDATION_ERROR", 400, "Attendance cannot be taken for a future session");
     }
 
     const date = toIsoDate(session.date);
-    await requireOnRoster(tx, groupDbId, monthOf(date), memberDbId);
+    await requireOnRoster(tx, actor.orgId, groupDbId, monthOf(date), memberDbId);
     const { count } = await tx.attendance.createMany({
       data: [{ sessionId: sessionDbId, memberId: memberDbId }],
       skipDuplicates: true,
@@ -351,7 +366,7 @@ export const unmarkAttendance = async (db: Db, actor: Actor, target: AttendanceT
   const memberDbId = toDbId(target.memberId);
 
   await db.$transaction(async (tx) => {
-    const session = await requireSession(tx, groupDbId, sessionDbId);
+    const session = await requireSession(tx, actor.orgId, groupDbId, sessionDbId);
     if (memberDbId === undefined) {
       return;
     }
@@ -385,8 +400,11 @@ export const addMonthMember = async (
   const memberDbId = requireDbId(target.memberId, "Member not found");
 
   await db.$transaction(async (tx) => {
-    await requireGroup(tx, groupDbId);
-    const member = await tx.member.findUnique({ where: { id: memberDbId, deletedAt: null }, select: { role: true } });
+    await requireGroup(tx, actor.orgId, groupDbId);
+    const member = await tx.member.findUnique({
+      where: { id: memberDbId, orgId: actor.orgId, deletedAt: null },
+      select: { role: true },
+    });
     if (!member) {
       throw memberNotFound();
     }
@@ -422,7 +440,7 @@ export const removeMonthMember = async (db: Db, actor: Actor, target: MonthMembe
   const memberDbId = toDbId(target.memberId);
 
   await db.$transaction(async (tx) => {
-    await requireGroup(tx, groupDbId);
+    await requireGroup(tx, actor.orgId, groupDbId);
     if (memberDbId === undefined) {
       return;
     }
@@ -448,16 +466,22 @@ export const removeMonthMember = async (db: Db, actor: Actor, target: MonthMembe
 
 // The subscription and payment are the member's for the whole month, but
 // they are changed from a group's sheet, so the member must be on its roster.
-const requireGroupRoster = async (db: DbClient, groupId: number, month: Month, memberId: number): Promise<void> => {
-  await requireGroup(db, groupId);
-  await requireOnRoster(db, groupId, month, memberId);
+const requireGroupRoster = async (
+  db: DbClient,
+  orgId: number,
+  groupId: number,
+  month: Month,
+  memberId: number,
+): Promise<void> => {
+  await requireGroup(db, orgId, groupId);
+  await requireOnRoster(db, orgId, groupId, month, memberId);
 };
 
 // Sets a member's subscription for one month, in all their groups, copying
 // its current price and sessions. null clears it, which a paid month refuses.
 // The month's row of a member on the group's roster, as it is before a change.
-const requireMemberMonth = async (db: DbClient, groupId: number, month: Month, memberId: number) => {
-  await requireGroupRoster(db, groupId, month, memberId);
+const requireMemberMonth = async (db: DbClient, orgId: number, groupId: number, month: Month, memberId: number) => {
+  await requireGroupRoster(db, orgId, groupId, month, memberId);
   return db.memberMonth.findUniqueOrThrow({
     where: { memberId_month: { memberId, month: monthStart(month) } },
     select: { subscriptionId: true, paid: true, comment: true },
@@ -485,7 +509,7 @@ export const setMonthSubscription = async (
   const eventTarget = { groupId: groupDbId, memberId: memberDbId, month: target.month };
 
   await db.$transaction(async (tx) => {
-    const before = await requireMemberMonth(tx, groupDbId, target.month, memberDbId);
+    const before = await requireMemberMonth(tx, actor.orgId, groupDbId, target.month, memberDbId);
     const key = { memberId: memberDbId, month: monthStart(target.month) };
 
     if (subscriptionDbId === null) {
@@ -496,7 +520,7 @@ export const setMonthSubscription = async (
       }
     } else {
       const subscription = await tx.subscription.findUnique({
-        where: { id: subscriptionDbId },
+        where: { id: subscriptionDbId, orgId: actor.orgId },
         select: { id: true, price: true, sessionsPerWeek: true },
       });
       if (!subscription) {
@@ -519,7 +543,7 @@ export const setMonthPaid = async (db: Db, actor: Actor, target: MonthMemberTarg
   const groupDbId = requireDbId(target.groupId, "Group not found");
   const memberDbId = requireDbId(target.memberId, "Member not found");
   await db.$transaction(async (tx) => {
-    const before = await requireMemberMonth(tx, groupDbId, target.month, memberDbId);
+    const before = await requireMemberMonth(tx, actor.orgId, groupDbId, target.month, memberDbId);
     const key = { memberId: memberDbId, month: monthStart(target.month) };
     // One statement, so a subscription cleared meanwhile is not paid.
     const { count } = await tx.memberMonth.updateMany({
@@ -549,7 +573,7 @@ export const setMonthComment = async (
   const groupDbId = requireDbId(target.groupId, "Group not found");
   const memberDbId = requireDbId(target.memberId, "Member not found");
   await db.$transaction(async (tx) => {
-    const before = await requireMemberMonth(tx, groupDbId, target.month, memberDbId);
+    const before = await requireMemberMonth(tx, actor.orgId, groupDbId, target.month, memberDbId);
     await tx.memberMonth.update({
       where: { memberId_month: { memberId: memberDbId, month: monthStart(target.month) } },
       data: { comment },

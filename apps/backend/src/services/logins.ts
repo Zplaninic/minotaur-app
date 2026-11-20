@@ -18,7 +18,6 @@ import { leaveGroups } from "./groups.js";
 // Used by the backend commands until there are screens for managing logins.
 
 export type NewLoginMember = {
-  orgId: number;
   name: string;
   surname: string;
   birthday?: string | undefined;
@@ -47,7 +46,7 @@ export const createLoginForMember = async (
   const passwordHash = await hashPassword(validPassword(password));
   await db.$transaction(async (tx) => {
     const member = await tx.member.findUnique({
-      where: { id: memberId, deletedAt: null },
+      where: { id: memberId, orgId: actor.orgId, deletedAt: null },
       select: { email: true, role: true },
     });
     if (!member) {
@@ -67,7 +66,8 @@ export const createLoginForMember = async (
   });
 };
 
-// Creates the member and their login in one go; used for the first admin.
+// Creates the member and their login in the actor's org in one go; used for
+// the first admin.
 export const createMemberWithLogin = async (
   db: Db,
   actor: Actor,
@@ -79,7 +79,7 @@ export const createMemberWithLogin = async (
   return db.$transaction(async (tx) => {
     const member = await tx.member.create({
       data: {
-        orgId: input.orgId,
+        orgId: actor.orgId,
         name: personName.parse(input.name),
         surname: personName.parse(input.surname),
         birthday: input.birthday ? toDbDate(input.birthday) : null,
@@ -103,7 +103,7 @@ export const createMemberWithLogin = async (
 export const setLoginPassword = async (db: Db, actor: Actor, memberId: number, password: string): Promise<void> => {
   const passwordHash = await hashPassword(validPassword(password));
   await db.$transaction(async (tx) => {
-    await tx.login.update({ where: { memberId }, data: { passwordHash } });
+    await tx.login.update({ where: { memberId, member: { orgId: actor.orgId } }, data: { passwordHash } });
     await deleteMemberSessions(tx, memberId);
     await recordEvent(tx, actor, { action: "login_password_set", memberId, changes: { password: { changed: true } } });
   });
@@ -121,7 +121,10 @@ export const setMemberRole = async (
   today: string,
 ): Promise<void> => {
   await db.$transaction(async (tx) => {
-    const member = await tx.member.findUnique({ where: { id: memberId, deletedAt: null }, select: { role: true } });
+    const member = await tx.member.findUnique({
+      where: { id: memberId, orgId: actor.orgId, deletedAt: null },
+      select: { role: true },
+    });
     if (!member) {
       throw new AppError("NOT_FOUND", 404, "Member not found");
     }

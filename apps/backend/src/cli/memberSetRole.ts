@@ -1,9 +1,8 @@
 import { memberRole } from "@repo/shared";
 import { config } from "../config.js";
-import { SYSTEM_ACTOR } from "../services/audit.js";
 import { isoDateIn } from "../services/dates.js";
 import { setMemberRole } from "../services/logins.js";
-import { required, requiredId, runCommand } from "./run.js";
+import { required, requiredId, runCommand, systemActorFor } from "./run.js";
 
 await runCommand(
   `pnpm --filter @repo/backend member:set-role --member-id <id> --role <${memberRole.options.join("|")}>`,
@@ -14,7 +13,8 @@ await runCommand(
     if (!parsed.success) {
       throw new Error(`--role must be one of: ${memberRole.options.join(", ")}`);
     }
-    await setMemberRole(db, SYSTEM_ACTOR, memberId, parsed.data, isoDateIn(new Date(), config.GYM_TIME_ZONE));
+    const actor = await systemActorFor(db, memberId);
+    await setMemberRole(db, actor, memberId, parsed.data, isoDateIn(new Date(), config.GYM_TIME_ZONE));
     return `Member ${memberId} is now ${parsed.data}.`;
   },
 );

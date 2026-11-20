@@ -23,6 +23,7 @@ beforeEach(async () => {
   trainer = await authHeaders(app.db, trainerMember.memberId);
   const group = await app.db.group.create({
     data: {
+      orgId: Number(orgId),
       ownerId: trainerMember.memberId,
       days: ["monday"],
       from: new Date("1970-01-01T17:00:00.000Z"),
@@ -153,7 +154,7 @@ describe("POST /enrollment-requests/:id/children/:childId/accept", () => {
   it("accepts a child, then answers CONFLICT for a second accept", async () => {
     const created = await create();
     const url = `/enrollment-requests/${created.id}/children/${created.children[0]?.id ?? ""}/accept`;
-    const payload = { orgId, surname: "Horvat", groupId };
+    const payload = { surname: "Horvat", groupId };
     const response = await app.inject({ method: "POST", url, payload, headers: admin });
     expect(response.statusCode).toBe(200);
     expect(enrollmentRequestResponse.parse(response.json()).children[0]).toMatchObject({
@@ -171,7 +172,7 @@ describe("POST /enrollment-requests/:id/children/:childId/accept", () => {
     const response = await app.inject({
       method: "POST",
       url: `/enrollment-requests/${created.id}/children/${created.children[0]?.id ?? ""}/accept`,
-      payload: { orgId, surname: "", groupId },
+      payload: { surname: "", groupId },
       headers: admin,
     });
     expect(response.statusCode).toBe(400);

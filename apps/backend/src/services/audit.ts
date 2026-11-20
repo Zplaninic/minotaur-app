@@ -15,9 +15,10 @@ import type { Prisma } from "../generated/prisma/client.js";
 import { monthOf, monthStart, toDbDate, toIsoDate, toTimeOfDay } from "./dates.js";
 import { toApiId, toDbId } from "./ids.js";
 
-// Who makes a change: a logged-in member, or the system (backend commands).
-export type Actor = { memberId: number } | null;
-export const SYSTEM_ACTOR: Actor = null;
+// Who makes a change, and in which org. memberId is null for the system
+// (backend commands). Every record a change touches must be in the org.
+export type Actor = { orgId: number; memberId: number | null };
+export const systemActor = (orgId: number): Actor => ({ orgId, memberId: null });
 
 // A value as stored in the log. References to other records (owner,
 // subscription) are stored as their database ids.
@@ -44,8 +45,9 @@ type DbClient = Db | Prisma.TransactionClient;
 export const recordEvent = async (db: DbClient, actor: Actor, event: AuditEventInput): Promise<void> => {
   await db.auditEvent.create({
     data: {
+      orgId: actor.orgId,
       action: event.action,
-      actorId: actor?.memberId ?? null,
+      actorId: actor.memberId,
       memberId: event.memberId ?? null,
       groupId: event.groupId ?? null,
       subscriptionId: event.subscriptionId ?? null,
@@ -121,7 +123,7 @@ const toPerson = (person: { id: number; name: string; surname: string }): AuditP
 const parseChanges = (changes: Prisma.JsonValue): StoredChanges => storedChanges.catch({}).parse(changes ?? {});
 
 // Reference ids in the changes, looked up once for the whole page.
-const loadRefs = async (db: Db, changes: readonly StoredChanges[]) => {
+const loadRefs = async (db: Db, orgId: number, changes: readonly StoredChanges[]) => {
   const ids = { member: new Set<number>(), subscription: new Set<number>() };
   for (const fields of changes) {
     for (const [field, change] of Object.entries(fields)) {
@@ -136,8 +138,11 @@ const loadRefs = async (db: Db, changes: readonly StoredChanges[]) => {
     }
   }
   const [members, subscriptions] = await Promise.all([
-    db.member.findMany({ where: { id: { in: [...ids.member] } }, select: personSelect }),
-    db.subscription.findMany({ where: { id: { in: [...ids.subscription] } }, select: { id: true, name: true } }),
+    db.member.findMany({ where: { orgId, id: { in: [...ids.member] } }, select: personSelect }),
+    db.subscription.findMany({
+      where: { orgId, id: { in: [...ids.subscription] } },
+      select: { id: true, name: true },
+    }),
   ]);
   return {
     member: new Map(members.map((member): [number, AuditRef] => [member.id, { kind: "member", ...toPerson(member) }])),
@@ -196,7 +201,11 @@ const ID_FILTERS = ["before", "actorId", "memberId", "groupId"] as const;
 type IdFilter = (typeof ID_FILTERS)[number];
 
 // Newest first, one page at a time. An id filter that cannot exist matches nothing.
-export const listAuditEvents = async (db: Db, query: ListAuditEventsQuery): Promise<ListAuditEventsResponse> => {
+export const listAuditEvents = async (
+  db: Db,
+  orgId: number,
+  query: ListAuditEventsQuery,
+): Promise<ListAuditEventsResponse> => {
   const ids: Partial<Record<IdFilter, number>> = {};
   for (const name of ID_FILTERS) {
     const value = query[name];
@@ -211,6 +220,7 @@ export const listAuditEvents = async (db: Db, query: ListAuditEventsQuery): Prom
 
   const rows = await db.auditEvent.findMany({
     where: {
+      orgId,
       ...(ids.before !== undefined ? { id: { lt: ids.before } } : {}),
       ...(ids.actorId !== undefined ? { actorId: ids.actorId } : {}),
       ...(ids.memberId !== undefined ? { memberId: ids.memberId } : {}),
@@ -229,7 +239,7 @@ export const listAuditEvents = async (db: Db, query: ListAuditEventsQuery): Prom
 
   const page = rows.slice(0, query.limit);
   const changes = page.map((row) => parseChanges(row.changes));
-  const refs = await loadRefs(db, changes);
+  const refs = await loadRefs(db, orgId, changes);
   return {
     items: page.map((row, index) => toEventResponse(refs, row, changes[index] ?? {})),
     nextCursor: rows.length > query.limit ? toApiId(page.at(-1)?.id ?? 0) : null,

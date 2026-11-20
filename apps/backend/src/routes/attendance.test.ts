@@ -10,7 +10,7 @@ import { afterAll, beforeAll, beforeEach, describe, expect, it } from "vitest";
 import { authHeaders, createLoginMember, createOrg, resetDb } from "../../test/db.js";
 import { config } from "../config.js";
 import { buildServer } from "../server.js";
-import { SYSTEM_ACTOR } from "../services/audit.js";
+import { systemActor } from "../services/audit.js";
 import { isoDateIn, monthOf, trainingDates } from "../services/dates.js";
 import { addGroupMember, createGroup } from "../services/groups.js";
 import { createSubscription } from "../services/subscriptions.js";
@@ -41,7 +41,7 @@ beforeEach(async () => {
   const trainerMember = await createLoginMember(app.db, orgId, "trainer");
   trainer = await authHeaders(app.db, trainerMember.memberId);
   groupId = (
-    await createGroup(app.db, SYSTEM_ACTOR, {
+    await createGroup(app.db, systemActor(Number(orgId)), {
       ownerId: String(trainerMember.memberId),
       days: ["monday", "wednesday"],
       from: "18:00",
@@ -52,7 +52,7 @@ beforeEach(async () => {
     })
   ).id;
   childId = String((await createLoginMember(app.db, orgId, "child")).memberId);
-  await addGroupMember(app.db, SYSTEM_ACTOR, groupId, childId, today);
+  await addGroupMember(app.db, systemActor(Number(orgId)), groupId, childId, today);
 });
 
 afterAll(async () => {
@@ -224,7 +224,7 @@ describe("PUT /groups/:id/months/:month/members/:memberId/subscription", () => {
     await addSession(firstOfThisMonth);
     const subscription = await createSubscription(
       app.db,
-      SYSTEM_ACTOR,
+      systemActor(Number(orgId)),
       { name: "Kids 2x", sessionsPerWeek: 2, price: 4500 },
     );
 
@@ -275,7 +275,7 @@ describe("PUT /groups/:id/months/:month/members/:memberId/paid", () => {
     await addSession(firstOfThisMonth);
     const subscription = await createSubscription(
       app.db,
-      SYSTEM_ACTOR,
+      systemActor(Number(orgId)),
       { name: "Kids 2x", sessionsPerWeek: 2, price: 4500 },
     );
     await app.inject({

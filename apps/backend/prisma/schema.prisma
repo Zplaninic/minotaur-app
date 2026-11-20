@@ -77,19 +77,25 @@ datasource db {
 }
 
 model Org {
-  id          Int      @id @default(autoincrement())
-  name        String
-  contactName String
-  email       String
-  createdAt   DateTime @default(now()) @db.Timestamptz
-  updatedAt   DateTime @updatedAt @db.Timestamptz
-  members     Member[]
+  id                 Int                 @id @default(autoincrement())
+  name               String
+  contactName        String
+  email              String
+  createdAt          DateTime            @default(now()) @db.Timestamptz
+  updatedAt          DateTime            @updatedAt @db.Timestamptz
+  members            Member[]
+  guardians          Guardian[]
+  groups             Group[]
+  subscriptions      Subscription[]
+  enrollmentRequests EnrollmentRequest[]
+  auditEvents        AuditEvent[]
 
   @@map("org")
 }
 
 model Guardian {
   id                 Int                 @id @default(autoincrement())
+  orgId              Int
   name               String
   surname            String?
   email              String?
@@ -98,7 +104,9 @@ model Guardian {
   updatedAt          DateTime            @updatedAt @db.Timestamptz
   members            MemberGuardian[]
   enrollmentRequests EnrollmentRequest[]
+  org                Org                 @relation(fields: [orgId], references: [id], onDelete: Restrict)
 
+  @@index([orgId])
   @@map("guardian")
 }
 
@@ -136,8 +144,9 @@ model Member {
   // match LOGIN_ROLES in @repo/shared/auth. Written the way Postgres stores
   // the condition, so Prisma does not see a difference and recreate it.
   @@unique([email], map: "member_login_email_key", where: raw("((role = ANY (ARRAY['trainer'::member_role, 'admin'::member_role])) AND (\"deletedAt\" IS NULL))"))
-  // An archived member's OIB is free again, so the same person can come back.
-  @@unique([taxNumber], map: "member_taxNumber_key", where: raw("(\"deletedAt\" IS NULL)"))
+  // An OIB is unique within an org. An archived member's OIB is free again,
+  // so the same person can come back.
+  @@unique([orgId, taxNumber], map: "member_orgId_taxNumber_key", where: raw("(\"deletedAt\" IS NULL)"))
   @@index([orgId])
   @@map("member")
 }
@@ -181,6 +190,8 @@ model MemberGuardian {
 // checks that, the database only knows the member exists.
 model Group {
   id           Int                @id @default(autoincrement())
+  // The owner's org; the service keeps the two the same.
+  orgId        Int
   ownerId      Int
   days         Weekday[]
   // Wall-clock times at the gym, without a date or a time zone.
@@ -195,6 +206,7 @@ model Group {
   updatedAt    DateTime           @updatedAt @db.Timestamptz
   // Set when the group is archived. Archived groups are hidden but kept for history.
   deletedAt    DateTime?          @db.Timestamptz
+  org          Org                @relation(fields: [orgId], references: [id], onDelete: Restrict)
   owner        Member             @relation(fields: [ownerId], references: [id], onDelete: Restrict)
   members      GroupMember[]
   sessions     TrainingSession[]
@@ -202,6 +214,7 @@ model Group {
   auditEvents  AuditEvent[]
   enrollments  EnrollmentChild[]
 
+  @@index([orgId])
   @@index([ownerId])
   @@map("group")
 }
@@ -294,15 +307,18 @@ model MemberMonth {
 // A subscription the club offers, e.g. "Kids 2x": sessions per week and a monthly price.
 model Subscription {
   id              Int           @id @default(autoincrement())
-  name            String        @unique
+  orgId           Int
+  name            String
   sessionsPerWeek Int
   // Euro cents.
   price           Int
   createdAt       DateTime      @default(now()) @db.Timestamptz
   updatedAt       DateTime      @updatedAt @db.Timestamptz
+  org             Org           @relation(fields: [orgId], references: [id], onDelete: Restrict)
   memberMonths    MemberMonth[]
   auditEvents     AuditEvent[]
 
+  @@unique([orgId, name])
   @@map("subscription")
 }
 
@@ -310,6 +326,7 @@ model Subscription {
 // same transaction as the change. Holds ids, never copies of personal values.
 model AuditEvent {
   id                  Int                @id @default(autoincrement())
+  orgId               Int
   action              AuditAction
   // Null for the system (backend commands).
   actorId             Int?
@@ -325,6 +342,7 @@ model AuditEvent {
   // { field: { from, to } } or { field: { changed: true } } for personal values.
   changes             Json?
   createdAt           DateTime           @default(now()) @db.Timestamptz
+  org                 Org                @relation(fields: [orgId], references: [id], onDelete: Restrict)
   actor               Member?            @relation("AuditActor", fields: [actorId], references: [id], onDelete: SetNull)
   member              Member?            @relation("AuditMember", fields: [memberId], references: [id], onDelete: SetNull)
   group               Group?             @relation(fields: [groupId], references: [id], onDelete: SetNull)
@@ -332,6 +350,7 @@ model AuditEvent {
   enrollmentRequest   EnrollmentRequest? @relation(fields: [enrollmentRequestId], references: [id], onDelete: SetNull)
   enrollmentChild     EnrollmentChild?   @relation(fields: [enrollmentChildId], references: [id], onDelete: SetNull)
 
+  @@index([orgId])
   @@index([createdAt])
   @@index([actorId])
   @@index([memberId])
@@ -346,6 +365,7 @@ model AuditEvent {
 // enrollment form email. Nobody becomes a member until a child is accepted.
 model EnrollmentRequest {
   id            Int               @id @default(autoincrement())
+  orgId         Int
   parentName    String
   parentSurname String?
   parentPhone   String?
@@ -357,10 +377,12 @@ model EnrollmentRequest {
   guardianId    Int?
   createdAt     DateTime          @default(now()) @db.Timestamptz
   updatedAt     DateTime          @updatedAt @db.Timestamptz
+  org           Org               @relation(fields: [orgId], references: [id], onDelete: Restrict)
   guardian      Guardian?         @relation(fields: [guardianId], references: [id], onDelete: SetNull)
   children      EnrollmentChild[]
   auditEvents   AuditEvent[]
 
+  @@index([orgId])
   @@index([guardianId])
   @@index([createdAt])
   @@map("enrollment_request")

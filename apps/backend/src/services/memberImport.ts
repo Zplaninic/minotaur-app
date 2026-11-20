@@ -7,12 +7,10 @@ import {
   type ImportRowProblem,
 } from "@repo/shared";
 import type { Db } from "../db/client.js";
-import { AppError } from "../errors.js";
 import type { Prisma } from "../generated/prisma/client.js";
 import { subscriptionFields } from "./attendance.js";
 import { recordEvent, type Actor } from "./audit.js";
 import { monthOf, monthStart, toDbDate, toIsoDate } from "./dates.js";
-import { requireDbId } from "./ids.js";
 import { ageOn } from "./members.js";
 
 // A full import writes a few rows per member, more than the default 5 seconds allow.
@@ -79,18 +77,27 @@ const checkRows = (
     return { status: problems.length > 0 ? "invalid" : "create", problems };
   });
 
-// Guardians already in the database, by email; the oldest wins when several share one.
-const guardiansByEmail = async (tx: Tx, rows: readonly ImportMemberRow[]): Promise<Map<string, number>> => {
+// Guardians already in the org, by email; the oldest wins when several share one.
+const guardiansByEmail = async (
+  tx: Tx,
+  orgId: number,
+  rows: readonly ImportMemberRow[],
+): Promise<Map<string, number>> => {
   const emails = rows.flatMap((row) => (row.guardianEmail ? [row.guardianEmail] : []));
   const guardians = await tx.guardian.findMany({
-    where: { email: { in: emails } },
+    where: { orgId, email: { in: emails } },
     select: { id: true, email: true },
     orderBy: { id: "desc" },
   });
   return new Map(guardians.flatMap((guardian) => (guardian.email ? [[guardian.email, guardian.id] as const] : [])));
 };
 
-const guardianFor = async (tx: Tx, row: ImportMemberRow, byEmail: Map<string, number>): Promise<number | undefined> => {
+const guardianFor = async (
+  tx: Tx,
+  orgId: number,
+  row: ImportMemberRow,
+  byEmail: Map<string, number>,
+): Promise<number | undefined> => {
   if (row.guardianName === undefined) {
     return undefined;
   }
@@ -99,7 +106,7 @@ const guardianFor = async (tx: Tx, row: ImportMemberRow, byEmail: Map<string, nu
     return known;
   }
   const guardian = await tx.guardian.create({
-    data: { name: row.guardianName, email: row.guardianEmail ?? null },
+    data: { orgId, name: row.guardianName, email: row.guardianEmail ?? null },
     select: { id: true },
   });
   if (row.guardianEmail) {
@@ -111,10 +118,10 @@ const guardianFor = async (tx: Tx, row: ImportMemberRow, byEmail: Map<string, nu
 const createImportedMember = async (
   tx: Tx,
   actor: Actor,
-  orgId: number,
   row: ImportMemberRow,
   context: { byEmail: Map<string, number>; subscriptions: ReadonlyMap<string, SubscriptionRow>; month: string },
 ): Promise<void> => {
+  const { orgId } = actor;
   const member = await tx.member.create({
     data: {
       orgId,
@@ -125,7 +132,7 @@ const createImportedMember = async (
     },
     select: { id: true },
   });
-  const guardianId = await guardianFor(tx, row, context.byEmail);
+  const guardianId = await guardianFor(tx, orgId, row, context.byEmail);
   if (guardianId !== undefined) {
     await tx.memberGuardian.create({ data: { memberId: member.id, guardianId } });
   }
@@ -147,26 +154,21 @@ const createImportedMember = async (
   }
 };
 
-// Checks every row, then creates the new members only when no row is invalid
-// and this is not a dry run: an import is all or nothing.
+// Checks every row, then creates the new members in the actor's org only when
+// no row is invalid and this is not a dry run: an import is all or nothing.
 export const importMembers = async (
   db: Db,
   actor: Actor,
   body: ImportMembersBody,
   today: string,
 ): Promise<ImportMembersResponse> => {
-  const orgId = requireDbId(body.orgId, "Org not found");
+  const { orgId } = actor;
 
   return db.$transaction(
     async (tx) => {
-      const org = await tx.org.findUnique({ where: { id: orgId }, select: { id: true } });
-      if (!org) {
-        throw new AppError("NOT_FOUND", 404, "Org not found");
-      }
-
       const names = body.rows.flatMap((row) => (row.subscription ? [row.subscription] : []));
       const subscriptionRows = await tx.subscription.findMany({
-        where: { name: { in: names } },
+        where: { orgId, name: { in: names } },
         select: { id: true, name: true, price: true, sessionsPerWeek: true },
       });
       const subscriptions = new Map(subscriptionRows.map((subscription) => [subscription.name, subscription]));
@@ -177,10 +179,10 @@ export const importMembers = async (
         return { imported, rows };
       }
 
-      const context = { byEmail: await guardiansByEmail(tx, body.rows), subscriptions, month: monthOf(today) };
+      const context = { byEmail: await guardiansByEmail(tx, orgId, body.rows), subscriptions, month: monthOf(today) };
       for (const [index, row] of body.rows.entries()) {
         if (rows[index]?.status === "create") {
-          await createImportedMember(tx, actor, orgId, row, context);
+          await createImportedMember(tx, actor, row, context);
         }
       }
       return { imported, rows };

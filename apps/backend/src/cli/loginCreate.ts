@@ -1,11 +1,11 @@
 import { email as emailSchema } from "@repo/shared";
 import { LOGIN_ROLES, type LoginRole } from "@repo/shared/auth";
 import { config } from "../config.js";
-import { SYSTEM_ACTOR } from "../services/audit.js";
+import { systemActor } from "../services/audit.js";
 import { isoDateIn } from "../services/dates.js";
 import { createLoginForMember, createMemberWithLogin } from "../services/logins.js";
 import { readNewPassword } from "./readPassword.js";
-import { required, requiredId, runCommand } from "./run.js";
+import { required, requiredId, runCommand, systemActorFor } from "./run.js";
 
 const usage = `pnpm --filter @repo/backend login:create --member-id <id> --role <${LOGIN_ROLES.join("|")}>
    or: pnpm --filter @repo/backend login:create --org-id <id> --name <name> --surname <surname> [--birthday <YYYY-MM-DD>] --email <email> --role <${LOGIN_ROLES.join("|")}>`;
@@ -36,7 +36,7 @@ await runCommand(
       const memberId = requiredId(values, "member-id");
       await createLoginForMember(
         db,
-        SYSTEM_ACTOR,
+        await systemActorFor(db, memberId),
         memberId,
         role,
         await readNewPassword(),
@@ -47,9 +47,8 @@ await runCommand(
 
     const memberId = await createMemberWithLogin(
       db,
-      SYSTEM_ACTOR,
+      systemActor(requiredId(values, "org-id")),
       {
-        orgId: requiredId(values, "org-id"),
         name: required(values, "name"),
         surname: required(values, "surname"),
         birthday: values["birthday"],

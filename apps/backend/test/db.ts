@@ -20,8 +20,8 @@ export const resetDb = async (db: Db): Promise<void> => {
     db.memberGuardian.deleteMany(),
     db.member.deleteMany(),
     db.guardian.deleteMany(),
-    db.org.deleteMany(),
     db.subscription.deleteMany(),
+    db.org.deleteMany(),
   ]);
 };
 
@@ -33,8 +33,11 @@ export const createOrg = async (db: Db, name = "SPK Minotaur"): Promise<string> 
   return String(org.id);
 };
 
-export const createGuardian = async (db: Db, name = "Iva", surname = "Horvat"): Promise<string> => {
-  const guardian = await db.guardian.create({ data: { name, surname }, select: { id: true } });
+export const createGuardian = async (db: Db, orgId: string, name = "Iva", surname = "Horvat"): Promise<string> => {
+  const guardian = await db.guardian.create({
+    data: { orgId: Number(orgId), name, surname },
+    select: { id: true },
+  });
   return String(guardian.id);
 };
 

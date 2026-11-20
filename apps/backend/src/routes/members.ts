@@ -24,7 +24,7 @@ import {
   setMemberNew,
   updateMember,
 } from "../services/members.js";
-import { actorOf } from "./actor.js";
+import { actorOf, orgIdOf } from "./actor.js";
 import { guardedErrorResponses } from "./responses.js";
 
 const todayAtGym = (): string => isoDateIn(new Date(), config.GYM_TIME_ZONE);
@@ -46,7 +46,7 @@ export const memberRoutes: FastifyPluginAsync = async (app) => {
       if (request.query.unpaid && !request.auth?.ability.can("read", "Subscription")) {
         throw new AppError("FORBIDDEN", 403, "Not allowed");
       }
-      return listMembers(app.db, request.query, todayAtGym());
+      return listMembers(app.db, orgIdOf(request), request.query, todayAtGym());
     },
   );
 
@@ -90,7 +90,7 @@ export const memberRoutes: FastifyPluginAsync = async (app) => {
         response: { 200: memberResponse, ...guardedErrorResponses(404) },
       },
     },
-    async (request) => getMember(app.db, request.params.id),
+    async (request) => getMember(app.db, orgIdOf(request), request.params.id),
   );
 
   routes.put(

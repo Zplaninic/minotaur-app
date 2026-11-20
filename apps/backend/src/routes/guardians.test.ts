@@ -27,10 +27,10 @@ describe("GET /guardians", () => {
     await app.db.member.update({ where: { id: archived.memberId }, data: { deletedAt: new Date() } });
     const link = (guardianId: string, toMemberId: number) =>
       app.db.memberGuardian.create({ data: { memberId: toMemberId, guardianId: Number(guardianId) } });
-    await link(await createGuardian(app.db, "Iva", "Zorić"), memberId);
-    await link(await createGuardian(app.db, "Ivan", "Babić"), memberId);
-    await link(await createGuardian(app.db, "Petar", "Arhiviran"), archived.memberId);
-    await createGuardian(app.db, "Nitko", "Nevezan");
+    await link(await createGuardian(app.db, orgId, "Iva", "Zorić"), memberId);
+    await link(await createGuardian(app.db, orgId, "Ivan", "Babić"), memberId);
+    await link(await createGuardian(app.db, orgId, "Petar", "Arhiviran"), archived.memberId);
+    await createGuardian(app.db, orgId, "Nitko", "Nevezan");
     const response = await app.inject({ method: "GET", url: "/guardians", headers });
     expect(response.statusCode).toBe(200);
     expect(listGuardiansResponse.parse(response.json()).items.map((guardian) => guardian.name)).toEqual([

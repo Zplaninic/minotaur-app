@@ -3,7 +3,7 @@ import type { FastifyInstance } from "fastify";
 import { afterAll, beforeAll, beforeEach, describe, expect, it } from "vitest";
 import { createOrg, loggedInAs, resetDb } from "../../test/db.js";
 import { buildServer } from "../server.js";
-import { SYSTEM_ACTOR } from "../services/audit.js";
+import { systemActor } from "../services/audit.js";
 import { createSubscription } from "../services/subscriptions.js";
 
 let app: FastifyInstance;
@@ -24,7 +24,7 @@ afterAll(async () => {
   await app.close();
 });
 
-const body = () => ({ orgId, name: "Marko", surname: "Babić", birthday: "1990-05-01" });
+const body = () => ({ name: "Marko", surname: "Babić", birthday: "1990-05-01" });
 
 const post = (payload: object, as = headers) => app.inject({ method: "POST", url: "/members", payload, headers: as });
 
@@ -89,7 +89,7 @@ describe("POST /members", () => {
   });
 
   it("answers NOT_FOUND for an id that is not a number", async () => {
-    const response = await post({ ...body(), orgId: "abc" });
+    const response = await post({ ...body(), guardians: [{ kind: "existing", guardianId: "abc" }] });
     expect(response.statusCode).toBe(404);
     expect(errorResponse.parse(response.json()).code).toBe("NOT_FOUND");
   });
@@ -258,7 +258,7 @@ describe("GET /members?unpaid=true", () => {
     await created("Luka");
     const subscription = await createSubscription(
       app.db,
-      SYSTEM_ACTOR,
+      systemActor(Number(orgId)),
       { name: "Adults 2x", sessionsPerWeek: 2, price: 5000 },
     );
     const month = (memberId: string, paid: boolean) => ({
@@ -299,7 +299,7 @@ describe("POST /members/import", () => {
     app.inject({ method: "POST", url: "/members/import", payload, headers: as });
 
   it("imports members for an admin", async () => {
-    const response = await postImport({ orgId, rows, dryRun: false });
+    const response = await postImport({ rows, dryRun: false });
     expect(response.statusCode).toBe(200);
     expect(importMembersResponse.parse(response.json())).toEqual({
       imported: true,
@@ -308,18 +308,18 @@ describe("POST /members/import", () => {
   });
 
   it("rejects a row with an invalid birthday", async () => {
-    const response = await postImport({ orgId, rows: [{ ...rows[0], birthday: "2.4.2016." }], dryRun: true });
+    const response = await postImport({ rows: [{ ...rows[0], birthday: "2.4.2016." }], dryRun: true });
     expect(response.statusCode).toBe(400);
     expect(errorResponse.parse(response.json()).code).toBe("VALIDATION_ERROR");
   });
 
   it("rejects an empty import", async () => {
-    expect((await postImport({ orgId, rows: [], dryRun: true })).statusCode).toBe(400);
+    expect((await postImport({ rows: [], dryRun: true })).statusCode).toBe(400);
   });
 
   it("is for admins only", async () => {
     const trainer = await loggedInAs(app.db, orgId, "trainer");
-    expect((await postImport({ orgId, rows, dryRun: true }, trainer)).statusCode).toBe(403);
+    expect((await postImport({ rows, dryRun: true }, trainer)).statusCode).toBe(403);
   });
 
   it("answers 401 when logged out", async () => {

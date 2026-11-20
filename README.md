@@ -69,7 +69,8 @@ and start with its URL:
 docker compose exec postgres psql -U minotaur -d minotaur_dev -c "CREATE DATABASE minotaur_prod;"
 export PROD_DB=postgresql://minotaur:minotaur@localhost:5433/minotaur_prod
 DATABASE_URL=$PROD_DB pnpm --filter @repo/backend prisma migrate deploy
-# The first org (id 1); the next ones are added in the app
+# The club's org (id 1). Another club is another org row with its own admin;
+# orgs never see each other's data
 docker compose exec postgres psql -U minotaur -d minotaur_prod -c \
   "INSERT INTO org (name, \"contactName\", email, \"updatedAt\") VALUES ('<club>', '<contact>', '<email>', now());"
 DATABASE_URL=$PROD_DB pnpm --filter @repo/backend login:create --org-id 1 --name <name> --surname <surname> --email <email> --role admin

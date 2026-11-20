@@ -53,9 +53,9 @@ const toGroupResponse = (group: GroupRow): GroupResponse => ({
   updatedAt: group.updatedAt.toISOString(),
 });
 
-export const listGroups = async (db: Db): Promise<ListGroupsResponse> => {
+export const listGroups = async (db: Db, orgId: number): Promise<ListGroupsResponse> => {
   const groups = await db.group.findMany({
-    where: { deletedAt: null },
+    where: { orgId, deletedAt: null },
     select: groupSelect,
     orderBy: [{ owner: { name: "asc" } }, { owner: { surname: "asc" } }, { from: "asc" }, { id: "asc" }],
   });
@@ -64,13 +64,13 @@ export const listGroups = async (db: Db): Promise<ListGroupsResponse> => {
 
 const ownerNotFound = (): AppError => new AppError("NOT_FOUND", 404, "Owner not found");
 
-// Returns the owner's database id once they are known to be a trainer.
-const requireTrainer = async (tx: Prisma.TransactionClient, ownerId: string): Promise<number> => {
+// Returns the owner's database id once they are known to be a trainer of the org.
+const requireTrainer = async (tx: Prisma.TransactionClient, orgId: number, ownerId: string): Promise<number> => {
   const id = toDbId(ownerId);
   if (id === undefined) {
     throw ownerNotFound();
   }
-  const owner = await tx.member.findUnique({ where: { id, deletedAt: null }, select: { role: true } });
+  const owner = await tx.member.findUnique({ where: { id, orgId, deletedAt: null }, select: { role: true } });
   if (!owner) {
     throw ownerNotFound();
   }
@@ -121,9 +121,9 @@ const auditSelect = {
 
 export const createGroup = async (db: Db, actor: Actor, body: CreateGroupBody): Promise<GroupResponse> =>
   db.$transaction(async (tx) => {
-    const ownerId = await requireTrainer(tx, body.ownerId);
+    const ownerId = await requireTrainer(tx, actor.orgId, body.ownerId);
     const data = toGroupData(body, ownerId);
-    const group = await tx.group.create({ data, select: groupSelect });
+    const group = await tx.group.create({ data: { ...data, orgId: actor.orgId }, select: groupSelect });
     await recordEvent(tx, actor, { action: "group_created", groupId: group.id, changes: initial(auditFieldsOf(data)) });
     return toGroupResponse(group);
   });
@@ -139,9 +139,9 @@ const requireGroupId = (groupId: string): number => {
   return id;
 };
 
-export const getGroup = async (db: Db, groupId: string): Promise<GroupResponse> => {
+export const getGroup = async (db: Db, orgId: number, groupId: string): Promise<GroupResponse> => {
   const group = await db.group.findUnique({
-    where: { id: requireGroupId(groupId), deletedAt: null },
+    where: { id: requireGroupId(groupId), orgId, deletedAt: null },
     select: groupSelect,
   });
   if (!group) {
@@ -160,11 +160,11 @@ export const updateGroup = async (
 ): Promise<GroupResponse> => {
   const id = requireGroupId(groupId);
   return db.$transaction(async (tx) => {
-    const before = await tx.group.findUnique({ where: { id, deletedAt: null }, select: auditSelect });
+    const before = await tx.group.findUnique({ where: { id, orgId: actor.orgId, deletedAt: null }, select: auditSelect });
     if (!before) {
       throw groupNotFound();
     }
-    const ownerId = await requireTrainer(tx, body.ownerId);
+    const ownerId = await requireTrainer(tx, actor.orgId, body.ownerId);
     const data = toGroupData(body, ownerId);
     const group = await tx.group.update({ where: { id }, data, select: groupSelect });
     const changes = diff(auditFieldsOf(before), auditFieldsOf(data));
@@ -189,9 +189,9 @@ const groupMemberSelect = {
   },
 } satisfies Prisma.MemberSelect;
 
-export const listGroupMembers = async (db: Db, groupId: string): Promise<ListGroupMembersResponse> => {
+export const listGroupMembers = async (db: Db, orgId: number, groupId: string): Promise<ListGroupMembersResponse> => {
   const group = await db.group.findUnique({
-    where: { id: requireGroupId(groupId), deletedAt: null },
+    where: { id: requireGroupId(groupId), orgId, deletedAt: null },
     select: {
       members: {
         select: { member: { select: groupMemberSelect } },
@@ -232,10 +232,14 @@ export const addGroupMember = async (
   }
 
   await db.$transaction(async (tx) => {
-    if (!(await tx.group.findUnique({ where: { id: groupDbId, deletedAt: null }, select: { id: true } }))) {
+    const { orgId } = actor;
+    if (!(await tx.group.findUnique({ where: { id: groupDbId, orgId, deletedAt: null }, select: { id: true } }))) {
       throw groupNotFound();
     }
-    const member = await tx.member.findUnique({ where: { id: memberDbId, deletedAt: null }, select: { role: true } });
+    const member = await tx.member.findUnique({
+      where: { id: memberDbId, orgId, deletedAt: null },
+      select: { role: true },
+    });
     if (!member) {
       throw memberNotFound();
     }
@@ -260,7 +264,8 @@ export const removeGroupMember = async (
   today: string,
 ): Promise<void> => {
   const groupDbId = requireGroupId(groupId);
-  if (!(await db.group.findUnique({ where: { id: groupDbId, deletedAt: null }, select: { id: true } }))) {
+  const inOrg = { id: groupDbId, orgId: actor.orgId, deletedAt: null };
+  if (!(await db.group.findUnique({ where: inOrg, select: { id: true } }))) {
     throw groupNotFound();
   }
   const memberDbId = toDbId(memberId);
@@ -290,7 +295,10 @@ export const leaveGroups = async (db: Prisma.TransactionClient, memberId: number
 export const archiveGroup = async (db: Db, actor: Actor, groupId: string, now: Date): Promise<void> => {
   const id = requireGroupId(groupId);
   await db.$transaction(async (tx) => {
-    const { count } = await tx.group.updateMany({ where: { id, deletedAt: null }, data: { deletedAt: now } });
+    const { count } = await tx.group.updateMany({
+      where: { id, orgId: actor.orgId, deletedAt: null },
+      data: { deletedAt: now },
+    });
     if (count === 0) {
       throw groupNotFound();
     }

@@ -27,9 +27,9 @@ export const toGuardianResponse = (guardian: GuardianRow): GuardianResponse => (
 });
 
 // Only guardians of at least one active member: the ones worth picking again.
-export const listGuardians = async (db: Db): Promise<ListGuardiansResponse> => {
+export const listGuardians = async (db: Db, orgId: number): Promise<ListGuardiansResponse> => {
   const guardians = await db.guardian.findMany({
-    where: { members: { some: { member: { deletedAt: null } } } },
+    where: { orgId, members: { some: { member: { deletedAt: null } } } },
     select: guardianSelect,
     orderBy: [{ name: "asc" }, { surname: "asc" }, { id: "asc" }],
   });

@@ -35,8 +35,9 @@ const toSubscriptionResponse = (subscription: SubscriptionRow): SubscriptionResp
 
 const subscriptionNotFound = (): AppError => new AppError("NOT_FOUND", 404, "Subscription not found");
 
-export const listSubscriptions = async (db: Db): Promise<ListSubscriptionsResponse> => {
+export const listSubscriptions = async (db: Db, orgId: number): Promise<ListSubscriptionsResponse> => {
   const subscriptions = await db.subscription.findMany({
+    where: { orgId },
     select: subscriptionSelect,
     orderBy: [{ sessionsPerWeek: "asc" }, { name: "asc" }, { id: "asc" }],
   });
@@ -49,15 +50,18 @@ const auditFieldsOf = (subscription: SubscriptionBody) => ({
   price: subscription.price,
 });
 
-// A name that is already taken fails with a unique constraint error, which
-// the error handler answers with CONFLICT.
+// A name that is already taken in the org fails with a unique constraint
+// error, which the error handler answers with CONFLICT.
 export const createSubscription = async (
   db: Db,
   actor: Actor,
   body: SubscriptionBody,
 ): Promise<SubscriptionResponse> =>
   db.$transaction(async (tx) => {
-    const subscription = await tx.subscription.create({ data: body, select: subscriptionSelect });
+    const subscription = await tx.subscription.create({
+      data: { ...body, orgId: actor.orgId },
+      select: subscriptionSelect,
+    });
     await recordEvent(tx, actor, {
       action: "subscription_created",
       subscriptionId: subscription.id,
@@ -78,7 +82,7 @@ export const updateSubscription = async (
     throw subscriptionNotFound();
   }
   return db.$transaction(async (tx) => {
-    const before = await tx.subscription.findUnique({ where: { id }, select: subscriptionSelect });
+    const before = await tx.subscription.findUnique({ where: { id, orgId: actor.orgId }, select: subscriptionSelect });
     if (!before) {
       throw subscriptionNotFound();
     }
@@ -107,9 +111,13 @@ const totals = (rows: readonly SummaryRow[]) => {
 
 // One month's money over the members who have a subscription that month,
 // at the prices copied when it was set.
-export const getSubscriptionSummary = async (db: Db, month: Month): Promise<SubscriptionSummaryResponse> => {
+export const getSubscriptionSummary = async (
+  db: Db,
+  orgId: number,
+  month: Month,
+): Promise<SubscriptionSummaryResponse> => {
   const memberMonths = await db.memberMonth.findMany({
-    where: { month: monthStart(month), subscriptionId: { not: null } },
+    where: { month: monthStart(month), subscriptionId: { not: null }, member: { orgId } },
     select: { subscriptionPrice: true, paid: true, subscription: { select: { id: true, name: true } } },
   });
   const rows = memberMonths.flatMap((row): SummaryRow[] =>
@@ -141,13 +149,13 @@ export const getSubscriptionSummary = async (db: Db, month: Month): Promise<Subs
 // Past months, before the current one at the gym, that a member had a
 // subscription for and did not pay. Archived members are left out.
 // today is YYYY-MM-DD at the gym.
-export const listOverduePayments = async (db: Db, today: string): Promise<OverduePaymentsResponse> => {
+export const listOverduePayments = async (db: Db, orgId: number, today: string): Promise<OverduePaymentsResponse> => {
   const unpaid = await db.memberMonth.findMany({
     where: {
       month: { lt: monthStart(monthOf(today)) },
       subscriptionId: { not: null },
       paid: false,
-      member: { deletedAt: null },
+      member: { orgId, deletedAt: null },
     },
     select: {
       month: true,

@@ -18,7 +18,7 @@ import {
   listSubscriptions,
   updateSubscription,
 } from "../services/subscriptions.js";
-import { actorOf } from "./actor.js";
+import { actorOf, orgIdOf } from "./actor.js";
 import { guardedErrorResponses } from "./responses.js";
 
 export const subscriptionRoutes: FastifyPluginAsync = async (app) => {
@@ -33,7 +33,7 @@ export const subscriptionRoutes: FastifyPluginAsync = async (app) => {
         response: { 200: listSubscriptionsResponse, ...guardedErrorResponses() },
       },
     },
-    async () => listSubscriptions(app.db),
+    async (request) => listSubscriptions(app.db, orgIdOf(request)),
   );
 
   routes.get(
@@ -45,7 +45,7 @@ export const subscriptionRoutes: FastifyPluginAsync = async (app) => {
         response: { 200: subscriptionSummaryResponse, ...guardedErrorResponses(400) },
       },
     },
-    async (request) => getSubscriptionSummary(app.db, request.query.month),
+    async (request) => getSubscriptionSummary(app.db, orgIdOf(request), request.query.month),
   );
 
   routes.get(
@@ -56,7 +56,7 @@ export const subscriptionRoutes: FastifyPluginAsync = async (app) => {
         response: { 200: overduePaymentsResponse, ...guardedErrorResponses() },
       },
     },
-    async () => listOverduePayments(app.db, isoDateIn(new Date(), config.GYM_TIME_ZONE)),
+    async (request) => listOverduePayments(app.db, orgIdOf(request), isoDateIn(new Date(), config.GYM_TIME_ZONE)),
   );
 
   routes.post(

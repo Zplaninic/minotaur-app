@@ -4,6 +4,7 @@ import type { ZodTypeProvider } from "fastify-type-provider-zod";
 import { config } from "../config.js";
 import { isoDateIn } from "../services/dates.js";
 import { getDashboard } from "../services/dashboard.js";
+import { orgIdOf } from "./actor.js";
 import { guardedErrorResponses } from "./responses.js";
 
 export const dashboardRoutes: FastifyPluginAsync = async (app) => {
@@ -17,6 +18,6 @@ export const dashboardRoutes: FastifyPluginAsync = async (app) => {
         response: { 200: dashboardResponse, ...guardedErrorResponses() },
       },
     },
-    async () => getDashboard(app.db, isoDateIn(new Date(), config.GYM_TIME_ZONE)),
+    async (request) => getDashboard(app.db, orgIdOf(request), isoDateIn(new Date(), config.GYM_TIME_ZONE)),
   );
 };

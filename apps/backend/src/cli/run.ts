@@ -1,6 +1,7 @@
 import { parseArgs, type ParseArgsOptionsConfig } from "node:util";
 import { prisma, type Db } from "../db/client.js";
 import { AppError } from "../errors.js";
+import { systemActor, type Actor } from "../services/audit.js";
 
 export type Options = Record<string, string | undefined>;
 
@@ -21,6 +22,15 @@ export const runCommand = async (
   } finally {
     await prisma.$disconnect();
   }
+};
+
+// The system acting in a member's org. Commands name a member by id, from any org.
+export const systemActorFor = async (db: Db, memberId: number): Promise<Actor> => {
+  const member = await db.member.findUnique({ where: { id: memberId }, select: { orgId: true } });
+  if (!member) {
+    throw new AppError("NOT_FOUND", 404, "Member not found");
+  }
+  return systemActor(member.orgId);
 };
 
 export const required = (values: Options, name: string): string => {

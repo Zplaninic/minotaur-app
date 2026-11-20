@@ -22,7 +22,7 @@ import {
   reopenEnrollmentChild,
   setEnrollmentChildGroup,
 } from "../services/enrollmentRequests.js";
-import { actorOf } from "./actor.js";
+import { actorOf, orgIdOf } from "./actor.js";
 import { guardedErrorResponses } from "./responses.js";
 
 export const enrollmentRequestRoutes: FastifyPluginAsync = async (app) => {
@@ -37,7 +37,7 @@ export const enrollmentRequestRoutes: FastifyPluginAsync = async (app) => {
         response: { 200: listEnrollmentRequestsResponse, ...guardedErrorResponses(400) },
       },
     },
-    async (request) => listEnrollmentRequests(app.db, request.query),
+    async (request) => listEnrollmentRequests(app.db, orgIdOf(request), request.query),
   );
 
   routes.post(

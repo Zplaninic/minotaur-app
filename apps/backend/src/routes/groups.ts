@@ -22,7 +22,7 @@ import {
   removeGroupMember,
   updateGroup,
 } from "../services/groups.js";
-import { actorOf } from "./actor.js";
+import { actorOf, orgIdOf } from "./actor.js";
 import { guardedErrorResponses } from "./responses.js";
 
 export const groupRoutes: FastifyPluginAsync = async (app) => {
@@ -34,7 +34,7 @@ export const groupRoutes: FastifyPluginAsync = async (app) => {
       onRequest: app.requireAbility("read", "Group"),
       schema: { response: { 200: listGroupsResponse, ...guardedErrorResponses() } },
     },
-    async () => listGroups(app.db),
+    async (request) => listGroups(app.db, orgIdOf(request)),
   );
 
   routes.post(
@@ -58,7 +58,7 @@ export const groupRoutes: FastifyPluginAsync = async (app) => {
         response: { 200: groupResponse, ...guardedErrorResponses(404) },
       },
     },
-    async (request) => getGroup(app.db, request.params.id),
+    async (request) => getGroup(app.db, orgIdOf(request), request.params.id),
   );
 
   routes.put(
@@ -98,7 +98,7 @@ export const groupRoutes: FastifyPluginAsync = async (app) => {
         response: { 200: listGroupMembersResponse, ...guardedErrorResponses(404) },
       },
     },
-    async (request) => listGroupMembers(app.db, request.params.id),
+    async (request) => listGroupMembers(app.db, orgIdOf(request), request.params.id),
   );
 
   routes.put(
