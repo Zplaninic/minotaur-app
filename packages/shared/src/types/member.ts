@@ -62,6 +62,10 @@ export type UpdateMemberBody = z.infer<typeof updateMemberBody>;
 export const memberParams = z.object({ id });
 export type MemberParams = z.infer<typeof memberParams>;
 
+// Sets or removes the "New" badge, shown in groups and on attendance.
+export const setMemberNewBody = z.object({ isNew: z.boolean() });
+export type SetMemberNewBody = z.infer<typeof setMemberNewBody>;
+
 export const memberResponse = z.object({
   id,
   orgId: id,

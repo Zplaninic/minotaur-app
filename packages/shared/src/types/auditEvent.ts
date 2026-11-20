@@ -9,6 +9,7 @@ export const auditAction = z.enum([
   "member_updated",
   "member_archived",
   "member_role_changed",
+  "member_new_set",
   "login_created",
   "login_password_set",
   "group_created",
@@ -28,6 +29,12 @@ export const auditAction = z.enum([
   "month_comment_set",
   "subscription_created",
   "subscription_updated",
+  "enrollment_request_created",
+  "enrollment_request_deleted",
+  "enrollment_child_group_set",
+  "enrollment_child_accepted",
+  "enrollment_child_rejected",
+  "enrollment_child_reopened",
 ]);
 export type AuditAction = z.infer<typeof auditAction>;
 
@@ -72,6 +79,10 @@ export const auditEventResponse = z.object({
   member: auditPerson.nullable(),
   group: auditGroup.nullable(),
   subscription: auditSubscription.nullable(),
+  // The enrollment request, while it still exists.
+  enrollmentRequestId: id.nullable(),
+  // The child of the request the event is about, while the request exists.
+  enrollmentChild: z.object({ id, name: z.string() }).nullable(),
   month: month.nullable(),
   // The training session's date, for session and attendance events.
   date: z.iso.date().nullable(),

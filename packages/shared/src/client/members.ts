@@ -104,6 +104,17 @@ export const keysToInvalidateAfterUpdateMember = [
 ] as const;
 
 // The server answers 204 with no body.
+export const setMemberNew = (api: ApiClient, memberId: string, isNew: boolean): Promise<undefined> =>
+  api.fetch(`/members/${encodeURIComponent(memberId)}/new`, z.undefined(), {
+    method: "PUT",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({ isNew }),
+  });
+
+// The badge shows in group member lists and on attendance.
+export const keysToInvalidateAfterSetMemberNew = [groupKeys.all, attendanceKeys.all] as const;
+
+// The server answers 204 with no body.
 export const archiveMember = (api: ApiClient, memberId: string): Promise<undefined> =>
   api.fetch(`/members/${encodeURIComponent(memberId)}`, z.undefined(), { method: "DELETE" });
 

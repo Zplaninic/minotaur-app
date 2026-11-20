@@ -5,6 +5,8 @@ export * from "./auditEvents.js";
 export * from "./auth.js";
 export * from "./csv.js";
 export * from "./dashboard.js";
+export * from "./enrollmentRequestDraft.js";
+export * from "./enrollmentRequests.js";
 export * from "./format.js";
 export * from "./groupDraft.js";
 export * from "./groups.js";

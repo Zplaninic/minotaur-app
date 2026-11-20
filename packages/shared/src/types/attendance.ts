@@ -57,6 +57,8 @@ export const attendanceMemberResponse = z.object({
   paid: z.boolean(),
   // The same in all the member's groups, like paid.
   comment: z.string().nullable(),
+  // New to the club, the same in all their groups.
+  isNew: z.boolean(),
 });
 export type AttendanceMemberResponse = z.infer<typeof attendanceMemberResponse>;
 

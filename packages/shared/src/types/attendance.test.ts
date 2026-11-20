@@ -44,6 +44,7 @@ describe("groupAttendanceResponse", () => {
           subscription: null,
           paid: false,
           comment: null,
+          isNew: false,
         },
         {
           id: "8",
@@ -53,6 +54,7 @@ describe("groupAttendanceResponse", () => {
           subscription: { id: "3", name: "Kids 2x", sessionsPerWeek: 2, price: 4500 },
           paid: true,
           comment: "Injured knee",
+          isNew: true,
         },
       ],
     };

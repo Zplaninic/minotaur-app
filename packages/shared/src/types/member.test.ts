@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { createMemberBody, listMembersQuery, memberResponse } from "./member.js";
+import { createMemberBody, listMembersQuery, memberResponse, setMemberNewBody } from "./member.js";
 
 const validBody = {
   orgId: "1",
@@ -90,5 +90,13 @@ describe("listMembersQuery", () => {
     expect(listMembersQuery.parse({ unpaid: "true" }).unpaid).toBe(true);
     expect(listMembersQuery.parse({}).unpaid).toBeUndefined();
     expect(listMembersQuery.safeParse({ unpaid: "maybe" }).success).toBe(false);
+  });
+});
+
+describe("setMemberNewBody", () => {
+  it("needs a boolean", () => {
+    expect(setMemberNewBody.parse({ isNew: true })).toEqual({ isNew: true });
+    expect(setMemberNewBody.safeParse({ isNew: "yes" }).success).toBe(false);
+    expect(setMemberNewBody.safeParse({}).success).toBe(false);
   });
 });

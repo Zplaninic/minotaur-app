@@ -77,6 +77,7 @@ describe("listGroupMembersResponse", () => {
           email: null,
           phone: null,
           guardians: [{ id: "1", name: "Iva", surname: "Horvat", email: null, phone: "+385 91 123 4567" }],
+          isNew: true,
         },
       ],
     };

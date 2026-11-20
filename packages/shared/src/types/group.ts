@@ -90,15 +90,18 @@ export type GroupParams = z.infer<typeof groupParams>;
 export const groupMemberParams = z.object({ id, memberId: id });
 export type GroupMemberParams = z.infer<typeof groupMemberParams>;
 
-export const groupMemberResponse = memberResponse.pick({
-  id: true,
-  name: true,
-  surname: true,
-  birthday: true,
-  email: true,
-  phone: true,
-  guardians: true,
-});
+export const groupMemberResponse = memberResponse
+  .pick({
+    id: true,
+    name: true,
+    surname: true,
+    birthday: true,
+    email: true,
+    phone: true,
+    guardians: true,
+  })
+  // New to the club: came in through an enrollment, or marked by hand.
+  .extend({ isNew: z.boolean() });
 export type GroupMemberResponse = z.infer<typeof groupMemberResponse>;
 
 export const listGroupMembersResponse = z.object({
