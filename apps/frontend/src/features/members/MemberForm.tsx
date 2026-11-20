@@ -6,7 +6,6 @@ import {
   newGuardianDraft,
   toErrorCode,
   toIsoDate,
-  toUpdateMemberBody,
   validateMemberDraft,
   type GuardianDraft,
   type MemberDraft,
@@ -15,16 +14,13 @@ import {
 import { useState, type FormEvent } from "react";
 import { useGuardians } from "../../api/guardians";
 import { useCreateMember, useUpdateMember } from "../../api/members";
-import { useOrgs } from "../../api/orgs";
 import { Button } from "../../components/Button";
 import { ConfirmDialog } from "../../components/ConfirmDialog";
 import { FieldMessage } from "../../components/FieldMessage";
-import { SelectField } from "../../components/SelectField";
 import { TextField } from "../../components/TextField";
 import { memberFieldErrorKey, useMessages } from "../../lib/messages";
 import { GuardianFieldset } from "./GuardianFieldset";
 import styles from "./MemberForm.module.css";
-import { LoadingState } from "../../components/LoadingState";
 
 type MemberFormProps = {
   // Set to edit this member; without it the form adds a new one.
@@ -35,7 +31,6 @@ type MemberFormProps = {
 
 export const MemberForm = ({ member, onCancel, onSaved }: MemberFormProps) => {
   const { errorMessage, t } = useMessages();
-  const orgs = useOrgs();
   const guardians = useGuardians();
   const createMember = useCreateMember();
   const updateMember = useUpdateMember(member?.id ?? "");
@@ -45,12 +40,9 @@ export const MemberForm = ({ member, onCancel, onSaved }: MemberFormProps) => {
   // Fixed for the life of the form, so the minor check does not change while typing.
   const [today] = useState(() => new Date());
 
-  // With a single club there is nothing to choose, so it is preselected.
-  const onlyOrg = orgs.data?.items.length === 1 ? orgs.data.items[0] : undefined;
-  const effectiveDraft: MemberDraft = { ...draft, orgId: draft.orgId || (onlyOrg?.id ?? "") };
   // A trainer or admin logs in with their email, so it cannot be cleared.
   const emailRequired = member !== undefined && isLoginRole(member.role);
-  const validation = validateMemberDraft(effectiveDraft, today, { emailRequired });
+  const validation = validateMemberDraft(draft, today, { emailRequired });
   const errors = submitted && !validation.ok ? validation.errors : {};
   const serverCode = save.error ? toErrorCode(save.error) : undefined;
 
@@ -93,31 +85,11 @@ export const MemberForm = ({ member, onCancel, onSaved }: MemberFormProps) => {
       return;
     }
     if (member) {
-      updateMember.mutate(toUpdateMemberBody(validation.body), { onSuccess: onSaved });
+      updateMember.mutate(validation.body, { onSuccess: onSaved });
     } else {
       createMember.mutate(validation.body, { onSuccess: onSaved });
     }
   };
-
-  if (orgs.isPending) {
-    return <LoadingState label={t("memberForm.orgsLoading")} />;
-  }
-  if (orgs.isError) {
-    return (
-      <div className={styles.form}>
-        <p role="alert">{errorMessage(toErrorCode(orgs.error))}</p>
-        <div className={styles.actions}>
-          <Button variant="secondary" onClick={onCancel}>
-            {t("common.cancel")}
-          </Button>
-          <Button onClick={() => void orgs.refetch()}>{t("common.retry")}</Button>
-        </div>
-      </div>
-    );
-  }
-  if (orgs.data.items.length === 0) {
-    return <p>{t("memberForm.orgsEmpty")}</p>;
-  }
 
   const guardiansState = guardians.isPending ? "loading" : guardians.isError ? "error" : "ready";
 
@@ -125,17 +97,6 @@ export const MemberForm = ({ member, onCancel, onSaved }: MemberFormProps) => {
     <form className={styles.form} onSubmit={onSubmit} noValidate>
       <fieldset className={styles.section}>
         <legend className={styles.sectionLegend}>{t("memberForm.member")}</legend>
-        {onlyOrg || member ? null : (
-          <SelectField
-            label={t("memberForm.org")}
-            placeholder={t("memberForm.orgPlaceholder")}
-            value={effectiveDraft.orgId}
-            onChange={(orgId) => update({ orgId })}
-            options={orgs.data.items.map((org) => ({ value: org.id, label: org.name }))}
-            error={fieldError("orgId")}
-            required
-          />
-        )}
         <div className={styles.grid}>
           <TextField
             label={t("memberForm.name")}

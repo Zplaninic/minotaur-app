@@ -18,7 +18,14 @@ vi.mock("../api/client", () => ({ api: { fetch: vi.fn() } }));
 
 const fetchMock = vi.mocked(api.fetch);
 
-const trainer: MeResponse = { memberId: "5", name: "Iva", surname: "Kovač", email: "iva@example.com", role: "trainer" };
+const trainer: MeResponse = {
+  memberId: "5",
+  name: "Iva",
+  surname: "Kovač",
+  email: "iva@example.com",
+  role: "trainer",
+  org: { id: "1", name: "SPK Minotaur" },
+};
 const admin: MeResponse = { ...trainer, role: "admin" };
 
 const group = (id: string, ownerId: string, surname: string, days: GroupResponse["days"], from: string): GroupResponse => ({

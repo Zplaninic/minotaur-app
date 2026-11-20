@@ -34,10 +34,14 @@ beforeEach(() => {
   fetchMock.mockReset();
   fetchMock.mockImplementation(async (path, _schema, init) => {
     if (path === "/me") {
-      return { memberId: "9", name: "Zvonimir", surname: "Admin", email: "admin@example.com", role: "admin" };
-    }
-    if (path === "/orgs") {
-      return { items: [{ id: "1", name: "SPK Minotaur" }] };
+      return {
+        memberId: "9",
+        name: "Zvonimir",
+        surname: "Admin",
+        email: "admin@example.com",
+        role: "admin",
+        org: { id: "1", name: "SPK Minotaur" },
+      };
     }
     if (path === "/guardians") {
       return { items: ana.guardians };
@@ -243,7 +247,7 @@ describe("MembersPage", () => {
       expect.anything(),
       expect.objectContaining({
         method: "POST",
-        body: JSON.stringify({ orgId: "1", name: "Marko", surname: "Babić", birthday: "1990-05-01", guardians: [] }),
+        body: JSON.stringify({ name: "Marko", surname: "Babić", birthday: "1990-05-01", guardians: [] }),
       }),
     );
     expect(await screen.findByRole("rowheader", { name: "Marko Babić" })).toBeInTheDocument();
@@ -262,7 +266,7 @@ describe("MembersPage", () => {
         expect.anything(),
         expect.objectContaining({
           method: "POST",
-          body: JSON.stringify({ orgId: "1", name: "Marko", surname: "Babić", guardians: [] }),
+          body: JSON.stringify({ name: "Marko", surname: "Babić", guardians: [] }),
         }),
       ),
     );

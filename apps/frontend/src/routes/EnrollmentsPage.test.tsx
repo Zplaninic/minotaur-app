@@ -19,7 +19,14 @@ vi.mock("../api/client", () => ({ api: { fetch: vi.fn() } }));
 
 const fetchMock = vi.mocked(api.fetch);
 
-const admin: MeResponse = { memberId: "9", name: "Zvonimir", surname: "Admin", email: "admin@example.com", role: "admin" };
+const admin: MeResponse = {
+  memberId: "9",
+  name: "Zvonimir",
+  surname: "Admin",
+  email: "admin@example.com",
+  role: "admin",
+  org: { id: "1", name: "SPK Minotaur" },
+};
 
 const kidsGroup: GroupResponse = {
   id: "1",
@@ -87,9 +94,6 @@ beforeEach(() => {
   fetchMock.mockImplementation(async (path, _schema, init) => {
     if (path === "/me") {
       return me;
-    }
-    if (path === "/orgs") {
-      return { items: [{ id: "1", name: "SPK Minotaur" }] };
     }
     if (path === "/groups") {
       return { items: [kidsGroup] };
@@ -172,7 +176,7 @@ describe("EnrollmentsPage", () => {
     await waitFor(() => expect(accepted).toHaveLength(1));
     expect(accepted[0]).toEqual({
       path: "/enrollment-requests/5/children/10/accept",
-      body: { orgId: "1", surname: "Horvat", groupId: "1" },
+      body: { surname: "Horvat", groupId: "1" },
     });
   });
 

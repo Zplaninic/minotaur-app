@@ -12,7 +12,14 @@ vi.mock("../api/client", () => ({ api: { fetch: vi.fn() } }));
 
 const fetchMock = vi.mocked(api.fetch);
 
-const admin: MeResponse = { memberId: "9", name: "Zvonimir", surname: "Admin", email: "admin@example.com", role: "admin" };
+const admin: MeResponse = {
+  memberId: "9",
+  name: "Zvonimir",
+  surname: "Admin",
+  email: "admin@example.com",
+  role: "admin",
+  org: { id: "1", name: "SPK Minotaur" },
+};
 
 const trainer: MemberResponse = {
   id: "3",

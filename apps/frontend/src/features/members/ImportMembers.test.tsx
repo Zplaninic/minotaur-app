@@ -23,9 +23,6 @@ beforeEach(() => {
   imports.length = 0;
   fetchMock.mockReset();
   fetchMock.mockImplementation(async (path, _schema, init) => {
-    if (path === "/orgs") {
-      return { items: [{ id: "1", name: "SPK Minotaur" }] };
-    }
     if (path === "/members/import" && init?.method === "POST") {
       const body = JSON.parse(String(init.body)) as ImportMembersBody;
       imports.push(body);
@@ -62,7 +59,6 @@ describe("ImportMembers", () => {
     expect(screen.getByText(t("membersImport.status.duplicate"))).toBeInTheDocument();
     expect(imports).toEqual([
       {
-        orgId: "1",
         dryRun: true,
         rows: [
           {

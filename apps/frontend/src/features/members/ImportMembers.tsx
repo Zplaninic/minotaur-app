@@ -8,11 +8,9 @@ import {
 } from "@repo/shared/client";
 import { useId, useState, type ChangeEvent } from "react";
 import { useImportMembers } from "../../api/members";
-import { useOrgs } from "../../api/orgs";
 import { Button } from "../../components/Button";
 import fieldStyles from "../../components/Field.module.css";
 import { LoadingState } from "../../components/LoadingState";
-import { SelectField } from "../../components/SelectField";
 import {
   importColumnKey,
   importFieldErrorKey,
@@ -52,22 +50,17 @@ const countOf = (outcomes: readonly (LineOutcome | undefined)[], status: ImportR
 
 export const ImportMembers = ({ onClose }: ImportMembersProps) => {
   const { t, errorMessage } = useMessages();
-  const orgs = useOrgs();
   const preview = useImportMembers();
   const save = useImportMembers();
   const [file, setFile] = useState<ImportFile | undefined>();
   const [unreadable, setUnreadable] = useState(false);
-  const [chosenOrgId, setChosenOrgId] = useState("");
   const fileInputId = useId();
 
-  const onlyOrg = orgs.data?.items.length === 1 ? orgs.data.items[0] : undefined;
-  const orgId = chosenOrgId || (onlyOrg?.id ?? "");
-
-  const check = (checked: ImportFile | undefined, forOrgId: string) => {
+  const check = (checked: ImportFile | undefined) => {
     save.reset();
     const rows = checked?.ok ? importableMembers(checked.lines) : [];
-    if (rows.length > 0 && forOrgId !== "") {
-      preview.mutate({ orgId: forOrgId, rows, dryRun: true });
+    if (rows.length > 0) {
+      preview.mutate({ rows, dryRun: true });
     } else {
       preview.reset();
     }
@@ -83,30 +76,8 @@ export const ImportMembers = ({ onClose }: ImportMembersProps) => {
       setUnreadable(true);
     }
     setFile(read);
-    check(read, orgId);
+    check(read);
   };
-
-  const onOrgChange = (nextOrgId: string) => {
-    setChosenOrgId(nextOrgId);
-    check(file, nextOrgId);
-  };
-
-  if (orgs.isPending) {
-    return <LoadingState label={t("memberForm.orgsLoading")} />;
-  }
-  if (orgs.isError) {
-    return (
-      <div className={styles.form}>
-        <p role="alert">{errorMessage(toErrorCode(orgs.error))}</p>
-        <div className={styles.actions}>
-          <Button onClick={() => void orgs.refetch()}>{t("common.retry")}</Button>
-        </div>
-      </div>
-    );
-  }
-  if (orgs.data.items.length === 0) {
-    return <p>{t("memberForm.orgsEmpty")}</p>;
-  }
 
   const lines = file?.ok ? file.lines : [];
   const report = save.data ?? preview.data;
@@ -116,7 +87,7 @@ export const ImportMembers = ({ onClose }: ImportMembersProps) => {
   const invalid = countOf(outcomes, "invalid");
   const checked = report !== undefined || (lines.length > 0 && invalid === lines.length);
   const imported = save.data?.imported === true;
-  const canImport = checked && !preview.isPending && invalid === 0 && created > 0 && !imported && orgId !== "";
+  const canImport = checked && !preview.isPending && invalid === 0 && created > 0 && !imported;
 
   const fileError = unreadable
     ? t("membersImport.fileError.unreadable")
@@ -141,17 +112,6 @@ export const ImportMembers = ({ onClose }: ImportMembersProps) => {
     <div className={styles.form}>
       <p>{t("membersImport.intro")}</p>
 
-      {onlyOrg ? null : (
-        <SelectField
-          label={t("memberForm.org")}
-          placeholder={t("memberForm.orgPlaceholder")}
-          value={orgId}
-          onChange={onOrgChange}
-          options={orgs.data.items.map((org) => ({ value: org.id, label: org.name }))}
-          required
-        />
-      )}
-
       <div className={fieldStyles.field}>
         <label htmlFor={fileInputId} className={fieldStyles.label}>
           {t("membersImport.file")}
@@ -175,7 +135,7 @@ export const ImportMembers = ({ onClose }: ImportMembersProps) => {
       {preview.isError ? (
         <div className={styles.formError}>
           <p role="alert">{errorMessage(toErrorCode(preview.error))}</p>
-          <Button variant="secondary" onClick={() => check(file, orgId)}>
+          <Button variant="secondary" onClick={() => check(file)}>
             {t("common.retry")}
           </Button>
         </div>
@@ -253,7 +213,7 @@ export const ImportMembers = ({ onClose }: ImportMembersProps) => {
           pending={save.isPending}
           onClick={() => {
             if (file?.ok) {
-              save.mutate({ orgId, rows: importableMembers(file.lines), dryRun: false });
+              save.mutate({ rows: importableMembers(file.lines), dryRun: false });
             }
           }}
         >

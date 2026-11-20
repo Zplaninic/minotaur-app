@@ -44,7 +44,14 @@ const club = [
 
 let everyone: MemberResponse[];
 
-const trainer: MeResponse = { memberId: "9", name: "Ana", surname: "Trener", email: "ana@example.com", role: "trainer" };
+const trainer: MeResponse = {
+  memberId: "9",
+  name: "Ana",
+  surname: "Trener",
+  email: "ana@example.com",
+  role: "trainer",
+  org: { id: "1", name: "SPK Minotaur" },
+};
 const admin: MeResponse = { ...trainer, role: "admin" };
 let me: MeResponse;
 
@@ -258,9 +265,6 @@ beforeEach(() => {
     }
     if (path.startsWith("/members?")) {
       return { items: everyone, page: 1, pageSize: 100, total: everyone.length };
-    }
-    if (path === "/orgs") {
-      return { items: [{ id: "1", name: "SPK Minotaur" }] };
     }
     if (path === "/guardians") {
       return { items: [] };
