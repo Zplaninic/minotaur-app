@@ -4,7 +4,7 @@ import { Pressable, StyleSheet, Text, View } from "react-native";
 import { useSetAttendance } from "../../api/attendance";
 import { useAbility } from "../../api/auth";
 import { useOverduePayments } from "../../api/subscriptions";
-import { formatMonth, formatPersonName, formatShortMonth, formatSortedName } from "../../lib/format";
+import { formatMonth, formatPersonName, formatShortMonth } from "../../lib/format";
 import { useMessages } from "../../lib/messages";
 import {
   bodyLineHeight,
@@ -52,13 +52,13 @@ export const AttendanceRow = ({
         onPress={() => setAttendance.mutate({ sessionId, memberId: member.id, attended: !checked })}
         disabled={inactive}
         accessibilityRole="checkbox"
-        accessibilityLabel={formatSortedName(member)}
+        accessibilityLabel={formatPersonName(member)}
         accessibilityState={{ checked, disabled: inactive }}
         style={({ pressed }) => [styles.check, pressed && styles.pressed]}
       >
         <View style={[styles.box, checked && styles.boxChecked, disabled && styles.boxDisabled]} />
         <View style={styles.text}>
-          <Text style={styles.name}>{formatSortedName(member)}</Text>
+          <Text style={styles.name}>{formatPersonName(member)}</Text>
           <Text style={styles.subscription}>
             {t("attendance.monthStatus", {
               subscription: member.subscription?.name ?? t("attendance.noSubscription"),

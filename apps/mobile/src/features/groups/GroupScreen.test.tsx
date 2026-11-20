@@ -90,7 +90,7 @@ describe("GroupScreen", () => {
   it("shows the group and its members", async () => {
     await renderScreen();
     expect(await screen.findByText(groupName)).toBeOnTheScreen();
-    expect(screen.getByText("Horvat Ana")).toBeOnTheScreen();
+    expect(screen.getByText("Ana Horvat")).toBeOnTheScreen();
   });
 
   it("shows the empty state when the group has no members", async () => {
@@ -141,7 +141,7 @@ describe("GroupScreen", () => {
       await screen.findByRole("button", { name: t("groupMembers.removeLabel", { name: "Ana Horvat" }) }),
     );
     await pressAlertButton(t("common.cancel"));
-    expect(screen.getByText("Horvat Ana")).toBeOnTheScreen();
+    expect(screen.getByText("Ana Horvat")).toBeOnTheScreen();
     expect(fetchMock).not.toHaveBeenCalledWith(expect.anything(), expect.anything(), expect.objectContaining({ method: "DELETE" }));
   });
 
@@ -154,7 +154,7 @@ describe("GroupScreen", () => {
   it("shows a trainer the members without the add and remove buttons", async () => {
     me = { ...admin, role: "trainer" };
     await renderScreen();
-    expect(await screen.findByText("Horvat Ana")).toBeOnTheScreen();
+    expect(await screen.findByText("Ana Horvat")).toBeOnTheScreen();
     expect(screen.queryByRole("button", { name: t("groupMembers.add") })).not.toBeOnTheScreen();
     expect(screen.queryByRole("button", { name: /^Remove/ })).not.toBeOnTheScreen();
     expect(screen.queryByRole("button", { name: t("group.delete") })).not.toBeOnTheScreen();

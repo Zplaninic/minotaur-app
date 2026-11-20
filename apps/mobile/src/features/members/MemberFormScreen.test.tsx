@@ -100,7 +100,7 @@ describe("MemberFormScreen", () => {
     await pickBirthday(new Date(2016, 5, 1));
     await fireEvent.press(screen.getByRole("button", { name: t("memberForm.guardianAdd") }));
     await fireEvent.press(screen.getByRole("radio", { name: t("memberForm.guardianExisting") }));
-    await fireEvent.press(await screen.findByRole("radio", { name: "Horvat Iva" }));
+    await fireEvent.press(await screen.findByRole("radio", { name: "Iva Horvat" }));
     await save();
 
     await waitFor(() => expect(mockBack).toHaveBeenCalled());

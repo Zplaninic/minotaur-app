@@ -1,5 +1,5 @@
 import { ApiError } from "@repo/shared/client";
-import { fireEvent, render, screen } from "@testing-library/react-native";
+import { fireEvent, render, screen, waitFor } from "@testing-library/react-native";
 import { api } from "../../api/client";
 import { translate as t } from "../../lib/messages";
 import { MembersScreen } from "./MembersScreen";
@@ -33,7 +33,7 @@ describe("MembersScreen", () => {
   it("lists members with their guardians", async () => {
     membersAnswer(async () => ({ items: [ana], page: 1, pageSize: 20, total: 1 }));
     await renderScreen();
-    expect(await screen.findByText("Horvat Ana")).toBeOnTheScreen();
+    expect(await screen.findByText("Ana Horvat")).toBeOnTheScreen();
     expect(screen.getByText(t("members.guardians", { names: "Iva Horvat" }))).toBeOnTheScreen();
     expect(fetchMock).toHaveBeenCalledWith("/members?page=1&pageSize=20", expect.anything());
   });
@@ -48,13 +48,35 @@ describe("MembersScreen", () => {
       return { items, page: 1, pageSize: 20, total: items.length };
     });
     await renderScreen();
-    expect(await screen.findByText("Babić Marko")).toBeOnTheScreen();
+    expect(await screen.findByText("Marko Babić")).toBeOnTheScreen();
 
     await fireEvent.press(screen.getByRole("checkbox", { name: t("members.unpaidOnly") }));
 
-    expect(await screen.findByText("Horvat Ana")).toBeOnTheScreen();
-    expect(screen.queryByText("Babić Marko")).not.toBeOnTheScreen();
+    await waitFor(() => expect(screen.queryByText("Marko Babić")).not.toBeOnTheScreen());
+    expect(screen.getByText("Ana Horvat")).toBeOnTheScreen();
     expect(fetchMock).toHaveBeenCalledWith("/members?page=1&pageSize=20&unpaid=true", expect.anything());
+  });
+
+  it("searches by name, surname or email", async () => {
+    const marko = { ...ana, id: "2", name: "Marko", surname: "Babić", guardians: [] };
+    fetchMock.mockImplementation(async (path) => {
+      if (path === "/me") {
+        return admin;
+      }
+      const items = path.includes("search=horvat") ? [ana] : path.includes("search=") ? [] : [marko, ana];
+      return { items, page: 1, pageSize: 20, total: items.length };
+    });
+    await renderScreen();
+    expect(await screen.findByText("Marko Babić")).toBeOnTheScreen();
+
+    await fireEvent.changeText(screen.getByLabelText(t("members.search")), " horvat ");
+
+    await waitFor(() => expect(screen.queryByText("Marko Babić")).not.toBeOnTheScreen());
+    expect(screen.getByText("Ana Horvat")).toBeOnTheScreen();
+    expect(fetchMock).toHaveBeenCalledWith("/members?page=1&pageSize=20&search=horvat", expect.anything());
+
+    await fireEvent.changeText(screen.getByLabelText(t("members.search")), "nobody");
+    expect(await screen.findByText(t("members.searchEmpty"))).toBeOnTheScreen();
   });
 
   it("says when nobody has an unpaid past month", async () => {
@@ -69,7 +91,7 @@ describe("MembersScreen", () => {
   it("labels trainers", async () => {
     membersAnswer(async () => ({ items: [ana, { ...ana, id: "2", name: "Marko", role: "trainer" }], page: 1, pageSize: 20, total: 2 }));
     await renderScreen();
-    expect(await screen.findByText("Horvat Marko")).toBeOnTheScreen();
+    expect(await screen.findByText("Marko Horvat")).toBeOnTheScreen();
     expect(screen.getAllByText(t("members.trainerLabel"))).toHaveLength(1);
   });
 
@@ -92,13 +114,13 @@ describe("MembersScreen", () => {
 
     online = true;
     await fireEvent.press(screen.getByRole("button", { name: t("common.retry") }));
-    expect(await screen.findByText("Horvat Ana")).toBeOnTheScreen();
+    expect(await screen.findByText("Ana Horvat")).toBeOnTheScreen();
   });
 
   it("opens a member's edit screen on tap", async () => {
     membersAnswer(async () => ({ items: [ana], page: 1, pageSize: 20, total: 1 }));
     await renderScreen();
-    await fireEvent.press(await screen.findByText("Horvat Ana"));
+    await fireEvent.press(await screen.findByText("Ana Horvat"));
     expect(mockPush).toHaveBeenCalledWith({ pathname: "/members/[id]/edit", params: { id: "1" } });
   });
 

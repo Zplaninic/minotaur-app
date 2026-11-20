@@ -11,17 +11,19 @@ import {
   nextMembersPage,
   updateMember,
 } from "@repo/shared/client";
-import { useInfiniteQuery, useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
+import { keepPreviousData, useInfiniteQuery, useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { api } from "./client";
 
 // Pages are loaded one after another as the list scrolls. unpaid: only
-// members with an unpaid past month.
-export const useMemberPages = (pageSize: number, unpaid = false) =>
+// members with an unpaid past month. search: words to find in the name,
+// surname or email. While a new filter loads, the previous list stays.
+export const useMemberPages = (pageSize: number, unpaid = false, search = "") =>
   useInfiniteQuery({
-    queryKey: memberKeys.pages(pageSize, unpaid),
-    queryFn: ({ pageParam }) => fetchMembersPage(api, { page: pageParam, pageSize, unpaid }),
+    queryKey: memberKeys.pages(pageSize, unpaid, search),
+    queryFn: ({ pageParam }) => fetchMembersPage(api, { page: pageParam, pageSize, unpaid, search }),
     initialPageParam: 1,
     getNextPageParam: nextMembersPage,
+    placeholderData: keepPreviousData,
   });
 
 // Not kept after the edit form closes: the form starts from what it is given,

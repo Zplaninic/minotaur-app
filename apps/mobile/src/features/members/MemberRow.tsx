@@ -1,6 +1,6 @@
 import type { MemberResponse } from "@repo/shared";
 import { Pressable, StyleSheet, Text, View } from "react-native";
-import { formatCalendarDate, formatPersonName, formatSortedName } from "../../lib/format";
+import { formatCalendarDate, formatPersonName } from "../../lib/format";
 import { useMessages } from "../../lib/messages";
 import { bodyLineHeight, colors, fonts, fontSizes, minTouchSize, radii, shadows, spacing } from "../../theme/tokens";
 
@@ -23,7 +23,7 @@ export const MemberRow = ({ member, onEdit }: MemberRowProps) => {
       style={({ pressed }) => [styles.row, pressed && styles.rowPressed]}
     >
       <View style={styles.nameLine}>
-        <Text style={styles.name}>{formatSortedName(member)}</Text>
+        <Text style={styles.name}>{formatPersonName(member)}</Text>
         {member.role === "trainer" ? <Text style={styles.label}>{t("members.trainerLabel")}</Text> : null}
       </View>
       {member.birthday ? (

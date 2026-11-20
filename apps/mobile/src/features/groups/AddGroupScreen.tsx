@@ -18,7 +18,7 @@ import { OptionList } from "../../components/OptionList";
 import { Screen } from "../../components/Screen";
 import { TextField } from "../../components/TextField";
 import { TimeField } from "../../components/TimeField";
-import { formatSortedName, formatTimeOfDay } from "../../lib/format";
+import { formatPersonName, formatTimeOfDay } from "../../lib/format";
 import { groupFieldErrorKey, useMessages, weekdayKey } from "../../lib/messages";
 import { bodyLineHeight, colors, fonts, fontSizes, radii, spacing } from "../../theme/tokens";
 
@@ -80,7 +80,7 @@ export const AddGroupScreen = () => {
     <Screen belowHeader>
       <OptionList
         label={t("groupForm.owner")}
-        options={trainers.data.items.map((trainer) => ({ value: trainer.id, label: formatSortedName(trainer) }))}
+        options={trainers.data.items.map((trainer) => ({ value: trainer.id, label: formatPersonName(trainer) }))}
         selected={draft.ownerId}
         onSelect={(ownerId) => update({ ownerId })}
         error={fieldError("ownerId")}

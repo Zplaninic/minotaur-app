@@ -5,7 +5,7 @@ import { ActivityIndicator, Pressable, SectionList, StyleSheet, Text, View } fro
 import { SafeAreaView } from "react-native-safe-area-context";
 import { useOverduePayments, useSubscriptionSummary } from "../../api/subscriptions";
 import { Button } from "../../components/Button";
-import { formatMoney, formatMonth, formatNumber, formatSortedName } from "../../lib/format";
+import { formatMoney, formatMonth, formatNumber, formatPersonName } from "../../lib/format";
 import { useMessages } from "../../lib/messages";
 import { useManualRefresh } from "../../lib/useManualRefresh";
 import { useToday } from "../../lib/useToday";
@@ -182,7 +182,7 @@ export const PaymentsScreen = ({ now }: PaymentsScreenProps) => {
             </View>
           ) : (
             <View style={styles.row}>
-              <Text style={styles.strong}>{formatSortedName(item.row)}</Text>
+              <Text style={styles.strong}>{formatPersonName(item.row)}</Text>
               {item.row.months.map((entry) => (
                 <Text key={entry.month} style={styles.small}>
                   {t("overdue.month", {

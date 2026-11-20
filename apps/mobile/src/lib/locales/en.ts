@@ -68,6 +68,8 @@ export const en = {
   "members.unpaidOnly": "Only members with unpaid past months",
   "members.unpaidEmpty": "Everyone has paid for every past month.",
   "members.empty": "No members yet. Add the first one.",
+  "members.search": "Search by name, surname or email",
+  "members.searchEmpty": "No members match your search.",
   "members.trainerLabel": "Trainer",
   "members.editLabel": "Edit {name}",
   "members.offlineTitle": "No connection",

@@ -90,7 +90,7 @@ describe("PaymentsScreen", () => {
       total: 4500,
     };
     await renderScreen();
-    expect(await screen.findByText("Perić Leo")).toBeOnTheScreen();
+    expect(await screen.findByText("Leo Perić")).toBeOnTheScreen();
     expect(screen.getByText("October 2026: Kids 2x, €45.00")).toBeOnTheScreen();
     expect(screen.getByText(t("overdue.total", { total: "€45.00" }))).toBeOnTheScreen();
   });

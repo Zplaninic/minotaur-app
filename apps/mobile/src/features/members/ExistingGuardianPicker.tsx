@@ -6,7 +6,7 @@ import { FieldError } from "../../components/FieldError";
 import { fieldStyles } from "../../components/fieldStyles";
 import { OptionList } from "../../components/OptionList";
 import { TextField } from "../../components/TextField";
-import { formatSortedName } from "../../lib/format";
+import { formatPersonName } from "../../lib/format";
 import { useMessages } from "../../lib/messages";
 import { spacing } from "../../theme/tokens";
 
@@ -28,7 +28,7 @@ export const ExistingGuardianPicker = ({ guardians, selectedId, onSelect, error 
   if (selected) {
     return (
       <View style={styles.chosen}>
-        <Text style={fieldStyles.value}>{t("memberForm.guardianChosen", { name: formatSortedName(selected) })}</Text>
+        <Text style={fieldStyles.value}>{t("memberForm.guardianChosen", { name: formatPersonName(selected) })}</Text>
         <Button label={t("common.change")} variant="secondary" onPress={() => onSelect("")} />
       </View>
     );
@@ -36,7 +36,7 @@ export const ExistingGuardianPicker = ({ guardians, selectedId, onSelect, error 
 
   const query = search.trim().toLocaleLowerCase();
   const matches = guardians
-    .filter((guardian) => formatSortedName(guardian).toLocaleLowerCase().includes(query))
+    .filter((guardian) => formatPersonName(guardian).toLocaleLowerCase().includes(query))
     .slice(0, MAX_MATCHES);
 
   return (
@@ -53,7 +53,7 @@ export const ExistingGuardianPicker = ({ guardians, selectedId, onSelect, error 
       ) : (
         <OptionList
           label={t("memberForm.guardianExisting")}
-          options={matches.map((guardian) => ({ value: guardian.id, label: formatSortedName(guardian) }))}
+          options={matches.map((guardian) => ({ value: guardian.id, label: formatPersonName(guardian) }))}
           selected={selectedId}
           onSelect={onSelect}
         />

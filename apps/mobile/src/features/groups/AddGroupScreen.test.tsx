@@ -46,7 +46,7 @@ const renderScreen = async () => {
       <AddGroupScreen />
     </Providers>,
   );
-  await screen.findByRole("radio", { name: "Kovač Petra" });
+  await screen.findByRole("radio", { name: "Petra Kovač" });
 };
 
 const pickTime = async (label: string, testID: string, hours: number, minutes: number) => {
@@ -90,7 +90,7 @@ describe("AddGroupScreen", () => {
 
   it("saves a group and goes back to the list", async () => {
     await renderScreen();
-    await fireEvent.press(screen.getByRole("radio", { name: "Kovač Petra" }));
+    await fireEvent.press(screen.getByRole("radio", { name: "Petra Kovač" }));
     await fireEvent.press(screen.getByRole("checkbox", { name: t("weekday.friday") }));
     await fireEvent.press(screen.getByRole("checkbox", { name: t("weekday.monday") }));
     await pickTime(t("groupForm.from"), "from-picker", 17, 0);

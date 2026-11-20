@@ -1,7 +1,7 @@
 import type { GroupMemberResponse } from "@repo/shared";
 import { StyleSheet, Text, View } from "react-native";
 import { Button } from "../../components/Button";
-import { formatPersonName, formatSortedName } from "../../lib/format";
+import { formatPersonName } from "../../lib/format";
 import { useMessages } from "../../lib/messages";
 import { bodyLineHeight, colors, fonts, fontSizes, minTouchSize, radii, shadows, spacing } from "../../theme/tokens";
 
@@ -16,7 +16,7 @@ export const GroupMemberRow = ({ member, onRemove, disabled = false }: GroupMemb
   const { t } = useMessages();
   return (
     <View style={styles.row}>
-      <Text style={styles.name}>{formatSortedName(member)}</Text>
+      <Text style={styles.name}>{formatPersonName(member)}</Text>
       {onRemove ? (
         <Button
           label={t("groupMembers.remove")}

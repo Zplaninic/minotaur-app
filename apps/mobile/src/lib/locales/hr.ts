@@ -70,6 +70,8 @@ export const hr: Record<keyof typeof en, string> = {
   "members.unpaidOnly": "Samo članovi s neplaćenim prošlim mjesecima",
   "members.unpaidEmpty": "Svi su platili sve prošle mjesece.",
   "members.empty": "Još nema članova. Dodajte prvoga.",
+  "members.search": "Pretraži po imenu, prezimenu ili e-pošti",
+  "members.searchEmpty": "Nijedan član ne odgovara pretrazi.",
   "members.trainerLabel": "Trener",
   "members.editLabel": "Uredi: {name}",
   "members.offlineTitle": "Nema veze",

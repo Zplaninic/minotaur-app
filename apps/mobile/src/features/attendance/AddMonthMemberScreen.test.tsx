@@ -80,7 +80,7 @@ describe("AddMonthMemberScreen", () => {
     const add = await screen.findByRole("button", {
       name: t("monthMemberForm.addLabel", { name: "Mia Novak", month: "November 2026" }),
     });
-    expect(screen.queryByText("Perić Leo")).not.toBeOnTheScreen();
+    expect(screen.queryByText("Leo Perić")).not.toBeOnTheScreen();
 
     await fireEvent.press(add);
     await waitFor(() => expect(mockBack).toHaveBeenCalled());
@@ -101,7 +101,7 @@ describe("AddMonthMemberScreen", () => {
       name: t("monthMemberForm.addLabel", { name: "Ivo Babić", month: "November 2026" }),
     });
     expect(screen.getByText(t("monthMemberForm.otherMembers"))).toBeOnTheScreen();
-    expect(screen.queryByText("Kovač Petra")).not.toBeOnTheScreen();
+    expect(screen.queryByText("Petra Kovač")).not.toBeOnTheScreen();
 
     await fireEvent.press(screen.getByRole("checkbox", { name: t("monthMemberForm.joinGroup") }));
     expect(screen.getByRole("checkbox", { name: t("monthMemberForm.joinGroup") })).toBeChecked();

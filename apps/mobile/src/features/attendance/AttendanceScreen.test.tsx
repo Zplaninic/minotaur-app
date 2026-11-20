@@ -138,10 +138,10 @@ describe("AttendanceScreen", () => {
     await renderScreen();
     expect(await screen.findByText("Mon, Nov 16")).toBeOnTheScreen();
 
-    fireEvent.press(await screen.findByRole("checkbox", { name: "Jurić Nora" }));
+    fireEvent.press(await screen.findByRole("checkbox", { name: "Nora Jurić" }));
 
     await waitFor(() =>
-      expect(screen.getByRole("checkbox", { name: "Jurić Nora" })).toBeChecked(),
+      expect(screen.getByRole("checkbox", { name: "Nora Jurić" })).toBeChecked(),
     );
     expect(fetchMock).toHaveBeenCalledWith(
       "/groups/1/sessions/16/attendance/5",
@@ -157,7 +157,7 @@ describe("AttendanceScreen", () => {
     fireEvent.press(screen.getByRole("button", { name: t("attendance.previousSession") }));
 
     expect(await screen.findByText("Wed, Nov 11")).toBeOnTheScreen();
-    expect(screen.getByRole("checkbox", { name: "Perić Leo" })).toBeChecked();
+    expect(screen.getByRole("checkbox", { name: "Leo Perić" })).toBeChecked();
   });
 
   it("disables a future session", async () => {
@@ -166,7 +166,7 @@ describe("AttendanceScreen", () => {
     fireEvent.press(screen.getByRole("button", { name: t("attendance.nextSession") }));
 
     expect(await screen.findByText("Wed, Nov 18")).toBeOnTheScreen();
-    expect(screen.getByRole("checkbox", { name: "Perić Leo" })).toBeDisabled();
+    expect(screen.getByRole("checkbox", { name: "Leo Perić" })).toBeDisabled();
     expect(screen.getByText(t("attendance.futureHint"))).toBeOnTheScreen();
   });
 

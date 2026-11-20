@@ -1,6 +1,6 @@
 import type { MemberResponse } from "@repo/shared";
 import { Pressable, StyleSheet, Text } from "react-native";
-import { formatPersonName, formatSortedName } from "../../lib/format";
+import { formatPersonName } from "../../lib/format";
 import { useMessages } from "../../lib/messages";
 import {
   bodyLineHeight,
@@ -33,7 +33,7 @@ export const GroupMemberCandidateRow = ({ member, onAdd, disabled, accessibility
       accessibilityState={{ disabled }}
       style={({ pressed }) => [styles.row, pressed && styles.rowPressed, disabled && styles.disabled]}
     >
-      <Text style={styles.name}>{formatSortedName(member)}</Text>
+      <Text style={styles.name}>{formatPersonName(member)}</Text>
     </Pressable>
   );
 };
