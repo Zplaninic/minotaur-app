@@ -1,4 +1,4 @@
-type Person = { name: string; surname: string };
+type Person = { name: string; surname: string | null };
 
 // Calendar dates (YYYY-MM-DD) have no time zone, so they are formatted in UTC
 // to keep the day from shifting.
@@ -11,7 +11,9 @@ export const formatCalendarDate = (isoDate: string, locale: string): string =>
 export const formatDateTime = (isoDateTime: string, locale: string): string =>
   new Intl.DateTimeFormat(locale, { dateStyle: "medium", timeStyle: "short" }).format(new Date(isoDateTime));
 
-export const formatPersonName = (person: Person): string => `${person.name} ${person.surname}`;
+// Guardians may have no surname.
+export const formatPersonName = (person: Person): string =>
+  person.surname === null ? person.name : `${person.name} ${person.surname}`;
 
 // A session's date for column headers and the checklist, e.g. "Mon, Nov 2".
 export const formatSessionDate = (isoDate: string, locale: string): string =>

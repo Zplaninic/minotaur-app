@@ -13,7 +13,7 @@ export const guardianSelect = {
 type GuardianRow = {
   id: number;
   name: string;
-  surname: string;
+  surname: string | null;
   email: string | null;
   phone: string | null;
 };

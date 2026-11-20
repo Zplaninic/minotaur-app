@@ -1,5 +1,6 @@
 import type { MemberResponse } from "@repo/shared";
 import { Pressable, StyleSheet, Text, View } from "react-native";
+import { GuardianList } from "../../components/GuardianList";
 import { formatCalendarDate, formatPersonName } from "../../lib/format";
 import { useMessages } from "../../lib/messages";
 import { bodyLineHeight, colors, fonts, fontSizes, minTouchSize, radii, shadows, spacing } from "../../theme/tokens";
@@ -31,11 +32,7 @@ export const MemberRow = ({ member, onEdit }: MemberRowProps) => {
       ) : null}
       {member.email ? <Text style={styles.detail}>{member.email}</Text> : null}
       {member.phone ? <Text style={styles.detail}>{member.phone}</Text> : null}
-      {member.guardians.length > 0 ? (
-        <Text style={styles.detail}>
-          {t("members.guardians", { names: member.guardians.map(formatPersonName).join(", ") })}
-        </Text>
-      ) : null}
+      <GuardianList guardians={member.guardians} />
     </Pressable>
   );
 };

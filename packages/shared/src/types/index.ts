@@ -6,6 +6,7 @@ export * from "./dashboard.js";
 export * from "./group.js";
 export * from "./guardian.js";
 export * from "./member.js";
+export * from "./memberImport.js";
 export * from "./org.js";
 export * from "./payment.js";
 export * from "./person.js";

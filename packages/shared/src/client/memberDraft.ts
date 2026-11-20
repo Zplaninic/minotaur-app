@@ -86,7 +86,7 @@ export const toCreateMemberInput = (draft: MemberDraft): CreateMemberInput => ({
       : {
           kind: "new",
           name: guardian.name,
-          surname: guardian.surname,
+          surname: optional(guardian.surname),
           email: optional(guardian.email),
           phone: optional(guardian.phone),
         },

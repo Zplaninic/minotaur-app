@@ -63,7 +63,7 @@ beforeEach(() => {
       birthday: "2014-03-12",
       email: null,
       phone: "+385 91 123 4567",
-      guardians: [{ id: "1", name: "Iva", surname: "Horvat", email: null, phone: null }],
+      guardians: [{ id: "1", name: "Iva", surname: "Horvat", email: "iva@example.com", phone: null }],
     },
   ];
   fetchMock.mockReset();
@@ -122,6 +122,7 @@ describe("GroupPage", () => {
     expect(within(row as HTMLElement).getByText("Mar 12, 2014")).toBeInTheDocument();
     expect(within(row as HTMLElement).getByText("+385 91 123 4567")).toBeInTheDocument();
     expect(within(row as HTMLElement).getByText("Iva Horvat")).toBeInTheDocument();
+    expect(within(row as HTMLElement).getByText("iva@example.com")).toBeInTheDocument();
   });
 
   it("names the group with its age range", async () => {

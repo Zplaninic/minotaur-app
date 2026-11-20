@@ -5,6 +5,7 @@ import { useAbility } from "../../api/auth";
 import { useGroupMembers, useRemoveGroupMember } from "../../api/groups";
 import { Button } from "../../components/Button";
 import { ConfirmDialog } from "../../components/ConfirmDialog";
+import { GuardianList } from "../../components/GuardianList";
 import { formatCalendarDate, formatPersonName } from "../../lib/format";
 import { useMessages } from "../../lib/messages";
 import styles from "./GroupMembersTable.module.css";
@@ -68,9 +69,7 @@ export const GroupMembersTable = ({ groupId }: GroupMembersTableProps) => {
                 <td>{member.email ?? t("common.empty")}</td>
                 <td className={styles.nowrap}>{member.phone ?? t("common.empty")}</td>
                 <td>
-                  {member.guardians.length === 0
-                    ? t("common.empty")
-                    : member.guardians.map(formatPersonName).join(", ")}
+                  <GuardianList guardians={member.guardians} />
                 </td>
                 {canChange ? (
                   <td className={styles.actions}>

@@ -76,7 +76,7 @@ export const hr: Record<keyof typeof en, string> = {
   "members.editLabel": "Uredi: {name}",
   "members.offlineTitle": "Nema veze",
   "members.birthday": "Rođen/a {date}",
-  "members.guardians": "Skrbnici: {names}",
+  "members.guardians": "Skrbnici",
 
   "memberForm.title": "Dodaj člana",
   "memberForm.editTitle": "Uredi člana",

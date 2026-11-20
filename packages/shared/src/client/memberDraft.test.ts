@@ -72,11 +72,11 @@ describe("validateMemberDraft", () => {
   });
 
   it("reports guardian fields by their index", () => {
-    const guardian = { ...newGuardianDraft("a"), name: "Iva", email: "iva@" };
+    const guardian = { ...newGuardianDraft("a"), surname: "Horvat", email: "iva@" };
     const result = validateMemberDraft({ ...adult, guardians: [guardian] }, today);
     expect(result).toEqual({
       ok: false,
-      errors: { "guardians.0.surname": "surname", "guardians.0.email": "email" },
+      errors: { "guardians.0.name": "name", "guardians.0.email": "email" },
     });
   });
 
@@ -84,6 +84,12 @@ describe("validateMemberDraft", () => {
     const guardian = { ...newGuardianDraft("a"), kind: "existing" as const, guardianId: "3", name: "ignored" };
     const result = validateMemberDraft({ ...adult, guardians: [guardian] }, today);
     expect(result.ok && result.body.guardians).toEqual([{ kind: "existing", guardianId: "3" }]);
+  });
+
+  it("accepts a new guardian without a surname", () => {
+    const guardian = { ...newGuardianDraft("a"), name: "Iva Horvat" };
+    const result = validateMemberDraft({ ...adult, guardians: [guardian] }, today);
+    expect(result.ok && result.body.guardians).toEqual([{ kind: "new", name: "Iva Horvat" }]);
   });
 });
 
