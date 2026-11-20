@@ -1,5 +1,6 @@
 import {
   formatCalendarDate as formatCalendarDateIn,
+  formatDateTime as formatDateTimeIn,
   formatMonth as formatMonthIn,
   formatShortMonth as formatShortMonthIn,
   formatMoney as formatMoneyIn,
@@ -11,6 +12,8 @@ import { currentLanguage } from "./i18n";
 export { formatPersonName, formatSortedName } from "@repo/shared/client";
 
 export const formatCalendarDate = (isoDate: string): string => formatCalendarDateIn(isoDate, currentLanguage());
+
+export const formatDateTime = (isoDateTime: string): string => formatDateTimeIn(isoDateTime, currentLanguage());
 
 export const formatTimeOfDay = (time: string): string => formatTimeOfDayIn(time, currentLanguage());
 

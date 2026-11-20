@@ -1,4 +1,4 @@
-import type { Weekday } from "@repo/shared";
+import type { AuditAction, MemberRole, Weekday } from "@repo/shared";
 import type {
   ClientErrorCode,
   GroupAgeRangeKind,
@@ -43,3 +43,16 @@ export const monthCommentErrorKey = (code: MonthCommentError): MessageKey => `at
 export const groupAgeKey = (kind: GroupAgeRangeKind): MessageKey => `groups.age.${kind}` as const;
 
 export const weekdayKey = (day: Weekday): MessageKey => `weekday.${day}` as const;
+
+export const auditActionKey = (action: AuditAction): MessageKey => `activity.action.${action}` as const;
+
+export const roleKey = (role: MemberRole): MessageKey => `activity.role.${role}` as const;
+
+const isMessageKey = (key: string): key is MessageKey => i18n.exists(key, { lng: "en" });
+
+// The label of a changed field in the activity log, or undefined for a field
+// this version of the app does not know yet.
+export const auditFieldKey = (field: string): MessageKey | undefined => {
+  const key = `activity.field.${field}`;
+  return isMessageKey(key) ? key : undefined;
+};

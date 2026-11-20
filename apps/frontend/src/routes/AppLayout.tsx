@@ -62,6 +62,11 @@ export const AppLayout = () => {
               {t("nav.subscriptions")}
             </Link>
           ) : null}
+          {ability.can("read", "AuditEvent") ? (
+            <Link to="/activity" className={styles.link} activeProps={{ "aria-current": "page" }}>
+              {t("nav.activity")}
+            </Link>
+          ) : null}
           <div className={styles.account}>
             <LanguageSwitcher />
             <span className={styles.name}>{t("nav.loggedInAs", { name: `${me.data.name} ${me.data.surname}` })}</span>
