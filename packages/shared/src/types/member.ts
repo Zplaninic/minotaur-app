@@ -77,7 +77,13 @@ export const memberResponse = z.object({
 });
 export type MemberResponse = z.infer<typeof memberResponse>;
 
+// Longest search the members list accepts.
+export const MAX_MEMBER_SEARCH_LENGTH = 100;
+
 export const listMembersQuery = paginationQuery.extend({
+  // Every word must appear in the name, surname or email, ignoring case.
+  // Blank means no search.
+  search: z.string().trim().max(MAX_MEMBER_SEARCH_LENGTH).optional(),
   // Only members with this role.
   role: memberRole.optional(),
   // Only members with a past month that has a subscription and is not paid.

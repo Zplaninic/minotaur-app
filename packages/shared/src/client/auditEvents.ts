@@ -64,7 +64,7 @@ export const fetchAuditActors = async (api: ApiClient): Promise<MemberResponse[]
   // flatMap returns a new array, so sorting it in place is safe; Hermes has no toSorted.
   return pages
     .flatMap((page) => page.items)
-    .sort((a, b) => a.surname.localeCompare(b.surname) || a.name.localeCompare(b.name));
+    .sort((a, b) => a.name.localeCompare(b.name) || a.surname.localeCompare(b.surname));
 };
 
 export const auditEventQueries = {

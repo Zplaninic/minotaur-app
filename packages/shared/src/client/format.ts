@@ -13,8 +13,6 @@ export const formatDateTime = (isoDateTime: string, locale: string): string =>
 
 export const formatPersonName = (person: Person): string => `${person.name} ${person.surname}`;
 
-export const formatSortedName = (person: Person): string => `${person.surname} ${person.name}`;
-
 // A session's date for column headers and the checklist, e.g. "Mon, Nov 2".
 export const formatSessionDate = (isoDate: string, locale: string): string =>
   new Intl.DateTimeFormat(locale, { weekday: "short", day: "numeric", month: "short", timeZone: "UTC" }).format(

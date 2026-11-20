@@ -17,20 +17,28 @@ import { guardianKeys } from "./guardians.js";
 export const memberKeys = {
   all: ["members"] as const,
   list: (query: MembersPageQuery) => [...memberKeys.all, "list", query] as const,
-  pages: (pageSize: number, unpaid = false) => [...memberKeys.all, "pages", pageSize, unpaid] as const,
+  pages: (pageSize: number, unpaid = false, search = "") =>
+    [...memberKeys.all, "pages", pageSize, unpaid, search.trim()] as const,
   trainers: () => [...memberKeys.all, "trainers"] as const,
   everyone: () => [...memberKeys.all, "everyone"] as const,
   detail: (memberId: string) => [...memberKeys.all, "detail", memberId] as const,
 };
 
-// unpaid: only members with an unpaid past month.
-export type MembersPageQuery = PaginationQuery & { unpaid?: boolean };
+// unpaid: only members with an unpaid past month. search: words to find in
+// the name, surname or email.
+export type MembersPageQuery = PaginationQuery & { unpaid?: boolean; search?: string };
 
-export const fetchMembersPage = (api: ApiClient, query: MembersPageQuery): Promise<ListMembersResponse> =>
-  api.fetch(
-    `/members?page=${query.page}&pageSize=${query.pageSize}${query.unpaid ? "&unpaid=true" : ""}`,
-    listMembersResponse,
-  );
+export const fetchMembersPage = (api: ApiClient, query: MembersPageQuery): Promise<ListMembersResponse> => {
+  const params = new URLSearchParams({ page: String(query.page), pageSize: String(query.pageSize) });
+  if (query.unpaid) {
+    params.set("unpaid", "true");
+  }
+  const search = query.search?.trim();
+  if (search) {
+    params.set("search", search);
+  }
+  return api.fetch(`/members?${params.toString()}`, listMembersResponse);
+};
 
 // The page after `last`, or undefined when `last` was the final page.
 export const nextMembersPage = (last: ListMembersResponse): number | undefined =>

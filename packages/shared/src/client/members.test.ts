@@ -1,6 +1,6 @@
 import { describe, expect, it } from "vitest";
 import type { ApiClient } from "./apiClient.js";
-import { formatCalendarDate, formatSortedName } from "./format.js";
+import { formatCalendarDate, formatPersonName } from "./format.js";
 import { archiveMember, fetchAllMembers, fetchMembersPage, memberKeys, nextMembersPage } from "./members.js";
 
 describe("nextMembersPage", () => {
@@ -49,8 +49,22 @@ describe("fetchMembersPage", () => {
     expect(paths).toEqual(["/members?page=1&pageSize=20", "/members?page=2&pageSize=20&unpaid=true"]);
   });
 
+  it("sends a trimmed search and leaves out a blank one", async () => {
+    const paths: string[] = [];
+    const api: ApiClient = {
+      fetch: async (path, schema) => {
+        paths.push(path);
+        return schema.parse({ items: [], page: 1, pageSize: 20, total: 0 });
+      },
+    };
+    await fetchMembersPage(api, { page: 1, pageSize: 20, search: "  ana horvat " });
+    await fetchMembersPage(api, { page: 1, pageSize: 20, search: "   " });
+    expect(paths).toEqual(["/members?page=1&pageSize=20&search=ana+horvat", "/members?page=1&pageSize=20"]);
+  });
+
   it("keeps filtered and unfiltered pages apart in the cache", () => {
     expect(memberKeys.pages(20, true)).not.toEqual(memberKeys.pages(20));
+    expect(memberKeys.pages(20, false, "ana")).not.toEqual(memberKeys.pages(20));
   });
 });
 
@@ -73,7 +87,7 @@ describe("format", () => {
     expect(formatCalendarDate("2014-03-12", "en")).toBe("Mar 12, 2014");
   });
 
-  it("puts the surname first for sorted lists", () => {
-    expect(formatSortedName({ name: "Ana", surname: "Horvat" })).toBe("Horvat Ana");
+  it("puts the name before the surname", () => {
+    expect(formatPersonName({ name: "Ana", surname: "Horvat" })).toBe("Ana Horvat");
   });
 });
