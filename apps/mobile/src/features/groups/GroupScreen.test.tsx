@@ -35,6 +35,7 @@ const group: GroupResponse = {
   to: "18:30",
   ageFrom: null,
   ageTo: null,
+  maxMembers: null,
   memberCount: 1,
   createdAt: "2026-11-15T17:00:00.000Z",
   updatedAt: "2026-11-15T17:00:00.000Z",

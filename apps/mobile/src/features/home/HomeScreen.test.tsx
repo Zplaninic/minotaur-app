@@ -41,6 +41,7 @@ const group = (id: string, ownerId: string, surname: string, days: GroupResponse
   to: "20:00",
   ageFrom: null,
   ageTo: null,
+  maxMembers: null,
   memberCount: 6,
   createdAt: "2026-11-01T10:00:00.000Z",
   updatedAt: "2026-11-01T10:00:00.000Z",

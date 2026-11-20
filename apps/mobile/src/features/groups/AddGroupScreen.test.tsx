@@ -88,6 +88,15 @@ describe("AddGroupScreen", () => {
     expect(postedBody).toBeUndefined();
   });
 
+  it("asks for a member limit from 1 to 999", async () => {
+    await renderScreen();
+    await fireEvent.changeText(screen.getByLabelText(t("groupForm.maxMembers")), "0");
+    await save();
+
+    expect(screen.getByText(t("groupForm.error.maxMembers"))).toBeOnTheScreen();
+    expect(postedBody).toBeUndefined();
+  });
+
   it("saves a group and goes back to the list", async () => {
     await renderScreen();
     await fireEvent.press(screen.getByRole("radio", { name: "Petra Kovač" }));
@@ -97,6 +106,7 @@ describe("AddGroupScreen", () => {
     await pickTime(t("groupForm.to"), "to-picker", 18, 30);
     await fireEvent.changeText(screen.getByLabelText(t("groupForm.ageFrom")), "7");
     await fireEvent.changeText(screen.getByLabelText(t("groupForm.ageTo")), "10");
+    await fireEvent.changeText(screen.getByLabelText(t("groupForm.maxMembers")), "12");
     await save();
 
     await waitFor(() => expect(mockBack).toHaveBeenCalled());
@@ -107,6 +117,7 @@ describe("AddGroupScreen", () => {
       to: "18:30",
       ageFrom: 7,
       ageTo: 10,
+      maxMembers: 12,
     });
   });
 });

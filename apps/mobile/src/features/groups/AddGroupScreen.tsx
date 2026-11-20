@@ -130,6 +130,15 @@ export const AddGroupScreen = () => {
         error={fieldError("ageTo")}
         optional
       />
+      <TextField
+        label={t("groupForm.maxMembers")}
+        value={draft.maxMembers}
+        onChangeText={(maxMembers) => update({ maxMembers })}
+        keyboardType="number-pad"
+        maxLength={3}
+        error={fieldError("maxMembers")}
+        optional
+      />
 
       {formError ? (
         <Text style={styles.formError} accessibilityLiveRegion="polite">

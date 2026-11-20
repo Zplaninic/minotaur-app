@@ -148,6 +148,8 @@ export const en = {
   "groups.age.from": "{from}+ yrs",
   "groups.age.to": "up to {to} yrs",
   "groups.memberCount": "Members: {count}",
+  "groups.memberCountWithLimit": "Members: {count} / {max}",
+  "groups.overLimit": "Over limit",
   "groups.open": "Open group {name}",
 
   "group.title": "Group",
@@ -234,6 +236,7 @@ export const en = {
   "groupForm.to": "To",
   "groupForm.ageFrom": "Age from",
   "groupForm.ageTo": "Age to",
+  "groupForm.maxMembers": "Max members",
   "groupForm.timePlaceholder": "Choose a time",
   "groupForm.submit": "Save group",
   "groupForm.submitting": "Saving…",
@@ -245,6 +248,7 @@ export const en = {
   "groupForm.error.timeOrder": "The end time must be after the start time.",
   "groupForm.error.age": "Enter a whole number of years from 0 to 99.",
   "groupForm.error.ageOrder": "The upper age must not be below the lower age.",
+  "groupForm.error.maxMembers": "Enter a whole number from 1 to 999.",
   "groupForm.error.invalid": "Check this field.",
 
   "subscriptions.title": "Subscriptions",

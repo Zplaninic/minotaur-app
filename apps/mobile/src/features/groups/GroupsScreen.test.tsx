@@ -22,6 +22,7 @@ const group: GroupResponse = {
   to: "18:30",
   ageFrom: null,
   ageTo: null,
+  maxMembers: null,
   memberCount: 3,
   createdAt: "2026-11-15T17:00:00.000Z",
   updatedAt: "2026-11-15T17:00:00.000Z",
@@ -95,6 +96,20 @@ describe("GroupsScreen", () => {
     expect(await screen.findByText(t("groups.memberCount", { count: "3" }))).toBeOnTheScreen();
     await fireEvent.press(screen.getByRole("button", { name: /^Open group Petra Kovač/ }));
     expect(mockPush).toHaveBeenCalledWith({ pathname: "/groups/[id]", params: { id: "1" } });
+  });
+
+  it("shows the member count against the limit, and a badge when over it", async () => {
+    answer(admin, async () => ({ items: [{ ...group, maxMembers: 2 }] }));
+    await renderScreen();
+    expect(await screen.findByText(t("groups.memberCountWithLimit", { count: "3", max: "2" }))).toBeOnTheScreen();
+    expect(screen.getByText(t("groups.overLimit"))).toBeOnTheScreen();
+  });
+
+  it("shows no badge for a group within its limit", async () => {
+    answer(admin, async () => ({ items: [{ ...group, maxMembers: 3 }] }));
+    await renderScreen();
+    expect(await screen.findByText(t("groups.memberCountWithLimit", { count: "3", max: "3" }))).toBeOnTheScreen();
+    expect(screen.queryByText(t("groups.overLimit"))).not.toBeOnTheScreen();
   });
 
   it("shows a trainer the list without the add button", async () => {
