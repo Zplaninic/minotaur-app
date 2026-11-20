@@ -33,7 +33,7 @@ const memberSelect = {
   createdAt: true,
   guardians: {
     select: { guardian: { select: guardianSelect } },
-    orderBy: [{ guardian: { surname: "asc" } }, { guardian: { name: "asc" } }, { guardianId: "asc" }],
+    orderBy: [{ guardian: { name: "asc" } }, { guardian: { surname: "asc" } }, { guardianId: "asc" }],
   },
 } satisfies Prisma.MemberSelect;
 
@@ -62,11 +62,23 @@ const toMemberResponse = (member: MemberRow): MemberResponse => ({
   createdAt: member.createdAt.toISOString(),
 });
 
+// Every word of the search must match the name, surname or email.
+const searchWhere = (search: string | undefined): Prisma.MemberWhereInput[] =>
+  (search ?? "")
+    .split(/\s+/)
+    .filter((word) => word !== "")
+    .map((word) => {
+      const filter = { contains: word, mode: "insensitive" } as const;
+      return { OR: [{ name: filter }, { surname: filter }, { email: filter }] };
+    });
+
 // With unpaid, only members who had a subscription in a month before the
 // current one and did not pay for it. today is YYYY-MM-DD at the gym.
+
 export const listMembers = async (db: Db, query: ListMembersQuery, today: string): Promise<ListMembersResponse> => {
   const where: Prisma.MemberWhereInput = {
     deletedAt: null,
+    AND: searchWhere(query.search),
     ...(query.role ? { role: query.role } : {}),
     ...(query.unpaid
       ? {
@@ -81,7 +93,7 @@ export const listMembers = async (db: Db, query: ListMembersQuery, today: string
     db.member.findMany({
       where,
       select: memberSelect,
-      orderBy: [{ surname: "asc" }, { name: "asc" }, { id: "asc" }],
+      orderBy: [{ name: "asc" }, { surname: "asc" }, { id: "asc" }],
       skip: (query.page - 1) * query.pageSize,
       take: query.pageSize,
     }),

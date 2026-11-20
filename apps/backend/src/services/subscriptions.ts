@@ -155,7 +155,7 @@ export const listOverduePayments = async (db: Db, today: string): Promise<Overdu
       subscription: { select: { id: true, name: true } },
       member: { select: { id: true, name: true, surname: true } },
     },
-    orderBy: [{ member: { surname: "asc" } }, { member: { name: "asc" } }, { memberId: "asc" }, { month: "asc" }],
+    orderBy: [{ member: { name: "asc" } }, { member: { surname: "asc" } }, { memberId: "asc" }, { month: "asc" }],
   });
 
   const items: OverduePaymentsResponse["items"] = [];

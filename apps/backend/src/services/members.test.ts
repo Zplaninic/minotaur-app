@@ -115,17 +115,32 @@ describe("createMember", () => {
 });
 
 describe("listMembers", () => {
-  it("returns members sorted by surname and name, one page at a time", async () => {
-    await createMember(prisma, SYSTEM_ACTOR, adult({ name: "Luka", surname: "Zorić" }), today);
+  it("returns members sorted by name and surname, one page at a time", async () => {
+    await createMember(prisma, SYSTEM_ACTOR, adult({ name: "Luka", surname: "Babić" }), today);
+    await createMember(prisma, SYSTEM_ACTOR, adult({ name: "Ana", surname: "Zorić" }), today);
     await createMember(prisma, SYSTEM_ACTOR, adult({ name: "Ana", surname: "Babić" }), today);
-    await createMember(prisma, SYSTEM_ACTOR, adult({ name: "Marko", surname: "Babić" }), today);
 
     const first = await listMembers(prisma, { page: 1, pageSize: 2 }, today);
     expect(first.total).toBe(3);
-    expect(first.items.map((member) => member.name)).toEqual(["Ana", "Marko"]);
+    expect(first.items.map((member) => `${member.name} ${member.surname}`)).toEqual(["Ana Babić", "Ana Zorić"]);
 
     const second = await listMembers(prisma, { page: 2, pageSize: 2 }, today);
     expect(second.items.map((member) => member.name)).toEqual(["Luka"]);
+  });
+
+  it("finds members by every search word in the name, surname or email, ignoring case", async () => {
+    await createMember(prisma, SYSTEM_ACTOR, adult({ name: "Ana", surname: "Horvat" }), today);
+    await createMember(prisma, SYSTEM_ACTOR, adult({ name: "Ivo", surname: "Anić" }), today);
+    await createMember(prisma, SYSTEM_ACTOR, adult({ name: "Luka", surname: "Babić", email: "luka@primjer.hr" }), today);
+
+    const names = async (search: string) =>
+      (await listMembers(prisma, { page: 1, pageSize: 20, search }, today)).items.map((member) => member.name);
+
+    expect(await names("an")).toEqual(["Ana", "Ivo"]);
+    expect(await names("ANA hor")).toEqual(["Ana"]);
+    expect(await names("PRIMJER.hr")).toEqual(["Luka"]);
+    expect(await names("nobody")).toEqual([]);
+    expect(await names("  ")).toEqual(["Ana", "Ivo", "Luka"]);
   });
 });
 

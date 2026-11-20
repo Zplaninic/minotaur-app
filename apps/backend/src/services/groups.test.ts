@@ -260,13 +260,13 @@ describe("addGroupMember", () => {
 });
 
 describe("listGroupMembers", () => {
-  it("returns the members sorted by surname, then name", async () => {
+  it("returns the members sorted by name, then surname", async () => {
     const created = await createGroup(prisma, SYSTEM_ACTOR, group());
-    for (const [name, surname] of [["Marko", "Novak"], ["Iva", "Horvat"], ["Ana", "Horvat"]] as const) {
+    for (const [name, surname] of [["Marko", "Novak"], ["Ana", "Novak"], ["Ana", "Horvat"]] as const) {
       await addGroupMember(prisma, SYSTEM_ACTOR, created.id, await addedMember("child", name, surname), TODAY);
     }
     const { items } = await listGroupMembers(prisma, created.id);
-    expect(items.map((item) => `${item.surname} ${item.name}`)).toEqual(["Horvat Ana", "Horvat Iva", "Novak Marko"]);
+    expect(items.map((item) => `${item.name} ${item.surname}`)).toEqual(["Ana Horvat", "Ana Novak", "Marko Novak"]);
   });
 
   it("rejects an unknown group", async () => {

@@ -19,7 +19,7 @@ afterAll(async () => {
 });
 
 describe("GET /guardians", () => {
-  it("lists the guardians of active members, sorted by surname", async () => {
+  it("lists the guardians of active members, sorted by name", async () => {
     const orgId = await createOrg(app.db);
     const { memberId } = await createLoginMember(app.db, orgId, "admin");
     const headers = await authHeaders(app.db, memberId);
@@ -33,9 +33,9 @@ describe("GET /guardians", () => {
     await createGuardian(app.db, "Nitko", "Nevezan");
     const response = await app.inject({ method: "GET", url: "/guardians", headers });
     expect(response.statusCode).toBe(200);
-    expect(listGuardiansResponse.parse(response.json()).items.map((guardian) => guardian.surname)).toEqual([
-      "Babić",
-      "Zorić",
+    expect(listGuardiansResponse.parse(response.json()).items.map((guardian) => guardian.name)).toEqual([
+      "Iva",
+      "Ivan",
     ]);
   });
 

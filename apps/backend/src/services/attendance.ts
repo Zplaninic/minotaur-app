@@ -142,7 +142,7 @@ export const getGroupAttendance = async (db: Db, groupId: string, month: Month):
             },
           },
         },
-        orderBy: [{ member: { surname: "asc" } }, { member: { name: "asc" } }, { memberId: "asc" }],
+        orderBy: [{ member: { name: "asc" } }, { member: { surname: "asc" } }, { memberId: "asc" }],
       },
     },
   });

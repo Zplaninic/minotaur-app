@@ -55,7 +55,7 @@ export const listGroups = async (db: Db): Promise<ListGroupsResponse> => {
   const groups = await db.group.findMany({
     where: { deletedAt: null },
     select: groupSelect,
-    orderBy: [{ owner: { surname: "asc" } }, { owner: { name: "asc" } }, { from: "asc" }, { id: "asc" }],
+    orderBy: [{ owner: { name: "asc" } }, { owner: { surname: "asc" } }, { from: "asc" }, { id: "asc" }],
   });
   return { items: groups.map(toGroupResponse) };
 };
@@ -178,7 +178,7 @@ const groupMemberSelect = {
   phone: true,
   guardians: {
     select: { guardian: { select: guardianSelect } },
-    orderBy: [{ guardian: { surname: "asc" } }, { guardian: { name: "asc" } }, { guardianId: "asc" }],
+    orderBy: [{ guardian: { name: "asc" } }, { guardian: { surname: "asc" } }, { guardianId: "asc" }],
   },
 } satisfies Prisma.MemberSelect;
 
@@ -188,7 +188,7 @@ export const listGroupMembers = async (db: Db, groupId: string): Promise<ListGro
     select: {
       members: {
         select: { member: { select: groupMemberSelect } },
-        orderBy: [{ member: { surname: "asc" } }, { member: { name: "asc" } }, { memberId: "asc" }],
+        orderBy: [{ member: { name: "asc" } }, { member: { surname: "asc" } }, { memberId: "asc" }],
       },
     },
   });

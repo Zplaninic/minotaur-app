@@ -109,6 +109,22 @@ describe("GET /members", () => {
     expect(listMembersResponse.parse(response.json())).toMatchObject({ total: 2, page: 1, pageSize: 10 });
   });
 
+  it("finds members by name, surname or email", async () => {
+    await post(body());
+    await post({ ...body(), name: "Ana", surname: "Horvat", email: "ana@primjer.hr" });
+    const response = await app.inject({ method: "GET", url: "/members?search=horvat%20ANA", headers });
+    expect(response.statusCode).toBe(200);
+    const found = listMembersResponse.parse(response.json());
+    expect(found.total).toBe(1);
+    expect(found.items[0]?.email).toBe("ana@primjer.hr");
+  });
+
+  it("rejects a search that is too long", async () => {
+    const response = await app.inject({ method: "GET", url: `/members?search=${"a".repeat(101)}`, headers });
+    expect(response.statusCode).toBe(400);
+    expect(errorResponse.parse(response.json()).code).toBe("VALIDATION_ERROR");
+  });
+
   it("rejects an invalid page size", async () => {
     const response = await app.inject({ method: "GET", url: "/members?pageSize=1000", headers });
     expect(response.statusCode).toBe(400);

@@ -31,7 +31,7 @@ export const listGuardians = async (db: Db): Promise<ListGuardiansResponse> => {
   const guardians = await db.guardian.findMany({
     where: { members: { some: { member: { deletedAt: null } } } },
     select: guardianSelect,
-    orderBy: [{ surname: "asc" }, { name: "asc" }, { id: "asc" }],
+    orderBy: [{ name: "asc" }, { surname: "asc" }, { id: "asc" }],
   });
   return { items: guardians.map(toGuardianResponse) };
 };

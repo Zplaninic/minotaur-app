@@ -15,7 +15,7 @@ export const getDashboard = async (db: Db, today: string): Promise<DashboardResp
     db.groupMonthMember.findMany({
       where: { ...rosterOfThisMonth, memberMonth: { subscriptionId: null } },
       select: { groupId: true, member: { select: { id: true, name: true, surname: true } } },
-      orderBy: [{ member: { surname: "asc" } }, { member: { name: "asc" } }, { memberId: "asc" }, { groupId: "asc" }],
+      orderBy: [{ member: { name: "asc" } }, { member: { surname: "asc" } }, { memberId: "asc" }, { groupId: "asc" }],
     }),
     db.groupMonthMember.groupBy({ by: ["groupId"], where: rosterOfThisMonth, _count: { _all: true } }),
     db.trainingSession.findMany({
