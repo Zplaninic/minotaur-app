@@ -82,7 +82,7 @@ export const MembersTable = ({ onEdit, unpaidOnly }: MembersTableProps) => {
                   {formatSortedName(member)}
                   {member.role === "trainer" ? <span className={styles.label}>{t("members.trainerLabel")}</span> : null}
                 </th>
-                <td className={styles.nowrap}>{formatCalendarDate(member.birthday)}</td>
+                <td className={styles.nowrap}>{member.birthday ? formatCalendarDate(member.birthday) : t("common.empty")}</td>
                 <td>{orEmpty(member.email)}</td>
                 <td className={styles.nowrap}>{orEmpty(member.phone)}</td>
                 <td>

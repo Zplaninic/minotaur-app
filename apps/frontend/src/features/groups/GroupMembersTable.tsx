@@ -63,7 +63,7 @@ export const GroupMembersTable = ({ groupId }: GroupMembersTableProps) => {
             {members.data.items.map((member) => (
               <tr key={member.id}>
                 <th scope="row">{formatSortedName(member)}</th>
-                <td className={styles.nowrap}>{formatCalendarDate(member.birthday)}</td>
+                <td className={styles.nowrap}>{member.birthday ? formatCalendarDate(member.birthday) : t("common.empty")}</td>
                 <td>{member.email ?? t("common.empty")}</td>
                 <td className={styles.nowrap}>{member.phone ?? t("common.empty")}</td>
                 <td>

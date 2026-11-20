@@ -160,7 +160,6 @@ export const MemberForm = ({ member, onCancel, onSaved }: MemberFormProps) => {
             error={fieldError("birthday")}
             min={MIN_BIRTHDAY}
             max={toIsoDate(today)}
-            required
           />
           <TextField
             label={t("memberForm.taxNumber")}

@@ -178,7 +178,7 @@ describe("MembersPage", () => {
     fireEvent.click(within(dialog).getByRole("button", { name: t("memberForm.submit") }));
 
     expect(within(dialog).getByText(t("memberForm.error.name"))).toBeInTheDocument();
-    expect(within(dialog).getByText(t("memberForm.error.birthday"))).toBeInTheDocument();
+    expect(within(dialog).queryByText(t("memberForm.error.birthday"))).not.toBeInTheDocument();
     expect(fetchMock).not.toHaveBeenCalledWith("/members", expect.anything(), expect.anything());
   });
 
@@ -212,6 +212,25 @@ describe("MembersPage", () => {
       }),
     );
     expect(await screen.findByRole("rowheader", { name: "Babić Marko" })).toBeInTheDocument();
+  });
+
+  it("saves a member without a birthday", async () => {
+    renderPage();
+    const dialog = await openDialog();
+    fill(dialog, t("memberForm.name"), "Marko");
+    fill(dialog, t("memberForm.surname"), "Babić");
+    fireEvent.click(within(dialog).getByRole("button", { name: t("memberForm.submit") }));
+
+    await waitFor(() =>
+      expect(fetchMock).toHaveBeenCalledWith(
+        "/members",
+        expect.anything(),
+        expect.objectContaining({
+          method: "POST",
+          body: JSON.stringify({ orgId: "1", name: "Marko", surname: "Babić", guardians: [] }),
+        }),
+      ),
+    );
   });
 
   it("deletes a member after confirming", async () => {
