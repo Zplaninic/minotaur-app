@@ -27,6 +27,35 @@ enum Weekday {
   @@map("weekday")
 }
 
+// Mirrors auditAction in @repo/shared.
+enum AuditAction {
+  member_created
+  member_updated
+  member_archived
+  member_role_changed
+  login_created
+  login_password_set
+  group_created
+  group_updated
+  group_archived
+  group_member_added
+  group_member_removed
+  training_session_added
+  training_session_deleted
+  month_sessions_created
+  attendance_marked
+  attendance_unmarked
+  month_member_added
+  month_member_removed
+  month_subscription_set
+  month_paid_set
+  month_comment_set
+  subscription_created
+  subscription_updated
+
+  @@map("audit_action")
+}
+
 datasource db {
   provider = "postgresql"
 }
@@ -79,6 +108,8 @@ model Member {
   attendance       Attendance[]
   monthMemberships GroupMonthMember[]
   months           MemberMonth[]
+  auditActions     AuditEvent[]       @relation("AuditActor")
+  auditEvents      AuditEvent[]       @relation("AuditMember")
 
   // Active people who can log in never share an email. The roles listed here must
   // match LOGIN_ROLES in @repo/shared/auth. Written the way Postgres stores
@@ -145,6 +176,7 @@ model Group {
   members      GroupMember[]
   sessions     TrainingSession[]
   monthMembers GroupMonthMember[]
+  auditEvents  AuditEvent[]
 
   @@index([ownerId])
   @@map("group")
@@ -245,6 +277,37 @@ model Subscription {
   createdAt       DateTime      @default(now()) @db.Timestamptz
   updatedAt       DateTime      @updatedAt @db.Timestamptz
   memberMonths    MemberMonth[]
+  auditEvents     AuditEvent[]
 
   @@map("subscription")
+}
+
+// One write in the system: who did what, to which records. Written in the
+// same transaction as the change. Holds ids, never copies of personal values.
+model AuditEvent {
+  id             Int           @id @default(autoincrement())
+  action         AuditAction
+  // Null for the system (backend commands).
+  actorId        Int?
+  memberId       Int?
+  groupId        Int?
+  subscriptionId Int?
+  // The first day of the month, for month and attendance events.
+  month          DateTime?     @db.Date
+  // The training session's date, for session and attendance events.
+  date           DateTime?     @db.Date
+  // { field: { from, to } } or { field: { changed: true } } for personal values.
+  changes        Json?
+  createdAt      DateTime      @default(now()) @db.Timestamptz
+  actor          Member?       @relation("AuditActor", fields: [actorId], references: [id], onDelete: SetNull)
+  member         Member?       @relation("AuditMember", fields: [memberId], references: [id], onDelete: SetNull)
+  group          Group?        @relation(fields: [groupId], references: [id], onDelete: SetNull)
+  subscription   Subscription? @relation(fields: [subscriptionId], references: [id], onDelete: SetNull)
+
+  @@index([createdAt])
+  @@index([actorId])
+  @@index([memberId])
+  @@index([groupId])
+  @@index([subscriptionId])
+  @@map("audit_event")
 }

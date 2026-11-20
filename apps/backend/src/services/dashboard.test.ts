@@ -2,6 +2,7 @@ import { afterAll, beforeEach, describe, expect, it } from "vitest";
 import { createLoginMember, createOrg, resetDb } from "../../test/db.js";
 import { prisma } from "../db/client.js";
 import { createMonthSessions, getGroupAttendance, markAttendance, setMonthSubscription } from "./attendance.js";
+import { SYSTEM_ACTOR } from "./audit.js";
 import { getDashboard } from "./dashboard.js";
 import { addGroupMember, archiveGroup, createGroup } from "./groups.js";
 import { archiveMember } from "./members.js";
@@ -32,7 +33,7 @@ const child = async (surname: string): Promise<string> => {
 };
 
 const groupWith = async (days: ("monday" | "wednesday")[], memberIds: string[]): Promise<string> => {
-  const { id } = await createGroup(prisma, {
+  const { id } = await createGroup(prisma, SYSTEM_ACTOR, {
     ownerId: trainerId,
     days,
     from: "17:00",
@@ -41,9 +42,9 @@ const groupWith = async (days: ("monday" | "wednesday")[], memberIds: string[]):
     ageTo: null,
   });
   for (const memberId of memberIds) {
-    await addGroupMember(prisma, id, memberId, TODAY);
+    await addGroupMember(prisma, SYSTEM_ACTOR, id, memberId, TODAY);
   }
-  await createMonthSessions(prisma, id, "2026-11", TODAY);
+  await createMonthSessions(prisma, SYSTEM_ACTOR, id, "2026-11", TODAY);
   return id;
 };
 
@@ -68,8 +69,8 @@ describe("getDashboard", () => {
     const climbing = await groupWith(["monday", "wednesday"], [leo, nora, mia]);
     const bouldering = await groupWith(["wednesday"], [nora]);
 
-    const kids = await createSubscription(prisma, { name: "Kids 2x", sessionsPerWeek: 2, price: 4500 });
-    await setMonthSubscription(prisma, { groupId: climbing, month: "2026-11", memberId: leo }, kids.id);
+    const kids = await createSubscription(prisma, SYSTEM_ACTOR, { name: "Kids 2x", sessionsPerWeek: 2, price: 4500 });
+    await setMonthSubscription(prisma, SYSTEM_ACTOR, { groupId: climbing, month: "2026-11", memberId: leo }, kids.id);
 
     const [first, second, , , sixteenth, eighteenth] = await sessionIds(climbing);
     for (const [sessionId, memberId] of [
@@ -80,9 +81,14 @@ describe("getDashboard", () => {
       // After today, so not counted.
       [eighteenth, nora],
     ] as const) {
-      await markAttendance(prisma, { groupId: climbing, sessionId: sessionId ?? "", memberId }, "2026-11-30");
+      await markAttendance(
+        prisma,
+        SYSTEM_ACTOR,
+        { groupId: climbing, sessionId: sessionId ?? "", memberId },
+        "2026-11-30",
+      );
     }
-    await archiveMember(prisma, mia, adminId, new Date(), TODAY);
+    await archiveMember(prisma, { memberId: Number(adminId) }, mia, new Date(), TODAY);
 
     expect(await getDashboard(prisma, TODAY)).toEqual({
       today: TODAY,
@@ -97,7 +103,7 @@ describe("getDashboard", () => {
   it("leaves out archived groups", async () => {
     const leo = await child("Perić");
     const climbing = await groupWith(["monday"], [leo]);
-    await archiveGroup(prisma, climbing, new Date());
+    await archiveGroup(prisma, SYSTEM_ACTOR, climbing, new Date());
 
     expect(await getDashboard(prisma, TODAY)).toMatchObject({
       activeMembers: 1,

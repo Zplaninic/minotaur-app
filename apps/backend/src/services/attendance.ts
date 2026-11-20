@@ -8,6 +8,7 @@ import {
 import type { Db } from "../db/client.js";
 import { AppError } from "../errors.js";
 import type { Prisma } from "../generated/prisma/client.js";
+import { recordEvent, type Actor, type StoredChanges } from "./audit.js";
 import { monthOf, monthRange, monthStart, nextMonth, toDbDate, toIsoDate, trainingDates } from "./dates.js";
 import { requireDbId, toApiId, toDbId } from "./ids.js";
 
@@ -196,17 +197,31 @@ const countMonthSessions = (db: DbClient, groupId: number, month: Month): Promis
 
 // Dates that already have a session are skipped, so calling it twice changes
 // nothing. today is YYYY-MM-DD at the gym.
-export const createMonthSessions = async (db: Db, groupId: string, month: Month, today: string): Promise<void> => {
+export const createMonthSessions = async (
+  db: Db,
+  actor: Actor,
+  groupId: string,
+  month: Month,
+  today: string,
+): Promise<void> => {
   const group = await requireGroup(db, requireDbId(groupId, "Group not found"));
   requireCreatableMonth(month, today);
   await db.$transaction(async (tx) => {
     const before = await countMonthSessions(tx, group.id, month);
-    await tx.trainingSession.createMany({
+    const { count } = await tx.trainingSession.createMany({
       data: trainingDates(month, group.days).map((date) => ({ groupId: group.id, date: toDbDate(date) })),
       skipDuplicates: true,
     });
     if (before === 0) {
       await copyGroupMembersToMonth(tx, group.id, month);
+    }
+    if (count > 0) {
+      await recordEvent(tx, actor, {
+        action: "month_sessions_created",
+        groupId: group.id,
+        month,
+        changes: { sessions: { from: before, to: before + count } },
+      });
     }
   });
 };
@@ -215,6 +230,7 @@ export const createMonthSessions = async (db: Db, groupId: string, month: Month,
 // CONFLICT. today is YYYY-MM-DD at the gym.
 export const addTrainingSession = async (
   db: Db,
+  actor: Actor,
   groupId: string,
   date: string,
   today: string,
@@ -230,28 +246,37 @@ export const addTrainingSession = async (
     if (before === 0) {
       await copyGroupMembersToMonth(tx, group.id, monthOf(date));
     }
+    await recordEvent(tx, actor, { action: "training_session_added", groupId: group.id, month: monthOf(date), date });
     return toSessionResponse(session);
   });
 };
 
 // Only a session nobody attended can go, so no attendance is ever lost.
-export const deleteTrainingSession = async (db: Db, groupId: string, sessionId: string): Promise<void> => {
+export const deleteTrainingSession = async (
+  db: Db,
+  actor: Actor,
+  groupId: string,
+  sessionId: string,
+): Promise<void> => {
   const groupDbId = requireDbId(groupId, "Group not found");
   const sessionDbId = requireDbId(sessionId, "Session not found");
 
-  // One statement, so a tick that arrives meanwhile cannot be deleted with it.
-  const { count } = await db.trainingSession.deleteMany({
-    where: { id: sessionDbId, groupId: groupDbId, group: { deletedAt: null }, attendance: { none: {} } },
+  await db.$transaction(async (tx) => {
+    const session = await requireSession(tx, groupDbId, sessionDbId);
+    // The attendance check is in the delete itself, so a tick that arrives
+    // meanwhile cannot be deleted with it.
+    const { count } = await tx.trainingSession.deleteMany({ where: { id: sessionDbId, attendance: { none: {} } } });
+    if (count === 0) {
+      throw new AppError("CONFLICT", 409, "The session has attendance");
+    }
+    const date = toIsoDate(session.date);
+    await recordEvent(tx, actor, {
+      action: "training_session_deleted",
+      groupId: groupDbId,
+      month: monthOf(date),
+      date,
+    });
   });
-  if (count > 0) {
-    return;
-  }
-
-  await requireGroup(db, groupDbId);
-  if (await db.trainingSession.findFirst({ where: { id: sessionDbId, groupId: groupDbId }, select: { id: true } })) {
-    throw new AppError("CONFLICT", 409, "The session has attendance");
-  }
-  throw sessionNotFound();
 };
 
 type AttendanceTarget = { groupId: string; sessionId: string; memberId: string };
@@ -289,7 +314,7 @@ const requireOnRoster = async (db: DbClient, groupId: number, month: Month, memb
 };
 
 // Ticking a member who is already ticked changes nothing.
-export const markAttendance = async (db: Db, target: AttendanceTarget, today: string): Promise<void> => {
+export const markAttendance = async (db: Db, actor: Actor, target: AttendanceTarget, today: string): Promise<void> => {
   const groupDbId = requireDbId(target.groupId, "Group not found");
   const sessionDbId = requireDbId(target.sessionId, "Session not found");
   const memberDbId = requireDbId(target.memberId, "Member not found");
@@ -300,25 +325,47 @@ export const markAttendance = async (db: Db, target: AttendanceTarget, today: st
       throw new AppError("VALIDATION_ERROR", 400, "Attendance cannot be taken for a future session");
     }
 
-    await requireOnRoster(tx, groupDbId, monthOf(toIsoDate(session.date)), memberDbId);
-    await tx.attendance.upsert({
-      where: { sessionId_memberId: { sessionId: sessionDbId, memberId: memberDbId } },
-      create: { sessionId: sessionDbId, memberId: memberDbId },
-      update: {},
+    const date = toIsoDate(session.date);
+    await requireOnRoster(tx, groupDbId, monthOf(date), memberDbId);
+    const { count } = await tx.attendance.createMany({
+      data: [{ sessionId: sessionDbId, memberId: memberDbId }],
+      skipDuplicates: true,
     });
+    if (count > 0) {
+      await recordEvent(tx, actor, {
+        action: "attendance_marked",
+        groupId: groupDbId,
+        memberId: memberDbId,
+        month: monthOf(date),
+        date,
+      });
+    }
   });
 };
 
 // Unticking a member who is not ticked changes nothing.
-export const unmarkAttendance = async (db: Db, target: AttendanceTarget): Promise<void> => {
+export const unmarkAttendance = async (db: Db, actor: Actor, target: AttendanceTarget): Promise<void> => {
   const groupDbId = requireDbId(target.groupId, "Group not found");
   const sessionDbId = requireDbId(target.sessionId, "Session not found");
-  await requireSession(db, groupDbId, sessionDbId);
-
   const memberDbId = toDbId(target.memberId);
-  if (memberDbId !== undefined) {
-    await db.attendance.deleteMany({ where: { sessionId: sessionDbId, memberId: memberDbId } });
-  }
+
+  await db.$transaction(async (tx) => {
+    const session = await requireSession(tx, groupDbId, sessionDbId);
+    if (memberDbId === undefined) {
+      return;
+    }
+    const { count } = await tx.attendance.deleteMany({ where: { sessionId: sessionDbId, memberId: memberDbId } });
+    if (count > 0) {
+      const date = toIsoDate(session.date);
+      await recordEvent(tx, actor, {
+        action: "attendance_unmarked",
+        groupId: groupDbId,
+        memberId: memberDbId,
+        month: monthOf(date),
+        date,
+      });
+    }
+  });
 };
 
 type MonthMemberTarget = { groupId: string; month: Month; memberId: string };
@@ -329,6 +376,7 @@ type MonthMemberTarget = { groupId: string; month: Month; memberId: string };
 // at the gym.
 export const addMonthMember = async (
   db: Db,
+  actor: Actor,
   target: MonthMemberTarget,
   options: { joinGroup: boolean; today: string },
 ): Promise<void> => {
@@ -347,23 +395,28 @@ export const addMonthMember = async (
     if ((await countMonthSessions(tx, groupDbId, target.month)) === 0) {
       throw new AppError("VALIDATION_ERROR", 400, "The month has no sessions");
     }
-    if (options.joinGroup) {
-      await joinGroup(tx, groupDbId, memberDbId, options.today);
+    if (options.joinGroup && (await joinGroup(tx, groupDbId, memberDbId, options.today))) {
+      await recordEvent(tx, actor, { action: "group_member_added", groupId: groupDbId, memberId: memberDbId });
     }
     await ensureMemberMonths(tx, target.month, [memberDbId]);
-    await tx.groupMonthMember.upsert({
-      where: {
-        groupId_month_memberId: { groupId: groupDbId, month: monthStart(target.month), memberId: memberDbId },
-      },
-      create: { groupId: groupDbId, month: monthStart(target.month), memberId: memberDbId },
-      update: {},
+    const { count } = await tx.groupMonthMember.createMany({
+      data: [{ groupId: groupDbId, month: monthStart(target.month), memberId: memberDbId }],
+      skipDuplicates: true,
     });
+    if (count > 0) {
+      await recordEvent(tx, actor, {
+        action: "month_member_added",
+        groupId: groupDbId,
+        memberId: memberDbId,
+        month: target.month,
+      });
+    }
   });
 };
 
 // Refused while the member has ticks in the month, so no attendance is lost.
 // Removing a member who is not on the roster changes nothing.
-export const removeMonthMember = async (db: Db, target: MonthMemberTarget): Promise<void> => {
+export const removeMonthMember = async (db: Db, actor: Actor, target: MonthMemberTarget): Promise<void> => {
   const groupDbId = requireDbId(target.groupId, "Group not found");
   const memberDbId = toDbId(target.memberId);
 
@@ -378,9 +431,17 @@ export const removeMonthMember = async (db: Db, target: MonthMemberTarget): Prom
     if (ticks > 0) {
       throw new AppError("CONFLICT", 409, "The member has attendance this month");
     }
-    await tx.groupMonthMember.deleteMany({
+    const { count } = await tx.groupMonthMember.deleteMany({
       where: { groupId: groupDbId, month: monthStart(target.month), memberId: memberDbId },
     });
+    if (count > 0) {
+      await recordEvent(tx, actor, {
+        action: "month_member_removed",
+        groupId: groupDbId,
+        memberId: memberDbId,
+        month: target.month,
+      });
+    }
   });
 };
 
@@ -393,17 +454,37 @@ const requireGroupRoster = async (db: DbClient, groupId: number, month: Month, m
 
 // Sets a member's subscription for one month, in all their groups, copying
 // its current price and sessions. null clears it, which a paid month refuses.
+// The month's row of a member on the group's roster, as it is before a change.
+const requireMemberMonth = async (db: DbClient, groupId: number, month: Month, memberId: number) => {
+  await requireGroupRoster(db, groupId, month, memberId);
+  return db.memberMonth.findUniqueOrThrow({
+    where: { memberId_month: { memberId, month: monthStart(month) } },
+    select: { subscriptionId: true, paid: true, comment: true },
+  });
+};
+
+const recordMonthEvent = (
+  db: DbClient,
+  actor: Actor,
+  action: "month_subscription_set" | "month_paid_set" | "month_comment_set",
+  target: { groupId: number; memberId: number; month: Month },
+  subscriptionId: number | null,
+  changes: StoredChanges,
+): Promise<void> => recordEvent(db, actor, { action, ...target, subscriptionId, changes });
+
 export const setMonthSubscription = async (
   db: Db,
+  actor: Actor,
   target: MonthMemberTarget,
   subscriptionId: string | null,
 ): Promise<void> => {
   const groupDbId = requireDbId(target.groupId, "Group not found");
   const memberDbId = requireDbId(target.memberId, "Member not found");
   const subscriptionDbId = subscriptionId === null ? null : requireDbId(subscriptionId, "Subscription not found");
+  const eventTarget = { groupId: groupDbId, memberId: memberDbId, month: target.month };
 
   await db.$transaction(async (tx) => {
-    await requireGroupRoster(tx, groupDbId, target.month, memberDbId);
+    const before = await requireMemberMonth(tx, groupDbId, target.month, memberDbId);
     const key = { memberId: memberDbId, month: monthStart(target.month) };
 
     if (subscriptionDbId === null) {
@@ -412,27 +493,32 @@ export const setMonthSubscription = async (
       if (count === 0) {
         throw new AppError("CONFLICT", 409, "A paid month keeps its subscription");
       }
-      return;
+    } else {
+      const subscription = await tx.subscription.findUnique({
+        where: { id: subscriptionDbId },
+        select: { id: true, price: true, sessionsPerWeek: true },
+      });
+      if (!subscription) {
+        throw subscriptionNotFound();
+      }
+      await tx.memberMonth.update({ where: { memberId_month: key }, data: subscriptionFields(subscription) });
     }
 
-    const subscription = await tx.subscription.findUnique({
-      where: { id: subscriptionDbId },
-      select: { id: true, price: true, sessionsPerWeek: true },
-    });
-    if (!subscription) {
-      throw subscriptionNotFound();
+    if (before.subscriptionId !== subscriptionDbId) {
+      await recordMonthEvent(tx, actor, "month_subscription_set", eventTarget, subscriptionDbId, {
+        subscription: { from: before.subscriptionId, to: subscriptionDbId },
+      });
     }
-    await tx.memberMonth.update({ where: { memberId_month: key }, data: subscriptionFields(subscription) });
   });
 };
 
 // Marks whether a member paid for the month, in all their groups. Only a
 // month with a subscription can be paid.
-export const setMonthPaid = async (db: Db, target: MonthMemberTarget, paid: boolean): Promise<void> => {
+export const setMonthPaid = async (db: Db, actor: Actor, target: MonthMemberTarget, paid: boolean): Promise<void> => {
   const groupDbId = requireDbId(target.groupId, "Group not found");
   const memberDbId = requireDbId(target.memberId, "Member not found");
   await db.$transaction(async (tx) => {
-    await requireGroupRoster(tx, groupDbId, target.month, memberDbId);
+    const before = await requireMemberMonth(tx, groupDbId, target.month, memberDbId);
     const key = { memberId: memberDbId, month: monthStart(target.month) };
     // One statement, so a subscription cleared meanwhile is not paid.
     const { count } = await tx.memberMonth.updateMany({
@@ -442,19 +528,35 @@ export const setMonthPaid = async (db: Db, target: MonthMemberTarget, paid: bool
     if (count === 0) {
       throw new AppError("VALIDATION_ERROR", 400, "Only a month with a subscription can be paid");
     }
+    if (before.paid !== paid) {
+      const eventTarget = { groupId: groupDbId, memberId: memberDbId, month: target.month };
+      await recordMonthEvent(tx, actor, "month_paid_set", eventTarget, before.subscriptionId, {
+        paid: { from: before.paid, to: paid },
+      });
+    }
   });
 };
 
 // Sets or clears (null) the member's comment for the month, in all their groups.
-export const setMonthComment = async (db: Db, target: MonthMemberTarget, comment: string | null): Promise<void> => {
+// The comment is free text about a member, so the log only marks that it changed.
+export const setMonthComment = async (
+  db: Db,
+  actor: Actor,
+  target: MonthMemberTarget,
+  comment: string | null,
+): Promise<void> => {
   const groupDbId = requireDbId(target.groupId, "Group not found");
   const memberDbId = requireDbId(target.memberId, "Member not found");
   await db.$transaction(async (tx) => {
-    await requireGroupRoster(tx, groupDbId, target.month, memberDbId);
+    const before = await requireMemberMonth(tx, groupDbId, target.month, memberDbId);
     await tx.memberMonth.update({
       where: { memberId_month: { memberId: memberDbId, month: monthStart(target.month) } },
       data: { comment },
     });
+    if (before.comment !== comment) {
+      const eventTarget = { groupId: groupDbId, memberId: memberDbId, month: target.month };
+      await recordMonthEvent(tx, actor, "month_comment_set", eventTarget, null, { comment: { changed: true } });
+    }
   });
 };
 
@@ -470,13 +572,10 @@ export const monthsFrom = async (db: DbClient, groupId: number, fromMonth: Month
 
 // Makes the member a member of the group and puts them on the roster of the
 // current month and of later months with sessions; past months stay as they
-// were. Joining twice changes nothing. today is YYYY-MM-DD at the gym.
-export const joinGroup = async (db: DbClient, groupId: number, memberId: number, today: string): Promise<void> => {
-  await db.groupMember.upsert({
-    where: { groupId_memberId: { groupId, memberId } },
-    create: { groupId, memberId },
-    update: {},
-  });
+// were. Joining twice changes nothing. Returns whether the member was new to
+// the group. today is YYYY-MM-DD at the gym.
+export const joinGroup = async (db: DbClient, groupId: number, memberId: number, today: string): Promise<boolean> => {
+  const { count } = await db.groupMember.createMany({ data: [{ groupId, memberId }], skipDuplicates: true });
   const months = await monthsFrom(db, groupId, monthOf(today));
   for (const month of months) {
     await ensureMemberMonths(db, month, [memberId]);
@@ -485,4 +584,5 @@ export const joinGroup = async (db: DbClient, groupId: number, memberId: number,
     data: months.map((month) => ({ groupId, month: monthStart(month), memberId })),
     skipDuplicates: true,
   });
+  return count > 0;
 };

@@ -2,6 +2,7 @@ import type { Month, Weekday } from "@repo/shared";
 import { config } from "../config.js";
 import type { Db } from "../db/client.js";
 import { createMonthSessions, getGroupAttendance, markAttendance, removeMonthMember } from "../services/attendance.js";
+import { SYSTEM_ACTOR } from "../services/audit.js";
 import { isoDateIn } from "../services/dates.js";
 import { addGroupMember, createGroup, removeGroupMember } from "../services/groups.js";
 import { createMemberWithLogin } from "../services/logins.js";
@@ -142,6 +143,7 @@ const createChild = async (db: Db, orgId: string, birthYears: [number, number], 
   const parent = pick(PARENT_NAMES);
   const member = await createMember(
     db,
+    SYSTEM_ACTOR,
     {
       orgId,
       name: child.name,
@@ -162,7 +164,7 @@ const createChild = async (db: Db, orgId: string, birthYears: [number, number], 
 };
 
 const seedGroup = async (db: Db, orgId: string, ownerId: string, demo: DemoGroup, today: string) => {
-  const group = await createGroup(db, {
+  const group = await createGroup(db, SYSTEM_ACTOR, {
     ownerId,
     days: demo.days,
     from: demo.from,
@@ -180,17 +182,17 @@ const seedGroup = async (db: Db, orgId: string, ownerId: string, demo: DemoGroup
 
   // Everyone joins the group first: with no sessions yet, no roster changes.
   for (const child of children) {
-    await addGroupMember(db, group.id, child.memberId, today);
+    await addGroupMember(db, SYSTEM_ACTOR, group.id, child.memberId, today);
   }
 
   let ticks = 0;
   for (const [monthIndex, month] of SEASON.entries()) {
     // Built as if it were the first day of that month, so past months pass
     // the "current or next month" rule.
-    await createMonthSessions(db, group.id, month, `${month}-01`);
+    await createMonthSessions(db, SYSTEM_ACTOR, group.id, month, `${month}-01`);
     for (const child of children) {
       if (monthIndex < child.firstMonth || monthIndex > child.lastMonth) {
-        await removeMonthMember(db, { groupId: group.id, month, memberId: child.memberId });
+        await removeMonthMember(db, SYSTEM_ACTOR, { groupId: group.id, month, memberId: child.memberId });
       }
     }
 
@@ -198,7 +200,12 @@ const seedGroup = async (db: Db, orgId: string, ownerId: string, demo: DemoGroup
     for (const session of sessions.filter((item) => item.date <= today)) {
       for (const child of children) {
         if (monthIndex >= child.firstMonth && monthIndex <= child.lastMonth && random() < child.rate) {
-          await markAttendance(db, { groupId: group.id, sessionId: session.id, memberId: child.memberId }, today);
+          await markAttendance(
+            db,
+            SYSTEM_ACTOR,
+            { groupId: group.id, sessionId: session.id, memberId: child.memberId },
+            today,
+          );
           ticks += 1;
         }
       }
@@ -207,7 +214,7 @@ const seedGroup = async (db: Db, orgId: string, ownerId: string, demo: DemoGroup
 
   // Children who stopped before this month are no longer in the group.
   for (const child of children.filter((item) => currentMonth !== -1 && item.lastMonth < currentMonth)) {
-    await removeGroupMember(db, group.id, child.memberId, today);
+    await removeGroupMember(db, SYSTEM_ACTOR, group.id, child.memberId, today);
   }
 
   return { children: children.length, ticks };
@@ -236,6 +243,7 @@ await runCommand("pnpm --filter @repo/backend db:seed", {}, async (db) => {
   for (const trainer of TRAINERS) {
     const trainerId = await createMemberWithLogin(
       db,
+      SYSTEM_ACTOR,
       { orgId: org.id, name: trainer.name, surname: trainer.surname, birthday: trainer.birthday, email: trainer.email },
       "trainer",
       DEMO_TRAINER_PASSWORD,

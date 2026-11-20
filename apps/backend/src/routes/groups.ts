@@ -22,6 +22,7 @@ import {
   removeGroupMember,
   updateGroup,
 } from "../services/groups.js";
+import { actorOf } from "./actor.js";
 import { guardedErrorResponses } from "./responses.js";
 
 export const groupRoutes: FastifyPluginAsync = async (app) => {
@@ -45,7 +46,7 @@ export const groupRoutes: FastifyPluginAsync = async (app) => {
         response: { 201: groupResponse, ...guardedErrorResponses(400, 404) },
       },
     },
-    async (request, reply) => reply.status(201).send(await createGroup(app.db, request.body)),
+    async (request, reply) => reply.status(201).send(await createGroup(app.db, actorOf(request), request.body)),
   );
 
   routes.get(
@@ -70,7 +71,7 @@ export const groupRoutes: FastifyPluginAsync = async (app) => {
         response: { 200: groupResponse, ...guardedErrorResponses(400, 404) },
       },
     },
-    async (request) => updateGroup(app.db, request.params.id, request.body),
+    async (request) => updateGroup(app.db, actorOf(request), request.params.id, request.body),
   );
 
   routes.delete(
@@ -83,7 +84,7 @@ export const groupRoutes: FastifyPluginAsync = async (app) => {
       },
     },
     async (request, reply) => {
-      await archiveGroup(app.db, request.params.id, new Date());
+      await archiveGroup(app.db, actorOf(request), request.params.id, new Date());
       return reply.status(204).send();
     },
   );
@@ -112,6 +113,7 @@ export const groupRoutes: FastifyPluginAsync = async (app) => {
     async (request, reply) => {
       await addGroupMember(
         app.db,
+        actorOf(request),
         request.params.id,
         request.params.memberId,
         isoDateIn(new Date(), config.GYM_TIME_ZONE),
@@ -132,6 +134,7 @@ export const groupRoutes: FastifyPluginAsync = async (app) => {
     async (request, reply) => {
       await removeGroupMember(
         app.db,
+        actorOf(request),
         request.params.id,
         request.params.memberId,
         isoDateIn(new Date(), config.GYM_TIME_ZONE),

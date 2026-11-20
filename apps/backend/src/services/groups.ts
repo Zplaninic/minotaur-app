@@ -13,7 +13,8 @@ import type { Db } from "../db/client.js";
 import { AppError } from "../errors.js";
 import type { Prisma } from "../generated/prisma/client.js";
 import { joinGroup } from "./attendance.js";
-import { monthOf, monthStart, toIsoDate } from "./dates.js";
+import { diff, initial, hasChanges, recordEvent, type Actor } from "./audit.js";
+import { monthOf, monthStart, toIsoDate, toTimeOfDay } from "./dates.js";
 import { guardianSelect, toGuardianResponse } from "./guardians.js";
 import { toApiId, toDbId } from "./ids.js";
 
@@ -34,7 +35,6 @@ type GroupRow = Prisma.GroupGetPayload<{ select: typeof groupSelect }>;
 
 // Postgres `time` values travel as the time on 1970-01-01 UTC in a Date.
 const toDbTime = (time: string): Date => new Date(`1970-01-01T${time}:00.000Z`);
-const toTimeOfDay = (date: Date): string => date.toISOString().slice(11, 16);
 
 const inWeekOrder = (days: readonly Weekday[]): Weekday[] => weekday.options.filter((day) => days.includes(day));
 
@@ -87,10 +87,38 @@ const toGroupData = (body: CreateGroupBody, ownerId: number) => ({
   ageTo: body.ageTo,
 });
 
-export const createGroup = async (db: Db, body: CreateGroupBody): Promise<GroupResponse> =>
+// What the log keeps of a group. The owner is a member id, resolved to a name when read.
+const auditFieldsOf = (group: {
+  ownerId: number;
+  days: Weekday[];
+  from: Date;
+  to: Date;
+  ageFrom: number | null;
+  ageTo: number | null;
+}) => ({
+  owner: group.ownerId,
+  days: inWeekOrder(group.days),
+  from: toTimeOfDay(group.from),
+  to: toTimeOfDay(group.to),
+  ageFrom: group.ageFrom,
+  ageTo: group.ageTo,
+});
+
+const auditSelect = {
+  ownerId: true,
+  days: true,
+  from: true,
+  to: true,
+  ageFrom: true,
+  ageTo: true,
+} satisfies Prisma.GroupSelect;
+
+export const createGroup = async (db: Db, actor: Actor, body: CreateGroupBody): Promise<GroupResponse> =>
   db.$transaction(async (tx) => {
     const ownerId = await requireTrainer(tx, body.ownerId);
-    const group = await tx.group.create({ data: toGroupData(body, ownerId), select: groupSelect });
+    const data = toGroupData(body, ownerId);
+    const group = await tx.group.create({ data, select: groupSelect });
+    await recordEvent(tx, actor, { action: "group_created", groupId: group.id, changes: initial(auditFieldsOf(data)) });
     return toGroupResponse(group);
   });
 
@@ -118,14 +146,25 @@ export const getGroup = async (db: Db, groupId: string): Promise<GroupResponse> 
 
 // Replaces the whole group. Sessions already recorded stay as they are, even
 // on days the group no longer trains.
-export const updateGroup = async (db: Db, groupId: string, body: UpdateGroupBody): Promise<GroupResponse> => {
+export const updateGroup = async (
+  db: Db,
+  actor: Actor,
+  groupId: string,
+  body: UpdateGroupBody,
+): Promise<GroupResponse> => {
   const id = requireGroupId(groupId);
   return db.$transaction(async (tx) => {
-    if (!(await tx.group.findUnique({ where: { id, deletedAt: null }, select: { id: true } }))) {
+    const before = await tx.group.findUnique({ where: { id, deletedAt: null }, select: auditSelect });
+    if (!before) {
       throw groupNotFound();
     }
     const ownerId = await requireTrainer(tx, body.ownerId);
-    const group = await tx.group.update({ where: { id }, data: toGroupData(body, ownerId), select: groupSelect });
+    const data = toGroupData(body, ownerId);
+    const group = await tx.group.update({ where: { id }, data, select: groupSelect });
+    const changes = diff(auditFieldsOf(before), auditFieldsOf(data));
+    if (hasChanges(changes)) {
+      await recordEvent(tx, actor, { action: "group_updated", groupId: id, changes });
+    }
     return toGroupResponse(group);
   });
 };
@@ -171,7 +210,13 @@ export const listGroupMembers = async (db: Db, groupId: string): Promise<ListGro
 
 // Adding a member who is already in the group changes nothing. See joinGroup
 // for the month rosters. today is YYYY-MM-DD at the gym.
-export const addGroupMember = async (db: Db, groupId: string, memberId: string, today: string): Promise<void> => {
+export const addGroupMember = async (
+  db: Db,
+  actor: Actor,
+  groupId: string,
+  memberId: string,
+  today: string,
+): Promise<void> => {
   const groupDbId = requireGroupId(groupId);
   const memberDbId = toDbId(memberId);
   if (memberDbId === undefined) {
@@ -190,27 +235,39 @@ export const addGroupMember = async (db: Db, groupId: string, memberId: string, 
       throw new AppError("VALIDATION_ERROR", 400, "Only children and members can be added to a group");
     }
 
-    await joinGroup(tx, groupDbId, memberDbId, today);
+    if (await joinGroup(tx, groupDbId, memberDbId, today)) {
+      await recordEvent(tx, actor, { action: "group_member_added", groupId: groupDbId, memberId: memberDbId });
+    }
   });
 };
 
 // Removing a member who is not in the group changes nothing. The member also
 // leaves the rosters of months after the current one, which have no ticks
 // yet; the current and past months keep them. today is YYYY-MM-DD at the gym.
-export const removeGroupMember = async (db: Db, groupId: string, memberId: string, today: string): Promise<void> => {
+export const removeGroupMember = async (
+  db: Db,
+  actor: Actor,
+  groupId: string,
+  memberId: string,
+  today: string,
+): Promise<void> => {
   const groupDbId = requireGroupId(groupId);
   if (!(await db.group.findUnique({ where: { id: groupDbId, deletedAt: null }, select: { id: true } }))) {
     throw groupNotFound();
   }
   const memberDbId = toDbId(memberId);
-  if (memberDbId !== undefined) {
-    await db.$transaction([
-      db.groupMember.deleteMany({ where: { groupId: groupDbId, memberId: memberDbId } }),
-      db.groupMonthMember.deleteMany({
-        where: { groupId: groupDbId, memberId: memberDbId, month: { gt: monthStart(monthOf(today)) } },
-      }),
-    ]);
+  if (memberDbId === undefined) {
+    return;
   }
+  await db.$transaction(async (tx) => {
+    const { count } = await tx.groupMember.deleteMany({ where: { groupId: groupDbId, memberId: memberDbId } });
+    await tx.groupMonthMember.deleteMany({
+      where: { groupId: groupDbId, memberId: memberDbId, month: { gt: monthStart(monthOf(today)) } },
+    });
+    if (count > 0) {
+      await recordEvent(tx, actor, { action: "group_member_removed", groupId: groupDbId, memberId: memberDbId });
+    }
+  });
 };
 
 // Takes a member out of every group and out of the rosters after the current
@@ -222,12 +279,13 @@ export const leaveGroups = async (db: Prisma.TransactionClient, memberId: number
 };
 
 // Hides the group and keeps its members, rosters, sessions and attendance for history.
-export const archiveGroup = async (db: Db, groupId: string, now: Date): Promise<void> => {
-  const { count } = await db.group.updateMany({
-    where: { id: requireGroupId(groupId), deletedAt: null },
-    data: { deletedAt: now },
+export const archiveGroup = async (db: Db, actor: Actor, groupId: string, now: Date): Promise<void> => {
+  const id = requireGroupId(groupId);
+  await db.$transaction(async (tx) => {
+    const { count } = await tx.group.updateMany({ where: { id, deletedAt: null }, data: { deletedAt: now } });
+    if (count === 0) {
+      throw groupNotFound();
+    }
+    await recordEvent(tx, actor, { action: "group_archived", groupId: id });
   });
-  if (count === 0) {
-    throw groupNotFound();
-  }
 };

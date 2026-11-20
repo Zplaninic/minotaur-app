@@ -2,6 +2,7 @@ import { afterAll, beforeEach, describe, expect, it } from "vitest";
 import { createLoginMember, createOrg, resetDb } from "../../test/db.js";
 import { prisma } from "../db/client.js";
 import { createMonthSessions, setMonthPaid, setMonthSubscription } from "./attendance.js";
+import { SYSTEM_ACTOR } from "./audit.js";
 import { addGroupMember, createGroup } from "./groups.js";
 import { archiveMember } from "./members.js";
 import {
@@ -24,21 +25,23 @@ const kids = { name: "Kids 2x", sessionsPerWeek: 2, price: 4500 };
 
 describe("createSubscription", () => {
   it("stores the subscription and returns it with an opaque id", async () => {
-    const created = await createSubscription(prisma, kids);
+    const created = await createSubscription(prisma, SYSTEM_ACTOR, kids);
     expect(created).toMatchObject({ ...kids, id: expect.any(String) });
   });
 
   it("rejects a name that is taken", async () => {
-    await createSubscription(prisma, kids);
-    await expect(createSubscription(prisma, { ...kids, sessionsPerWeek: 3 })).rejects.toMatchObject({ code: "P2002" });
+    await createSubscription(prisma, SYSTEM_ACTOR, kids);
+    await expect(
+      createSubscription(prisma, SYSTEM_ACTOR, { ...kids, sessionsPerWeek: 3 }),
+    ).rejects.toMatchObject({ code: "P2002" });
   });
 });
 
 describe("listSubscriptions", () => {
   it("orders by sessions per week, then name", async () => {
-    await createSubscription(prisma, { name: "Adults 3x", sessionsPerWeek: 3, price: 6000 });
-    await createSubscription(prisma, kids);
-    await createSubscription(prisma, { name: "Adults 2x", sessionsPerWeek: 2, price: 5000 });
+    await createSubscription(prisma, SYSTEM_ACTOR, { name: "Adults 3x", sessionsPerWeek: 3, price: 6000 });
+    await createSubscription(prisma, SYSTEM_ACTOR, kids);
+    await createSubscription(prisma, SYSTEM_ACTOR, { name: "Adults 2x", sessionsPerWeek: 2, price: 5000 });
 
     const { items } = await listSubscriptions(prisma);
     expect(items.map((item) => item.name)).toEqual(["Adults 2x", "Kids 2x", "Adults 3x"]);
@@ -47,17 +50,22 @@ describe("listSubscriptions", () => {
 
 describe("updateSubscription", () => {
   it("replaces every field", async () => {
-    const created = await createSubscription(prisma, kids);
-    const updated = await updateSubscription(prisma, created.id, { name: "Kids 1x", sessionsPerWeek: 1, price: 3000 });
+    const created = await createSubscription(prisma, SYSTEM_ACTOR, kids);
+    const updated = await updateSubscription(
+      prisma,
+      SYSTEM_ACTOR,
+      created.id,
+      { name: "Kids 1x", sessionsPerWeek: 1, price: 3000 },
+    );
     expect(updated).toMatchObject({ id: created.id, name: "Kids 1x", sessionsPerWeek: 1, price: 3000 });
   });
 
   it("answers NOT_FOUND for an id that is not a database id", async () => {
-    await expect(updateSubscription(prisma, "abc", kids)).rejects.toMatchObject({ code: "NOT_FOUND" });
+    await expect(updateSubscription(prisma, SYSTEM_ACTOR, "abc", kids)).rejects.toMatchObject({ code: "NOT_FOUND" });
   });
 
   it("fails for an unknown id", async () => {
-    await expect(updateSubscription(prisma, "999999", kids)).rejects.toMatchObject({ code: "P2025" });
+    await expect(updateSubscription(prisma, SYSTEM_ACTOR, "999999", kids)).rejects.toMatchObject({ code: "NOT_FOUND" });
   });
 });
 
@@ -75,7 +83,7 @@ describe("payments", () => {
     adminId = String((await createLoginMember(prisma, orgId, "admin")).memberId);
     const trainerId = String((await createLoginMember(prisma, orgId, "trainer")).memberId);
     groupId = (
-      await createGroup(prisma, {
+      await createGroup(prisma, SYSTEM_ACTOR, {
         ownerId: trainerId,
         days: ["monday"],
         from: "17:00",
@@ -87,29 +95,38 @@ describe("payments", () => {
     const child = async (surname: string) => {
       const id = String((await createLoginMember(prisma, orgId, "child", `${surname}@example.com`)).memberId);
       await prisma.member.update({ where: { id: Number(id) }, data: { surname } });
-      await addGroupMember(prisma, groupId, id, "2026-10-01");
+      await addGroupMember(prisma, SYSTEM_ACTOR, groupId, id, "2026-10-01");
       return id;
     };
     leo = await child("Perić");
     nora = await child("Jurić");
     mia = await child("Novak");
 
-    const kids = await createSubscription(prisma, kids2x);
-    await createMonthSessions(prisma, groupId, "2026-10", "2026-10-01");
+    const kids = await createSubscription(prisma, SYSTEM_ACTOR, kids2x);
+    await createMonthSessions(prisma, SYSTEM_ACTOR, groupId, "2026-10", "2026-10-01");
     for (const memberId of [leo, nora]) {
-      await setMonthSubscription(prisma, { groupId, month: "2026-10", memberId }, kids.id);
+      await setMonthSubscription(prisma, SYSTEM_ACTOR, { groupId, month: "2026-10", memberId }, kids.id);
     }
-    await createMonthSessions(prisma, groupId, "2026-11", TODAY);
+    await createMonthSessions(prisma, SYSTEM_ACTOR, groupId, "2026-11", TODAY);
   });
 
   const kids2x = { name: "Kids 2x", sessionsPerWeek: 2, price: 4500 };
-  const pay = (memberId: string, month: string) => setMonthPaid(prisma, { groupId, month, memberId }, true);
+  const pay = (memberId: string, month: string) => setMonthPaid(
+    prisma,
+    SYSTEM_ACTOR,
+    { groupId, month, memberId },
+    true,
+  );
 
   describe("getSubscriptionSummary", () => {
     it("counts members with a subscription and sums the money", async () => {
       await pay(leo, "2026-10");
-      const adults = await createSubscription(prisma, { name: "Adults 3x", sessionsPerWeek: 3, price: 6000 });
-      await setMonthSubscription(prisma, { groupId, month: "2026-10", memberId: mia }, adults.id);
+      const adults = await createSubscription(
+        prisma,
+        SYSTEM_ACTOR,
+        { name: "Adults 3x", sessionsPerWeek: 3, price: 6000 },
+      );
+      await setMonthSubscription(prisma, SYSTEM_ACTOR, { groupId, month: "2026-10", memberId: mia }, adults.id);
 
       expect(await getSubscriptionSummary(prisma, "2026-10")).toEqual({
         month: "2026-10",
@@ -128,7 +145,7 @@ describe("payments", () => {
 
     it("keeps the prices a month was set with", async () => {
       const [kids] = (await listSubscriptions(prisma)).items;
-      await updateSubscription(prisma, kids?.id ?? "", { ...kids2x, price: 9900 });
+      await updateSubscription(prisma, SYSTEM_ACTOR, kids?.id ?? "", { ...kids2x, price: 9900 });
       expect((await getSubscriptionSummary(prisma, "2026-10")).expected).toBe(9000);
     });
 
@@ -163,7 +180,7 @@ describe("payments", () => {
 
     it("leaves out paid months, the current month and archived members", async () => {
       await pay(leo, "2026-10");
-      await archiveMember(prisma, nora, adminId, new Date(), TODAY);
+      await archiveMember(prisma, { memberId: Number(adminId) }, nora, new Date(), TODAY);
       expect(await listOverduePayments(prisma, TODAY)).toEqual({ items: [], total: 0 });
     });
 

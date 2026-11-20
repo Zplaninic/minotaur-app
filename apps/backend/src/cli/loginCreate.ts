@@ -1,6 +1,7 @@
 import { email as emailSchema } from "@repo/shared";
 import { LOGIN_ROLES, type LoginRole } from "@repo/shared/auth";
 import { config } from "../config.js";
+import { SYSTEM_ACTOR } from "../services/audit.js";
 import { isoDateIn } from "../services/dates.js";
 import { createLoginForMember, createMemberWithLogin } from "../services/logins.js";
 import { readNewPassword } from "./readPassword.js";
@@ -35,6 +36,7 @@ await runCommand(
       const memberId = requiredId(values, "member-id");
       await createLoginForMember(
         db,
+        SYSTEM_ACTOR,
         memberId,
         role,
         await readNewPassword(),
@@ -45,6 +47,7 @@ await runCommand(
 
     const memberId = await createMemberWithLogin(
       db,
+      SYSTEM_ACTOR,
       {
         orgId: requiredId(values, "org-id"),
         name: required(values, "name"),

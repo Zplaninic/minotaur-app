@@ -3,6 +3,7 @@ import type { FastifyInstance } from "fastify";
 import { afterAll, beforeAll, beforeEach, describe, expect, it } from "vitest";
 import { createOrg, loggedInAs, resetDb } from "../../test/db.js";
 import { buildServer } from "../server.js";
+import { SYSTEM_ACTOR } from "../services/audit.js";
 import { createSubscription } from "../services/subscriptions.js";
 
 let app: FastifyInstance;
@@ -190,7 +191,11 @@ describe("GET /members?unpaid=true", () => {
     const ana = await created("Ana");
     const ivo = await created("Ivo");
     await created("Luka");
-    const subscription = await createSubscription(app.db, { name: "Adults 2x", sessionsPerWeek: 2, price: 5000 });
+    const subscription = await createSubscription(
+      app.db,
+      SYSTEM_ACTOR,
+      { name: "Adults 2x", sessionsPerWeek: 2, price: 5000 },
+    );
     const month = (memberId: string, paid: boolean) => ({
       memberId: Number(memberId),
       month: september,

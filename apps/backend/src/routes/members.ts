@@ -13,6 +13,7 @@ import { config } from "../config.js";
 import { AppError } from "../errors.js";
 import { isoDateIn } from "../services/dates.js";
 import { archiveMember, createMember, getMember, listMembers, updateMember } from "../services/members.js";
+import { actorOf } from "./actor.js";
 import { guardedErrorResponses } from "./responses.js";
 
 const todayAtGym = (): string => isoDateIn(new Date(), config.GYM_TIME_ZONE);
@@ -48,7 +49,8 @@ export const memberRoutes: FastifyPluginAsync = async (app) => {
         response: { 201: memberResponse, ...guardedErrorResponses(400, 404, 409) },
       },
     },
-    async (request, reply) => reply.status(201).send(await createMember(app.db, request.body, todayAtGym())),
+    async (request, reply) =>
+      reply.status(201).send(await createMember(app.db, actorOf(request), request.body, todayAtGym())),
   );
 
   routes.get(
@@ -74,7 +76,7 @@ export const memberRoutes: FastifyPluginAsync = async (app) => {
         response: { 200: memberResponse, ...guardedErrorResponses(400, 404, 409) },
       },
     },
-    async (request) => updateMember(app.db, request.params.id, request.body, todayAtGym()),
+    async (request) => updateMember(app.db, actorOf(request), request.params.id, request.body, todayAtGym()),
   );
 
   routes.delete(
@@ -87,14 +89,11 @@ export const memberRoutes: FastifyPluginAsync = async (app) => {
       },
     },
     async (request, reply) => {
-      if (!request.auth) {
-        throw new AppError("UNAUTHORIZED", 401, "Log in first");
-      }
       const now = new Date();
       await archiveMember(
         app.db,
+        actorOf(request),
         request.params.id,
-        request.auth.me.memberId,
         now,
         isoDateIn(now, config.GYM_TIME_ZONE),
       );
