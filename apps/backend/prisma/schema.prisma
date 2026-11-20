@@ -33,6 +33,7 @@ enum AuditAction {
   member_updated
   member_archived
   member_role_changed
+  member_new_set
   login_created
   login_password_set
   group_created
@@ -52,8 +53,23 @@ enum AuditAction {
   month_comment_set
   subscription_created
   subscription_updated
+  enrollment_request_created
+  enrollment_request_deleted
+  enrollment_child_group_set
+  enrollment_child_accepted
+  enrollment_child_rejected
+  enrollment_child_reopened
 
   @@map("audit_action")
+}
+
+// Mirrors enrollmentChildStatus in @repo/shared.
+enum EnrollmentChildStatus {
+  pending
+  accepted
+  rejected
+
+  @@map("enrollment_child_status")
 }
 
 datasource db {
@@ -73,14 +89,15 @@ model Org {
 }
 
 model Guardian {
-  id        Int              @id @default(autoincrement())
-  name      String
-  surname   String?
-  email     String?
-  phone     String?
-  createdAt DateTime         @default(now()) @db.Timestamptz
-  updatedAt DateTime         @updatedAt @db.Timestamptz
-  members   MemberGuardian[]
+  id                 Int                 @id @default(autoincrement())
+  name               String
+  surname            String?
+  email              String?
+  phone              String?
+  createdAt          DateTime            @default(now()) @db.Timestamptz
+  updatedAt          DateTime            @updatedAt @db.Timestamptz
+  members            MemberGuardian[]
+  enrollmentRequests EnrollmentRequest[]
 
   @@map("guardian")
 }
@@ -92,6 +109,9 @@ model Member {
   surname          String
   birthday         DateTime?          @db.Date
   role             MemberRole         @default(child)
+  // Shows the "New" badge in groups and on attendance. Set when the member
+  // comes in through an enrollment request; trainers and admins clear it.
+  isNew            Boolean            @default(false)
   taxNumber        String?
   email            String?
   phone            String?
@@ -104,6 +124,7 @@ model Member {
   login            Login?
   sessions         Session[]
   ownedGroups      Group[]
+  enrollments      EnrollmentChild[]
   groupMemberships GroupMember[]
   attendance       Attendance[]
   monthMemberships GroupMonthMember[]
@@ -179,6 +200,7 @@ model Group {
   sessions     TrainingSession[]
   monthMembers GroupMonthMember[]
   auditEvents  AuditEvent[]
+  enrollments  EnrollmentChild[]
 
   @@index([ownerId])
   @@map("group")
@@ -287,29 +309,84 @@ model Subscription {
 // One write in the system: who did what, to which records. Written in the
 // same transaction as the change. Holds ids, never copies of personal values.
 model AuditEvent {
-  id             Int           @id @default(autoincrement())
-  action         AuditAction
+  id                  Int                @id @default(autoincrement())
+  action              AuditAction
   // Null for the system (backend commands).
-  actorId        Int?
-  memberId       Int?
-  groupId        Int?
-  subscriptionId Int?
+  actorId             Int?
+  memberId            Int?
+  groupId             Int?
+  subscriptionId      Int?
+  enrollmentRequestId Int?
+  enrollmentChildId   Int?
   // The first day of the month, for month and attendance events.
-  month          DateTime?     @db.Date
+  month               DateTime?          @db.Date
   // The training session's date, for session and attendance events.
-  date           DateTime?     @db.Date
+  date                DateTime?          @db.Date
   // { field: { from, to } } or { field: { changed: true } } for personal values.
-  changes        Json?
-  createdAt      DateTime      @default(now()) @db.Timestamptz
-  actor          Member?       @relation("AuditActor", fields: [actorId], references: [id], onDelete: SetNull)
-  member         Member?       @relation("AuditMember", fields: [memberId], references: [id], onDelete: SetNull)
-  group          Group?        @relation(fields: [groupId], references: [id], onDelete: SetNull)
-  subscription   Subscription? @relation(fields: [subscriptionId], references: [id], onDelete: SetNull)
+  changes             Json?
+  createdAt           DateTime           @default(now()) @db.Timestamptz
+  actor               Member?            @relation("AuditActor", fields: [actorId], references: [id], onDelete: SetNull)
+  member              Member?            @relation("AuditMember", fields: [memberId], references: [id], onDelete: SetNull)
+  group               Group?             @relation(fields: [groupId], references: [id], onDelete: SetNull)
+  subscription        Subscription?      @relation(fields: [subscriptionId], references: [id], onDelete: SetNull)
+  enrollmentRequest   EnrollmentRequest? @relation(fields: [enrollmentRequestId], references: [id], onDelete: SetNull)
+  enrollmentChild     EnrollmentChild?   @relation(fields: [enrollmentChildId], references: [id], onDelete: SetNull)
 
   @@index([createdAt])
   @@index([actorId])
   @@index([memberId])
   @@index([groupId])
   @@index([subscriptionId])
+  @@index([enrollmentRequestId])
+  @@index([enrollmentChildId])
   @@map("audit_event")
+}
+
+// A parent's request to enroll one or more children, read from the club's
+// enrollment form email. Nobody becomes a member until a child is accepted.
+model EnrollmentRequest {
+  id            Int               @id @default(autoincrement())
+  parentName    String
+  parentSurname String?
+  parentPhone   String?
+  parentEmail   String?
+  // The email the request was read from.
+  rawText       String?
+  // The guardian created from the parent when the first child was accepted,
+  // so siblings accepted later share it.
+  guardianId    Int?
+  createdAt     DateTime          @default(now()) @db.Timestamptz
+  updatedAt     DateTime          @updatedAt @db.Timestamptz
+  guardian      Guardian?         @relation(fields: [guardianId], references: [id], onDelete: SetNull)
+  children      EnrollmentChild[]
+  auditEvents   AuditEvent[]
+
+  @@index([guardianId])
+  @@index([createdAt])
+  @@map("enrollment_request")
+}
+
+// One child of an enrollment request.
+model EnrollmentChild {
+  id          Int                   @id @default(autoincrement())
+  requestId   Int
+  name        String
+  // Years, as the parent wrote them.
+  age         Decimal               @db.Decimal(3, 1)
+  // The recommended group, or the one an admin chose instead.
+  groupId     Int?
+  status      EnrollmentChildStatus @default(pending)
+  // The member created when the child was accepted.
+  memberId    Int?
+  createdAt   DateTime              @default(now()) @db.Timestamptz
+  updatedAt   DateTime              @updatedAt @db.Timestamptz
+  request     EnrollmentRequest     @relation(fields: [requestId], references: [id], onDelete: Cascade)
+  group       Group?                @relation(fields: [groupId], references: [id], onDelete: SetNull)
+  member      Member?               @relation(fields: [memberId], references: [id], onDelete: SetNull)
+  auditEvents AuditEvent[]
+
+  @@index([requestId])
+  @@index([groupId, status])
+  @@index([memberId])
+  @@map("enrollment_child")
 }

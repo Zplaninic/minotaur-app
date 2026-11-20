@@ -116,6 +116,7 @@ describe("getGroupAttendance", () => {
         subscription: null,
         paid: false,
         comment: null,
+        isNew: false,
       },
     ]);
   });

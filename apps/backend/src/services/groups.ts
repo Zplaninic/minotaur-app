@@ -182,6 +182,7 @@ const groupMemberSelect = {
   birthday: true,
   email: true,
   phone: true,
+  isNew: true,
   guardians: {
     select: { guardian: { select: guardianSelect } },
     orderBy: [{ guardian: { name: "asc" } }, { guardian: { surname: "asc" } }, { guardianId: "asc" }],
@@ -210,6 +211,7 @@ export const listGroupMembers = async (db: Db, groupId: string): Promise<ListGro
       email: member.email,
       phone: member.phone,
       guardians: member.guardians.map((link) => toGuardianResponse(link.guardian)),
+      isNew: member.isNew,
     })),
   };
 };

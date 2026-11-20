@@ -278,6 +278,26 @@ export const updateMember = async (
   });
 };
 
+// Sets or removes the "New" badge. Setting it to what it already is changes nothing.
+export const setMemberNew = async (db: Db, actor: Actor, memberId: string, isNew: boolean): Promise<void> => {
+  const id = requireDbId(memberId, "Member not found");
+  await db.$transaction(async (tx) => {
+    const before = await tx.member.findUnique({ where: { id, deletedAt: null }, select: { isNew: true } });
+    if (!before) {
+      throw new AppError("NOT_FOUND", 404, "Member not found");
+    }
+    if (before.isNew === isNew) {
+      return;
+    }
+    await tx.member.update({ where: { id }, data: { isNew } });
+    await recordEvent(tx, actor, {
+      action: "member_new_set",
+      memberId: id,
+      changes: { isNew: { from: before.isNew, to: isNew } },
+    });
+  });
+};
+
 // Hides the member and keeps their past rosters and attendance for history.
 // They leave their groups and the rosters after the current month, the same
 // as being removed from a group, and lose their login. A group's owner must

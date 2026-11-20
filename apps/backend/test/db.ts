@@ -7,6 +7,8 @@ import type { Db } from "../src/db/client.js";
 export const resetDb = async (db: Db): Promise<void> => {
   await db.$transaction([
     db.auditEvent.deleteMany(),
+    db.enrollmentChild.deleteMany(),
+    db.enrollmentRequest.deleteMany(),
     db.attendance.deleteMany(),
     db.trainingSession.deleteMany(),
     db.groupMonthMember.deleteMany(),

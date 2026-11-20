@@ -131,7 +131,7 @@ export const getGroupAttendance = async (db: Db, groupId: string, month: Month):
       monthMembers: {
         where: { month: monthStart(month) },
         select: {
-          member: { select: { id: true, name: true, surname: true } },
+          member: { select: { id: true, name: true, surname: true, isNew: true } },
           memberMonth: {
             select: {
               subscriptionPrice: true,
@@ -173,6 +173,7 @@ export const getGroupAttendance = async (db: Db, groupId: string, month: Month):
       subscription: toMonthMemberSubscription(row.memberMonth),
       paid: row.memberMonth.paid,
       comment: row.memberMonth.comment,
+      isNew: row.member.isNew,
     })),
   };
 };

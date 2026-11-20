@@ -30,6 +30,8 @@ export type AuditEventInput = {
   memberId?: number;
   groupId?: number;
   subscriptionId?: number | null;
+  enrollmentRequestId?: number;
+  enrollmentChildId?: number;
   month?: Month;
   // YYYY-MM-DD
   date?: string;
@@ -47,6 +49,8 @@ export const recordEvent = async (db: DbClient, actor: Actor, event: AuditEventI
       memberId: event.memberId ?? null,
       groupId: event.groupId ?? null,
       subscriptionId: event.subscriptionId ?? null,
+      enrollmentRequestId: event.enrollmentRequestId ?? null,
+      enrollmentChildId: event.enrollmentChildId ?? null,
       month: event.month ? monthStart(event.month) : null,
       date: event.date ? toDbDate(event.date) : null,
       ...(event.changes && Object.keys(event.changes).length > 0 ? { changes: event.changes } : {}),
@@ -98,6 +102,8 @@ const eventSelect = {
   month: true,
   date: true,
   changes: true,
+  enrollmentRequestId: true,
+  enrollmentChild: { select: { id: true, name: true } },
   actor: { select: personSelect },
   member: { select: personSelect },
   group: { select: { id: true, days: true, from: true, to: true, owner: { select: personSelect } } },
@@ -177,6 +183,10 @@ const toEventResponse = (refs: Refs, row: EventRow, changes: StoredChanges): Aud
       }
     : null,
   subscription: row.subscription ? { id: toApiId(row.subscription.id), name: row.subscription.name } : null,
+  enrollmentRequestId: row.enrollmentRequestId === null ? null : toApiId(row.enrollmentRequestId),
+  enrollmentChild: row.enrollmentChild
+    ? { id: toApiId(row.enrollmentChild.id), name: row.enrollmentChild.name }
+    : null,
   month: row.month ? monthOf(toIsoDate(row.month)) : null,
   date: row.date ? toIsoDate(row.date) : null,
   changes: resolveChanges(refs, changes),

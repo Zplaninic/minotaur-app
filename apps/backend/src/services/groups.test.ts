@@ -221,6 +221,7 @@ describe("addGroupMember", () => {
         email: "Ana.Horvat@example.com",
         phone: null,
         guardians: [],
+        isNew: false,
       },
     ]);
   });

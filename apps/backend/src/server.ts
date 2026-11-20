@@ -8,6 +8,7 @@ import { attendanceRoutes } from "./routes/attendance.js";
 import { auditEventRoutes } from "./routes/auditEvents.js";
 import { authRoutes } from "./routes/auth.js";
 import { dashboardRoutes } from "./routes/dashboard.js";
+import { enrollmentRequestRoutes } from "./routes/enrollmentRequests.js";
 import { groupRoutes } from "./routes/groups.js";
 import { guardianRoutes } from "./routes/guardians.js";
 import { memberRoutes } from "./routes/members.js";
@@ -44,6 +45,7 @@ export const buildServer = async (): Promise<FastifyInstance> => {
   await app.register(subscriptionRoutes, { prefix: "/subscriptions" });
   await app.register(dashboardRoutes, { prefix: "/dashboard" });
   await app.register(auditEventRoutes, { prefix: "/audit-events" });
+  await app.register(enrollmentRequestRoutes, { prefix: "/enrollment-requests" });
 
   return app;
 };

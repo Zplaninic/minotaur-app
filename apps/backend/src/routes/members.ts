@@ -6,6 +6,7 @@ import {
   listMembersResponse,
   memberParams,
   memberResponse,
+  setMemberNewBody,
   updateMemberBody,
 } from "@repo/shared";
 import type { FastifyPluginAsync } from "fastify";
@@ -15,7 +16,14 @@ import { config } from "../config.js";
 import { AppError } from "../errors.js";
 import { isoDateIn } from "../services/dates.js";
 import { importMembers } from "../services/memberImport.js";
-import { archiveMember, createMember, getMember, listMembers, updateMember } from "../services/members.js";
+import {
+  archiveMember,
+  createMember,
+  getMember,
+  listMembers,
+  setMemberNew,
+  updateMember,
+} from "../services/members.js";
 import { actorOf } from "./actor.js";
 import { guardedErrorResponses } from "./responses.js";
 
@@ -97,6 +105,22 @@ export const memberRoutes: FastifyPluginAsync = async (app) => {
       },
     },
     async (request) => updateMember(app.db, actorOf(request), request.params.id, request.body, todayAtGym()),
+  );
+
+  routes.put(
+    "/:id/new",
+    {
+      onRequest: app.requireAbility("update", "Member"),
+      schema: {
+        params: memberParams,
+        body: setMemberNewBody,
+        response: { 204: z.undefined(), ...guardedErrorResponses(400, 404) },
+      },
+    },
+    async (request, reply) => {
+      await setMemberNew(app.db, actorOf(request), request.params.id, request.body.isNew);
+      return reply.status(204).send();
+    },
   );
 
   routes.delete(

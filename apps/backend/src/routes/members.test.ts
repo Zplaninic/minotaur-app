@@ -205,6 +205,48 @@ describe("DELETE /members/:id", () => {
   });
 });
 
+describe("PUT /members/:id/new", () => {
+  const setNew = (memberId: string, payload: object, as = headers) =>
+    app.inject({ method: "PUT", url: `/members/${memberId}/new`, payload, headers: as });
+
+  it("sets and removes the badge, logging each change", async () => {
+    const created = memberResponse.parse((await post(body())).json());
+    expect((await setNew(created.id, { isNew: true })).statusCode).toBe(204);
+    expect((await app.db.member.findUniqueOrThrow({ where: { id: Number(created.id) } })).isNew).toBe(true);
+    // Setting it again changes nothing and logs nothing.
+    expect((await setNew(created.id, { isNew: true })).statusCode).toBe(204);
+    expect((await setNew(created.id, { isNew: false })).statusCode).toBe(204);
+    expect((await app.db.member.findUniqueOrThrow({ where: { id: Number(created.id) } })).isNew).toBe(false);
+
+    const events = await app.db.auditEvent.findMany({
+      where: { action: "member_new_set", memberId: Number(created.id) },
+      orderBy: { id: "asc" },
+      select: { changes: true },
+    });
+    expect(events.map((event) => event.changes)).toEqual([
+      { isNew: { from: false, to: true } },
+      { isNew: { from: true, to: false } },
+    ]);
+  });
+
+  it("lets a trainer set it", async () => {
+    const created = memberResponse.parse((await post(body())).json());
+    const trainer = await loggedInAs(app.db, orgId, "trainer");
+    expect((await setNew(created.id, { isNew: true }, trainer)).statusCode).toBe(204);
+  });
+
+  it("answers VALIDATION_ERROR without a boolean", async () => {
+    const created = memberResponse.parse((await post(body())).json());
+    const response = await setNew(created.id, { isNew: "yes" });
+    expect(response.statusCode).toBe(400);
+    expect(errorResponse.parse(response.json()).code).toBe("VALIDATION_ERROR");
+  });
+
+  it("answers NOT_FOUND for a missing member", async () => {
+    expect((await setNew("999999", { isNew: true })).statusCode).toBe(404);
+  });
+});
+
 describe("GET /members?unpaid=true", () => {
   // September 2026 is the first month, so it is always in the past.
   const september = new Date("2026-09-01T00:00:00.000Z");
