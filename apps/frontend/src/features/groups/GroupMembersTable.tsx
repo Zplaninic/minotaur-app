@@ -8,6 +8,7 @@ import { ConfirmDialog } from "../../components/ConfirmDialog";
 import { formatCalendarDate, formatPersonName } from "../../lib/format";
 import { useMessages } from "../../lib/messages";
 import styles from "./GroupMembersTable.module.css";
+import { TableSkeleton } from "../../components/TableSkeleton";
 
 type GroupMembersTableProps = {
   groupId: string;
@@ -26,7 +27,7 @@ export const GroupMembersTable = ({ groupId }: GroupMembersTableProps) => {
   };
 
   if (members.isPending) {
-    return <output>{t("groupMembers.loading")}</output>;
+    return <TableSkeleton label={t("groupMembers.loading")} columns={canChange ? 6 : 5} />;
   }
   if (members.isError) {
     return (

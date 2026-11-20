@@ -1,0 +1,31 @@
+.state {
+  display: flex;
+  align-items: center;
+  gap: var(--space-3);
+  color: var(--color-green-dark);
+  animation: appear var(--duration-fast) ease var(--delay-loader) both;
+}
+
+.inline {
+  padding: var(--space-4) 0;
+}
+
+.card {
+  padding: var(--space-6);
+  border-radius: var(--radius-lg);
+  background-color: var(--color-beige-10);
+  box-shadow: var(--shadow-raised);
+}
+
+/* Fills the screen while the app checks the login. */
+.page {
+  flex-direction: column;
+  justify-content: center;
+  min-height: 60vh;
+}
+
+@keyframes appear {
+  from {
+    opacity: 0;
+  }
+}

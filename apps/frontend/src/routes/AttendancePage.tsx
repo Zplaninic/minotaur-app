@@ -30,6 +30,8 @@ import { useMessages } from "../lib/messages";
 import { useNarrowScreen } from "../lib/useNarrowScreen";
 import { useToday } from "../lib/useToday";
 import styles from "./AttendancePage.module.css";
+import { LoadingState } from "../components/LoadingState";
+import { TableSkeleton } from "../components/TableSkeleton";
 
 const ROUTE = "/app/groups/$groupId/attendance";
 
@@ -246,7 +248,11 @@ const AttendanceBody = ({
     );
   }
   if (loading || !group || !attendance) {
-    return <output>{t("attendance.loading")}</output>;
+    return narrow ? (
+      <LoadingState label={t("attendance.loading")} variant="card" />
+    ) : (
+      <TableSkeleton label={t("attendance.loading")} columns={8} rows={8} />
+    );
   }
   if (attendance.sessions.length === 0) {
     return <CreateMonthSessions groupId={groupId} month={month} days={group.days} today={today} />;

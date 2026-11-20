@@ -6,6 +6,7 @@ import { formatDateTime, formatMonth, formatPersonName, formatSessionDate, forma
 import { auditActionKey, type Translate, useMessages, weekdayKey } from "../../lib/messages";
 import { describeChanges } from "./describeChanges";
 import styles from "./ActivityTable.module.css";
+import { TableSkeleton } from "../../components/TableSkeleton";
 
 // What the event is about: the member, group, subscription and when, one per line.
 const targetLines = (event: AuditEventResponse, t: Translate): string[] => [
@@ -50,7 +51,7 @@ export const ActivityTable = ({ filters, filtered }: ActivityTableProps) => {
   // A failed "load more" keeps the pages already shown; only a failed first page replaces them.
   if (!events.data) {
     if (!events.isError) {
-      return <output>{t("activity.loading")}</output>;
+      return <TableSkeleton label={t("activity.loading")} columns={5} />;
     }
     return (
       <div className={styles.state} role="alert">
@@ -104,7 +105,7 @@ export const ActivityTable = ({ filters, filtered }: ActivityTableProps) => {
       </div>
       {events.hasNextPage ? (
         <div>
-          <Button variant="secondary" onClick={() => void events.fetchNextPage()} disabled={events.isFetchingNextPage}>
+          <Button variant="secondary" onClick={() => void events.fetchNextPage()} pending={events.isFetchingNextPage}>
             {events.isFetchingNextPage ? t("activity.loadingMore") : t("activity.loadMore")}
           </Button>
         </div>

@@ -6,13 +6,14 @@ import { formatNumber, formatPersonName, formatTimeOfDay } from "../../lib/forma
 import { useMessages, weekdayKey } from "../../lib/messages";
 import { groupName } from "./groupName";
 import styles from "./GroupsTable.module.css";
+import { TableSkeleton } from "../../components/TableSkeleton";
 
 export const GroupsTable = () => {
   const { errorMessage, t } = useMessages();
   const groups = useGroups();
 
   if (groups.isPending) {
-    return <output>{t("groups.loading")}</output>;
+    return <TableSkeleton label={t("groups.loading")} columns={5} />;
   }
   if (groups.isError) {
     return (

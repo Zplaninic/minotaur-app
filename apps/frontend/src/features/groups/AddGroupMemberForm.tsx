@@ -7,6 +7,7 @@ import { SelectField } from "../../components/SelectField";
 import { formatPersonName } from "../../lib/format";
 import { useMessages } from "../../lib/messages";
 import styles from "./GroupForm.module.css";
+import { LoadingState } from "../../components/LoadingState";
 
 type AddGroupMemberFormProps = {
   groupId: string;
@@ -31,7 +32,7 @@ export const AddGroupMemberForm = ({ groupId, onCancel, onSaved }: AddGroupMembe
   };
 
   if (everyone.isPending || current.isPending) {
-    return <output>{t("groupMemberForm.membersLoading")}</output>;
+    return <LoadingState label={t("groupMemberForm.membersLoading")} />;
   }
   const loadError = everyone.error ?? current.error;
   if (everyone.isError || current.isError) {
@@ -75,7 +76,7 @@ export const AddGroupMemberForm = ({ groupId, onCancel, onSaved }: AddGroupMembe
         <Button variant="secondary" onClick={onCancel}>
           {t("common.cancel")}
         </Button>
-        <Button type="submit" disabled={addMember.isPending}>
+        <Button type="submit" pending={addMember.isPending}>
           {addMember.isPending ? t("groupMemberForm.submitting") : t("groupMemberForm.submit")}
         </Button>
       </div>

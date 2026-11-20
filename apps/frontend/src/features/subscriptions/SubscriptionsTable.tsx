@@ -6,6 +6,7 @@ import { Button } from "../../components/Button";
 import { formatMoney, formatNumber } from "../../lib/format";
 import { useMessages } from "../../lib/messages";
 import styles from "./SubscriptionsTable.module.css";
+import { TableSkeleton } from "../../components/TableSkeleton";
 
 type SubscriptionsTableProps = {
   onEdit: (subscription: SubscriptionResponse) => void;
@@ -17,7 +18,7 @@ export const SubscriptionsTable = ({ onEdit }: SubscriptionsTableProps) => {
   const canEdit = useAbility().can("update", "Subscription");
 
   if (subscriptions.isPending) {
-    return <output>{t("subscriptions.loading")}</output>;
+    return <TableSkeleton label={t("subscriptions.loading")} columns={canEdit ? 4 : 3} rows={4} />;
   }
   if (subscriptions.isError) {
     return (

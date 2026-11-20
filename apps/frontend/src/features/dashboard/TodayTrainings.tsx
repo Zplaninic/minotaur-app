@@ -7,6 +7,7 @@ import { formatNumber, formatPersonName, formatTimeOfDay } from "../../lib/forma
 import { useMessages } from "../../lib/messages";
 import styles from "./Dashboard.module.css";
 import { SectionError } from "./SectionError";
+import { LoadingState } from "../../components/LoadingState";
 
 // The groups training today at the gym, the viewer's own first. Each links to its attendance.
 export const TodayTrainings = () => {
@@ -17,7 +18,7 @@ export const TodayTrainings = () => {
 
   const body = () => {
     if (dashboard.isPending || groups.isPending) {
-      return <output>{t("dashboard.today.loading")}</output>;
+      return <LoadingState label={t("dashboard.today.loading")} />;
     }
     if (dashboard.isError || groups.isError) {
       return (

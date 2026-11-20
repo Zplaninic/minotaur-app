@@ -6,6 +6,8 @@ import { LanguageSwitcher } from "../components/LanguageSwitcher";
 import { Logo } from "../components/Logo";
 import { useMessages } from "../lib/messages";
 import styles from "./AppLayout.module.css";
+import { LoadingState } from "../components/LoadingState";
+import { TopProgress } from "../components/TopProgress";
 
 // Every page except login: only for logged-in members.
 export const AppLayout = () => {
@@ -18,7 +20,7 @@ export const AppLayout = () => {
   if (me.isPending) {
     return (
       <main className={styles.main}>
-        <output>{t("auth.checking")}</output>
+        <LoadingState label={t("auth.checking")} variant="page" />
       </main>
     );
   }
@@ -42,6 +44,7 @@ export const AppLayout = () => {
 
   return (
     <>
+      <TopProgress />
       <header className={styles.header}>
         <nav className={styles.nav} aria-label={t("nav.label")}>
           <Link to="/" className={styles.brand}>

@@ -7,6 +7,7 @@ import { formatMoney, formatMonth, formatNumber, formatPersonName } from "../../
 import { useMessages } from "../../lib/messages";
 import styles from "./Dashboard.module.css";
 import { SectionError } from "./SectionError";
+import { LoadingState } from "../../components/LoadingState";
 
 type Money = { summary: SubscriptionSummaryResponse; overdue: OverduePaymentsResponse } | undefined;
 
@@ -80,13 +81,13 @@ export const NeedsAttention = () => {
   const body = () => {
     // The summary waits for the month from the dashboard, so the dashboard is checked first.
     if (dashboard.isPending) {
-      return <output>{t("dashboard.attention.loading")}</output>;
+      return <LoadingState label={t("dashboard.attention.loading")} />;
     }
     if (dashboard.isError) {
       return <SectionError error={dashboard.error} onRetry={() => void dashboard.refetch()} />;
     }
     if (moneyQueries.some((query) => query.isPending)) {
-      return <output>{t("dashboard.attention.loading")}</output>;
+      return <LoadingState label={t("dashboard.attention.loading")} />;
     }
     const failed = moneyQueries.filter((query) => query.isError);
     if (failed.length > 0) {

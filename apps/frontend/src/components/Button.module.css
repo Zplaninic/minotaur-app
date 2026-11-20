@@ -1,4 +1,8 @@
 .button {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: var(--space-2);
   min-height: var(--space-12);
   padding: var(--space-2) var(--space-6);
   border: var(--border-width) solid var(--color-green-dark);
@@ -14,6 +18,12 @@
 .button:disabled {
   cursor: not-allowed;
   opacity: 0.6;
+}
+
+/* A running action is not unavailable, so it keeps full contrast. */
+.button[aria-busy="true"] {
+  cursor: progress;
+  opacity: 1;
 }
 
 .primary {

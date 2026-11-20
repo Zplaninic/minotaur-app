@@ -24,6 +24,7 @@ import { TextField } from "../../components/TextField";
 import { memberFieldErrorKey, useMessages } from "../../lib/messages";
 import { GuardianFieldset } from "./GuardianFieldset";
 import styles from "./MemberForm.module.css";
+import { LoadingState } from "../../components/LoadingState";
 
 type MemberFormProps = {
   // Set to edit this member; without it the form adds a new one.
@@ -99,7 +100,7 @@ export const MemberForm = ({ member, onCancel, onSaved }: MemberFormProps) => {
   };
 
   if (orgs.isPending) {
-    return <output>{t("memberForm.orgsLoading")}</output>;
+    return <LoadingState label={t("memberForm.orgsLoading")} />;
   }
   if (orgs.isError) {
     return (
@@ -244,7 +245,7 @@ export const MemberForm = ({ member, onCancel, onSaved }: MemberFormProps) => {
         <Button variant="secondary" onClick={onCancel}>
           {t("common.cancel")}
         </Button>
-        <Button type="submit" disabled={save.isPending}>
+        <Button type="submit" pending={save.isPending}>
           {save.isPending ? t("memberForm.submitting") : t(member ? "memberForm.saveChanges" : "memberForm.submit")}
         </Button>
       </div>

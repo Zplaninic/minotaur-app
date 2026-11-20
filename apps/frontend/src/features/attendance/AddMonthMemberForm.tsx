@@ -9,6 +9,7 @@ import { SelectField } from "../../components/SelectField";
 import { formatPersonName } from "../../lib/format";
 import { useMessages } from "../../lib/messages";
 import styles from "../groups/GroupForm.module.css";
+import { LoadingState } from "../../components/LoadingState";
 
 type AddMonthMemberFormProps = {
   groupId: string;
@@ -40,7 +41,7 @@ export const AddMonthMemberForm = ({
   const [submitted, setSubmitted] = useState(false);
 
   if (everyone.isPending || groupMembers.isPending || attendance.isPending) {
-    return <output>{t("monthMemberForm.membersLoading")}</output>;
+    return <LoadingState label={t("monthMemberForm.membersLoading")} />;
   }
   if (everyone.isError || groupMembers.isError || attendance.isError) {
     return (
@@ -123,7 +124,7 @@ export const AddMonthMemberForm = ({
         <Button variant="secondary" onClick={onNewMember}>
           {t("monthMemberForm.newMember")}
         </Button>
-        <Button type="submit" disabled={addMember.isPending}>
+        <Button type="submit" pending={addMember.isPending}>
           {addMember.isPending ? t("monthMemberForm.submitting") : t("monthMemberForm.submit")}
         </Button>
       </div>

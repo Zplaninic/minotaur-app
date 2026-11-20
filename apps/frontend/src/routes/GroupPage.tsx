@@ -13,6 +13,7 @@ import { groupAgeRange, groupName } from "../features/groups/groupName";
 import { formatPersonName, formatTimeOfDay } from "../lib/format";
 import { useMessages, weekdayKey } from "../lib/messages";
 import styles from "./GroupPage.module.css";
+import { LoadingState } from "../components/LoadingState";
 
 export const GroupPage = () => {
   const { errorMessage, t } = useMessages();
@@ -41,7 +42,7 @@ export const GroupPage = () => {
         {t("group.back")}
       </Link>
 
-      {group.isPending ? <output>{t("group.loading")}</output> : null}
+      {group.isPending ? <LoadingState label={t("group.loading")} variant="card" /> : null}
       {group.isError ? (
         <div className={styles.state} role="alert">
           <p>{errorMessage(toErrorCode(group.error))}</p>

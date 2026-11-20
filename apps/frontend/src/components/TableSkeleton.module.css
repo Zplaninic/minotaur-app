@@ -1,0 +1,77 @@
+.wrapper {
+  display: block;
+  animation: appear var(--duration-fast) ease var(--delay-loader) both;
+}
+
+/* Read by screen readers, hidden on screen: the shapes say it visually. */
+.label {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  overflow: hidden;
+  clip-path: inset(50%);
+  white-space: nowrap;
+}
+
+.table {
+  display: grid;
+  overflow: hidden;
+  border: var(--border-width) solid var(--color-green-dark-20);
+  border-radius: var(--radius-lg);
+  background-color: var(--color-beige-10);
+  box-shadow: var(--shadow-raised);
+}
+
+.head,
+.cell {
+  display: flex;
+  align-items: center;
+  min-height: var(--space-12);
+  padding: var(--space-3) var(--space-4);
+  border-bottom: var(--border-width) solid var(--color-green-dark-20);
+}
+
+.head {
+  min-height: var(--space-8);
+  background-color: var(--color-green-light-30);
+}
+
+.bar {
+  display: block;
+  height: var(--space-3);
+  border-radius: var(--radius-pill);
+  background: linear-gradient(
+      90deg,
+      var(--color-green-dark-10) 0%,
+      var(--color-beige-10) 50%,
+      var(--color-green-dark-10) 100%
+    )
+    0 0 / 200% 100%;
+  animation: shimmer var(--duration-shimmer) ease-in-out infinite;
+}
+
+.head .bar {
+  background: var(--color-green-dark-20);
+  animation: none;
+}
+
+@keyframes shimmer {
+  from {
+    background-position: 100% 0;
+  }
+  to {
+    background-position: -100% 0;
+  }
+}
+
+@keyframes appear {
+  from {
+    opacity: 0;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .bar {
+    animation: none;
+  }
+}

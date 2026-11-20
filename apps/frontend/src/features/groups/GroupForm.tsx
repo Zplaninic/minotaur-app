@@ -17,6 +17,7 @@ import { TextField } from "../../components/TextField";
 import { formatPersonName } from "../../lib/format";
 import { groupFieldErrorKey, useMessages, weekdayKey } from "../../lib/messages";
 import styles from "./GroupForm.module.css";
+import { LoadingState } from "../../components/LoadingState";
 
 type GroupFormProps = {
   // The group to edit; without one the form adds a new group.
@@ -51,7 +52,7 @@ export const GroupForm = ({ group, onCancel, onSaved }: GroupFormProps) => {
   };
 
   if (trainers.isPending) {
-    return <output>{t("groupForm.trainersLoading")}</output>;
+    return <LoadingState label={t("groupForm.trainersLoading")} />;
   }
   if (trainers.isError) {
     return (
@@ -137,7 +138,7 @@ export const GroupForm = ({ group, onCancel, onSaved }: GroupFormProps) => {
         <Button variant="secondary" onClick={onCancel}>
           {t("common.cancel")}
         </Button>
-        <Button type="submit" disabled={saveGroup.isPending}>
+        <Button type="submit" pending={saveGroup.isPending}>
           {saveGroup.isPending ? t("groupForm.submitting") : t("groupForm.submit")}
         </Button>
       </div>

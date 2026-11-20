@@ -83,7 +83,7 @@ export const LoginForm = ({ onLoggedIn }: LoginFormProps) => {
           {formError}
         </p>
       ) : null}
-      <Button type="submit" disabled={login.isPending}>
+      <Button type="submit" pending={login.isPending}>
         {login.isPending ? t("login.submitting") : t("login.submit")}
       </Button>
     </form>

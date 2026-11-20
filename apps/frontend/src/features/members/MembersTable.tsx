@@ -8,6 +8,7 @@ import { ConfirmDialog } from "../../components/ConfirmDialog";
 import { formatCalendarDate, formatPersonName } from "../../lib/format";
 import { useMessages } from "../../lib/messages";
 import styles from "./MembersTable.module.css";
+import { TableSkeleton } from "../../components/TableSkeleton";
 
 type MembersTableProps = {
   onEdit: (member: MemberResponse) => void;
@@ -42,7 +43,7 @@ export const MembersTable = ({ onEdit, unpaidOnly, search }: MembersTableProps) 
   };
 
   if (members.isPending) {
-    return <output>{t("members.loading")}</output>;
+    return <TableSkeleton label={t("members.loading")} columns={canEdit || canDelete ? 6 : 5} />;
   }
   if (members.isError) {
     return (
@@ -70,7 +71,10 @@ export const MembersTable = ({ onEdit, unpaidOnly, search }: MembersTableProps) 
 
   return (
     <div className={styles.wrapper}>
-      <div className={styles.scroll}>
+      <div
+        className={[styles.scroll, members.isPlaceholderData ? styles.stale : ""].filter(Boolean).join(" ")}
+        aria-busy={members.isPlaceholderData || undefined}
+      >
         <table className={styles.table}>
           <caption className={styles.caption}>{t("members.table.caption")}</caption>
           <thead>
@@ -141,11 +145,11 @@ export const MembersTable = ({ onEdit, unpaidOnly, search }: MembersTableProps) 
 
       {pages > 1 ? (
         <nav className={styles.pagination} aria-label={t("members.pagination.label")}>
-          <Button variant="secondary" onClick={() => setPage(page - 1)} disabled={page <= 1}>
+          <Button variant="secondary" onClick={() => setPage(page - 1)} disabled={page <= 1 || members.isPlaceholderData}>
             {t("members.pagination.previous")}
           </Button>
           <p aria-live="polite">{t("members.pagination.status", { page, pages })}</p>
-          <Button variant="secondary" onClick={() => setPage(page + 1)} disabled={page >= pages}>
+          <Button variant="secondary" onClick={() => setPage(page + 1)} disabled={page >= pages || members.isPlaceholderData}>
             {t("members.pagination.next")}
           </Button>
         </nav>

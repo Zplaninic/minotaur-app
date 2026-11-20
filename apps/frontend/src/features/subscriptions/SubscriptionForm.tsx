@@ -100,7 +100,7 @@ export const SubscriptionForm = ({ subscription, onCancel, onSaved }: Subscripti
         <Button variant="secondary" onClick={onCancel}>
           {t("common.cancel")}
         </Button>
-        <Button type="submit" disabled={save.isPending}>
+        <Button type="submit" pending={save.isPending}>
           {save.isPending ? t("subscriptionForm.submitting") : t("subscriptionForm.submit")}
         </Button>
       </div>

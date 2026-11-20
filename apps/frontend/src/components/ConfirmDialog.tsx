@@ -42,7 +42,7 @@ export const ConfirmDialog = ({
         <Button variant="secondary" onClick={onCancel}>
           {t("common.cancel")}
         </Button>
-        <Button onClick={onConfirm} disabled={pending}>
+        <Button onClick={onConfirm} pending={pending}>
           {pending && pendingLabel ? pendingLabel : confirmLabel}
         </Button>
       </div>

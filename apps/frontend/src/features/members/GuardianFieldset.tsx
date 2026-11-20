@@ -6,6 +6,7 @@ import { TextField } from "../../components/TextField";
 import { formatPersonName } from "../../lib/format";
 import { useMessages } from "../../lib/messages";
 import styles from "./MemberForm.module.css";
+import { LoadingState } from "../../components/LoadingState";
 
 type GuardianFieldsetProps = {
   index: number;
@@ -51,7 +52,7 @@ export const GuardianFieldset = ({
 
       {guardian.kind === "existing" ? (
         existingState === "loading" ? (
-          <output>{t("memberForm.guardiansLoading")}</output>
+          <LoadingState label={t("memberForm.guardiansLoading")} />
         ) : existingState === "error" || !existingGuardians ? null : existingGuardians.length === 0 ? (
           <p>{t("memberForm.guardiansEmpty")}</p>
         ) : (

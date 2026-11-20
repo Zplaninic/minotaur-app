@@ -7,6 +7,7 @@ import { formatMoney, formatNumber, formatPercent } from "../../lib/format";
 import { useMessages } from "../../lib/messages";
 import styles from "./Dashboard.module.css";
 import { SectionError } from "./SectionError";
+import { LoadingState } from "../../components/LoadingState";
 
 // The current month in a few numbers.
 export const MonthOverview = () => {
@@ -20,13 +21,13 @@ export const MonthOverview = () => {
   const body = () => {
     // The summary waits for the month from the dashboard, so the dashboard is checked first.
     if (dashboard.isPending) {
-      return <output>{t("dashboard.overview.loading")}</output>;
+      return <LoadingState label={t("dashboard.overview.loading")} />;
     }
     if (dashboard.isError) {
       return <SectionError error={dashboard.error} onRetry={() => void dashboard.refetch()} />;
     }
     if (canReadMoney && summary.isPending) {
-      return <output>{t("dashboard.overview.loading")}</output>;
+      return <LoadingState label={t("dashboard.overview.loading")} />;
     }
     if (canReadMoney && summary.isError) {
       return <SectionError error={summary.error} onRetry={() => void summary.refetch()} />;

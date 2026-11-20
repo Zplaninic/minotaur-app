@@ -67,7 +67,7 @@ export const AddSessionForm = ({ groupId, today, onCancel, onSaved }: AddSession
         <Button variant="secondary" onClick={onCancel}>
           {t("common.cancel")}
         </Button>
-        <Button type="submit" disabled={addSession.isPending}>
+        <Button type="submit" pending={addSession.isPending}>
           {addSession.isPending ? t("sessionForm.submitting") : t("sessionForm.submit")}
         </Button>
       </div>

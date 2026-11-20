@@ -80,6 +80,10 @@
     0 0.5rem 1.5rem color-mix(in srgb, var(--color-green-dark) 6%, transparent);
   --shadow-overlay: 0 1rem 3rem color-mix(in srgb, var(--color-green-dark) 24%, transparent);
   --duration-fast: 150ms;
+  --duration-spin: 800ms;
+  --duration-shimmer: 1400ms;
+  /* Loaders wait this long before showing, so quick requests do not flash. */
+  --delay-loader: 200ms;
   --color-backdrop: color-mix(in srgb, var(--color-green-dark) 50%, transparent);
 
   --width-dialog: 40rem;

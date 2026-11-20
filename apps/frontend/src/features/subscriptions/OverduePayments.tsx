@@ -4,6 +4,7 @@ import { Button } from "../../components/Button";
 import { formatMoney, formatMonth, formatPersonName } from "../../lib/format";
 import { useMessages } from "../../lib/messages";
 import styles from "./PaymentSummary.module.css";
+import { TableSkeleton } from "../../components/TableSkeleton";
 
 // Members who had a subscription in a past month and did not pay for it.
 export const OverduePayments = () => {
@@ -12,7 +13,7 @@ export const OverduePayments = () => {
 
   const body = () => {
     if (overdue.isPending) {
-      return <output>{t("overdue.loading")}</output>;
+      return <TableSkeleton label={t("overdue.loading")} columns={3} rows={4} />;
     }
     if (overdue.isError) {
       return (

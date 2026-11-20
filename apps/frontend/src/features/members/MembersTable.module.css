@@ -98,3 +98,9 @@
 .table tbody tr:hover > * {
   background-color: var(--color-green-light-10);
 }
+
+/* The previous rows while a new search or page loads. */
+.stale {
+  opacity: 0.6;
+  transition: opacity var(--duration-fast) ease var(--delay-loader);
+}

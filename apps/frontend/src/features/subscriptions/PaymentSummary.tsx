@@ -7,6 +7,7 @@ import { useMessages } from "../../lib/messages";
 import { useToday } from "../../lib/useToday";
 import navStyles from "../attendance/Attendance.module.css";
 import styles from "./PaymentSummary.module.css";
+import { TableSkeleton } from "../../components/TableSkeleton";
 
 // One month's money: what was expected, what came in, and per subscription.
 export const PaymentSummary = () => {
@@ -21,7 +22,7 @@ export const PaymentSummary = () => {
 
   const body = () => {
     if (summary.isPending) {
-      return <output>{t("payments.loading")}</output>;
+      return <TableSkeleton label={t("payments.loading")} columns={4} rows={3} />;
     }
     if (summary.isError) {
       return (

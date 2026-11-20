@@ -35,7 +35,7 @@ export const CreateMonthSessions = ({ groupId, month, days, today }: CreateMonth
       ) : null}
       {canCreate && allowedMonth ? (
         <div>
-          <Button onClick={() => createSessions.mutate(month)} disabled={createSessions.isPending}>
+          <Button onClick={() => createSessions.mutate(month)} pending={createSessions.isPending}>
             {createSessions.isPending
               ? t("attendance.creatingSessions")
               : t("attendance.createSessions", { days: days.map((day) => t(weekdayKey(day))).join(", ") })}
