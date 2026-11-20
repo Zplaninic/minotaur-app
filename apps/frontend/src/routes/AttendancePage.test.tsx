@@ -45,6 +45,8 @@ const club = [
 let everyone: MemberResponse[];
 
 const trainer: MeResponse = { memberId: "9", name: "Ana", surname: "Trener", email: "ana@example.com", role: "trainer" };
+const admin: MeResponse = { ...trainer, role: "admin" };
+let me: MeResponse;
 
 const group: GroupResponse = {
   id: "1",
@@ -105,10 +107,11 @@ beforeEach(() => {
   vi.setSystemTime(new Date(2026, 10, 16, 18, 30));
   attendance = november();
   everyone = club;
+  me = trainer;
   fetchMock.mockReset();
   fetchMock.mockImplementation(async (path, _schema, init) => {
     if (path === "/me") {
-      return trainer;
+      return me;
     }
     if (path === "/groups/1") {
       return group;
@@ -399,11 +402,18 @@ describe("AttendancePage, wide screens", () => {
   });
 
   it("marks members who have not paid a past month", async () => {
+    me = admin;
     renderAt("/groups/1/attendance?month=2026-11");
     const leo = (await screen.findByRole("rowheader", { name: /Perić Leo/ })) as HTMLElement;
     expect(await within(leo).findByText(t("overdue.badge", { months: "Oct 2026" }))).toBeInTheDocument();
     const nora = screen.getByRole("rowheader", { name: /Jurić Nora/ });
     expect(within(nora).queryByText(/Unpaid/)).not.toBeInTheDocument();
+  });
+
+  it("does not show a trainer who has not paid", async () => {
+    renderAt("/groups/1/attendance?month=2026-11");
+    const leo = (await screen.findByRole("rowheader", { name: /Perić Leo/ })) as HTMLElement;
+    expect(within(leo).queryByText(/Unpaid/)).not.toBeInTheDocument();
   });
 
   it("disables future sessions", async () => {

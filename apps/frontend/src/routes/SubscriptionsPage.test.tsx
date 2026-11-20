@@ -139,12 +139,11 @@ describe("SubscriptionsPage", () => {
     expect(await screen.findByText(t("subscriptions.empty"))).toBeInTheDocument();
   });
 
-  it("shows a trainer the list without add or edit buttons", async () => {
+  it("tells a trainer they have no access and shows no subscriptions", async () => {
     me = { ...admin, role: "trainer" };
     renderPage();
-    expect(await screen.findByRole("rowheader", { name: "Kids 2x" })).toBeInTheDocument();
-    expect(screen.queryByRole("button", { name: t("subscriptions.add") })).not.toBeInTheDocument();
-    expect(screen.queryByRole("button", { name: t("subscriptions.editLabel", { name: "Kids 2x" }) })).not.toBeInTheDocument();
+    expect(await screen.findByRole("alert")).toHaveTextContent(t("auth.noAccess"));
+    expect(screen.queryByRole("rowheader", { name: "Kids 2x" })).not.toBeInTheDocument();
   });
 
   it("shows field errors and sends nothing when the form is empty", async () => {

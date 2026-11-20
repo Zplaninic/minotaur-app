@@ -19,6 +19,7 @@ vi.mock("../api/client", () => ({ api: { fetch: vi.fn() } }));
 const fetchMock = vi.mocked(api.fetch);
 
 const trainer: MeResponse = { memberId: "5", name: "Iva", surname: "Kovač", email: "iva@example.com", role: "trainer" };
+const admin: MeResponse = { ...trainer, role: "admin" };
 
 const group = (id: string, ownerId: string, surname: string, days: GroupResponse["days"], from: string): GroupResponse => ({
   id,
@@ -33,12 +34,14 @@ const group = (id: string, ownerId: string, surname: string, days: GroupResponse
   updatedAt: "2026-11-01T10:00:00.000Z",
 });
 
+let me: MeResponse;
 let dashboard: DashboardResponse;
 let dashboardFails: boolean;
 let summary: SubscriptionSummaryResponse;
 let overdue: OverduePaymentsResponse;
 
 beforeEach(() => {
+  me = trainer;
   dashboardFails = false;
   dashboard = {
     today: "2026-11-16",
@@ -65,7 +68,7 @@ beforeEach(() => {
   fetchMock.mockImplementation(async (path) => {
     switch (path) {
       case "/me":
-        return trainer;
+        return me;
       case "/dashboard":
         if (dashboardFails) {
           throw new ApiError("INTERNAL_ERROR", 500);
@@ -114,6 +117,7 @@ describe("HomePage", () => {
   });
 
   it("lists unpaid months and members without a subscription", async () => {
+    me = admin;
     renderPage();
     const attention = await section(t("dashboard.attention.title"));
     expect(
@@ -129,6 +133,13 @@ describe("HomePage", () => {
     );
   });
 
+  it("shows a trainer members without a subscription but no payments", async () => {
+    renderPage();
+    const attention = await section(t("dashboard.attention.title"));
+    expect(await within(attention).findByText("No subscription in November 2026: 1")).toBeInTheDocument();
+    expect(within(attention).queryByText(/Not paid|Owing/)).not.toBeInTheDocument();
+  });
+
   it("says all is good when nothing needs attention", async () => {
     dashboard = { ...dashboard, withoutSubscription: [] };
     summary = { ...summary, unpaid: 0 };
@@ -139,6 +150,7 @@ describe("HomePage", () => {
   });
 
   it("shows the month in numbers", async () => {
+    me = admin;
     renderPage();
     const overview = await section(t("dashboard.overview.title"));
     expect(await within(overview).findByText("42")).toBeInTheDocument();
