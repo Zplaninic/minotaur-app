@@ -13,6 +13,11 @@ describe("createMemberBody", () => {
     expect(createMemberBody.parse(validBody)).toEqual({ ...validBody, guardians: [] });
   });
 
+  it("accepts a member without a birthday", () => {
+    const { birthday: _birthday, ...withoutBirthday } = validBody;
+    expect(createMemberBody.safeParse(withoutBirthday).success).toBe(true);
+  });
+
   it("rejects a birthday before 1900", () => {
     expect(createMemberBody.safeParse({ ...validBody, birthday: "0001-01-01" }).success).toBe(false);
     expect(createMemberBody.safeParse({ ...validBody, birthday: "1900-01-01" }).success).toBe(true);

@@ -31,13 +31,20 @@ describe("validateMemberDraft", () => {
     const result = validateMemberDraft({ ...emptyMemberDraft, taxNumber: "123" }, today);
     expect(result).toEqual({
       ok: false,
-      errors: { orgId: "org", name: "name", surname: "surname", birthday: "birthday", taxNumber: "taxNumber" },
+      errors: { orgId: "org", name: "name", surname: "surname", taxNumber: "taxNumber" },
     });
   });
 
   it("requires a guardian for a member under 18", () => {
     const result = validateMemberDraft({ ...adult, birthday: "2008-11-16" }, today);
     expect(result).toEqual({ ok: false, errors: { guardians: "guardianRequired" } });
+  });
+
+  it("accepts a member without a birthday and without a guardian", () => {
+    expect(validateMemberDraft({ ...adult, birthday: "" }, today)).toEqual({
+      ok: true,
+      body: { orgId: "1", name: "Marko", surname: "Babić", guardians: [] },
+    });
   });
 
   it("accepts a member who turns 18 today without a guardian", () => {

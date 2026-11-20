@@ -35,7 +35,7 @@ export const createMemberBody = z.object({
   orgId: id,
   name: personName,
   surname: personName,
-  birthday,
+  birthday: birthday.optional(),
   taxNumber: taxNumber.optional(),
   email: email.optional(),
   phone: phone.optional(),
@@ -53,7 +53,7 @@ export const createMemberBody = z.object({
 export type CreateMemberBody = z.infer<typeof createMemberBody>;
 export type CreateMemberInput = z.input<typeof createMemberBody>;
 
-// Replaces a member's editable fields: a missing OIB, email or phone is
+// Replaces a member's editable fields: a missing birthday, OIB, email or phone is
 // cleared, and the guardian list becomes exactly this one. The org and the
 // role are not editable.
 export const updateMemberBody = createMemberBody.omit({ orgId: true });
@@ -67,7 +67,7 @@ export const memberResponse = z.object({
   orgId: id,
   name: z.string(),
   surname: z.string(),
-  birthday: z.iso.date(),
+  birthday: z.iso.date().nullable(),
   role: memberRole,
   taxNumber: z.string().nullable(),
   email: z.string().nullable(),
