@@ -99,6 +99,13 @@ describe("MembersPage", () => {
     expect(within(row as HTMLElement).queryByText(t("members.trainerLabel"))).not.toBeInTheDocument();
   });
 
+  it("shows each guardian's email under their name", async () => {
+    members = [{ ...ana, guardians: [{ id: "1", name: "Iva", surname: "Horvat", email: "iva@example.com", phone: null }] }];
+    renderPage();
+    const row = (await screen.findByRole("rowheader", { name: "Ana Horvat" })).closest("tr");
+    expect(within(row as HTMLElement).getByText("iva@example.com")).toBeInTheDocument();
+  });
+
   it("edits a member", async () => {
     renderPage();
     fireEvent.click(await screen.findByRole("button", { name: t("members.editLabel", { name: "Ana Horvat" }) }));

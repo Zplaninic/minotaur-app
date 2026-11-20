@@ -5,6 +5,7 @@ import { useAbility, useMe } from "../../api/auth";
 import { useArchiveMember, useMembers } from "../../api/members";
 import { Button } from "../../components/Button";
 import { ConfirmDialog } from "../../components/ConfirmDialog";
+import { GuardianList } from "../../components/GuardianList";
 import { formatCalendarDate, formatPersonName } from "../../lib/format";
 import { useMessages } from "../../lib/messages";
 import styles from "./MembersTable.module.css";
@@ -98,9 +99,7 @@ export const MembersTable = ({ onEdit, unpaidOnly, search }: MembersTableProps) 
                 <td>{orEmpty(member.email)}</td>
                 <td className={styles.nowrap}>{orEmpty(member.phone)}</td>
                 <td>
-                  {member.guardians.length === 0
-                    ? t("common.empty")
-                    : member.guardians.map(formatPersonName).join(", ")}
+                  <GuardianList guardians={member.guardians} />
                 </td>
                 {canEdit || canDelete ? (
                   <td className={styles.actions}>
