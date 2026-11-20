@@ -1,6 +1,7 @@
 import { z } from "zod";
 import { id } from "./common.js";
 import { memberRole } from "./member.js";
+import { orgResponse } from "./org.js";
 import { email } from "./person.js";
 
 export const MIN_PASSWORD_LENGTH = 12;
@@ -28,6 +29,8 @@ export const meResponse = z.object({
   surname: z.string(),
   email: z.string(),
   role: memberRole,
+  // The member's club. Everything the member sees and changes belongs to it.
+  org: orgResponse,
 });
 export type MeResponse = z.infer<typeof meResponse>;
 

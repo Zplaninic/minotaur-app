@@ -47,7 +47,6 @@ export type SetEnrollmentChildGroupBody = z.infer<typeof setEnrollmentChildGroup
 
 // The form has no child surname; the admin confirms one, prefilled from the parent's.
 export const acceptEnrollmentChildBody = z.object({
-  orgId: id,
   surname: personName,
   groupId: id,
 });

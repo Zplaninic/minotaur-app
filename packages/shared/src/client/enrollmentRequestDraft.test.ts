@@ -74,26 +74,24 @@ describe("validateEnrollmentDraft", () => {
 
 describe("accept draft", () => {
   it("prefills the parent's surname and the child's group", () => {
-    expect(acceptEnrollmentDraft({ parentSurname: "Horvat" }, { groupId: "3" }, "1")).toEqual({
-      orgId: "1",
+    expect(acceptEnrollmentDraft({ parentSurname: "Horvat" }, { groupId: "3" })).toEqual({
       surname: "Horvat",
       groupId: "3",
     });
-    expect(acceptEnrollmentDraft({ parentSurname: null }, { groupId: null }, "")).toEqual({
-      orgId: "",
+    expect(acceptEnrollmentDraft({ parentSurname: null }, { groupId: null })).toEqual({
       surname: "",
       groupId: "",
     });
   });
 
-  it("requires an org, a surname and a group", () => {
-    expect(validateAcceptEnrollmentDraft({ orgId: "", surname: " ", groupId: "" })).toEqual({
+  it("requires a surname and a group", () => {
+    expect(validateAcceptEnrollmentDraft({ surname: " ", groupId: "" })).toEqual({
       ok: false,
-      errors: { orgId: "org", surname: "surname", groupId: "group" },
+      errors: { surname: "surname", groupId: "group" },
     });
-    expect(validateAcceptEnrollmentDraft({ orgId: "1", surname: "Horvat", groupId: "3" })).toEqual({
+    expect(validateAcceptEnrollmentDraft({ surname: "Horvat", groupId: "3" })).toEqual({
       ok: true,
-      body: { orgId: "1", surname: "Horvat", groupId: "3" },
+      body: { surname: "Horvat", groupId: "3" },
     });
   });
 });

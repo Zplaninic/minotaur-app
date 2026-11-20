@@ -4,7 +4,6 @@ import {
   emptyMemberDraft,
   memberDraftFrom,
   newGuardianDraft,
-  toUpdateMemberBody,
   validateMemberDraft,
   type MemberDraft,
 } from "./memberDraft.js";
@@ -13,7 +12,6 @@ const today = new Date(2026, 10, 15);
 
 const adult: MemberDraft = {
   ...emptyMemberDraft,
-  orgId: "1",
   name: "Marko",
   surname: "Babić",
   birthday: "1990-05-01",
@@ -23,7 +21,7 @@ describe("validateMemberDraft", () => {
   it("turns a valid draft into the request body, leaving empty optional fields out", () => {
     expect(validateMemberDraft(adult, today)).toEqual({
       ok: true,
-      body: { orgId: "1", name: "Marko", surname: "Babić", birthday: "1990-05-01", guardians: [] },
+      body: { name: "Marko", surname: "Babić", birthday: "1990-05-01", guardians: [] },
     });
   });
 
@@ -31,7 +29,7 @@ describe("validateMemberDraft", () => {
     const result = validateMemberDraft({ ...emptyMemberDraft, taxNumber: "123" }, today);
     expect(result).toEqual({
       ok: false,
-      errors: { orgId: "org", name: "name", surname: "surname", taxNumber: "taxNumber" },
+      errors: { name: "name", surname: "surname", taxNumber: "taxNumber" },
     });
   });
 
@@ -43,7 +41,7 @@ describe("validateMemberDraft", () => {
   it("accepts a member without a birthday and without a guardian", () => {
     expect(validateMemberDraft({ ...adult, birthday: "" }, today)).toEqual({
       ok: true,
-      body: { orgId: "1", name: "Marko", surname: "Babić", guardians: [] },
+      body: { name: "Marko", surname: "Babić", guardians: [] },
     });
   });
 
@@ -110,16 +108,16 @@ describe("editing a member", () => {
 
   it("starts the draft from the member, with its guardians as existing ones", () => {
     const draft = memberDraftFrom(member);
-    expect(draft).toMatchObject({ orgId: "1", name: "Lovro", taxNumber: "", email: "", phone: "+385 91 000 0000" });
+    expect(draft).toMatchObject({ name: "Lovro", taxNumber: "", email: "", phone: "+385 91 000 0000" });
     expect(draft.guardians).toMatchObject([{ kind: "existing", guardianId: "3" }]);
   });
 
-  it("turns the unchanged draft into an update body without the org", () => {
+  it("turns the unchanged draft into an update body", () => {
     const validation = validateMemberDraft(memberDraftFrom(member), today);
     if (!validation.ok) {
       throw new Error("expected a valid draft");
     }
-    expect(toUpdateMemberBody(validation.body)).toEqual({
+    expect(validation.body).toEqual({
       name: "Lovro",
       surname: "Golub",
       birthday: "2016-04-02",

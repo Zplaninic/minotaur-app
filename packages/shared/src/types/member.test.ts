@@ -2,7 +2,6 @@ import { describe, expect, it } from "vitest";
 import { createMemberBody, listMembersQuery, memberResponse, setMemberNewBody } from "./member.js";
 
 const validBody = {
-  orgId: "1",
   name: "Ana",
   surname: "Horvat",
   birthday: "2014-03-12",

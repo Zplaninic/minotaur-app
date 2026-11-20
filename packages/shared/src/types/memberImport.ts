@@ -1,5 +1,4 @@
 import { z } from "zod";
-import { id } from "./common.js";
 import { birthday } from "./member.js";
 import { email, personName } from "./person.js";
 import { MAX_SUBSCRIPTION_NAME_LENGTH } from "./subscription.js";
@@ -24,8 +23,8 @@ export const importMemberRow = z
   });
 export type ImportMemberRow = z.infer<typeof importMemberRow>;
 
+// The members join the org of whoever is logged in.
 export const importMembersBody = z.object({
-  orgId: id,
   rows: z.array(importMemberRow).min(1).max(MAX_IMPORT_ROWS),
   // Checks the rows and reports what would happen, without writing anything.
   dryRun: z.boolean(),

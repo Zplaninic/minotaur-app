@@ -99,9 +99,9 @@ export const validateEnrollmentDraft = (draft: EnrollmentRequestDraft): Enrollme
 };
 
 // Form state for accepting one child.
-export type AcceptEnrollmentDraft = { orgId: string; surname: string; groupId: string };
+export type AcceptEnrollmentDraft = { surname: string; groupId: string };
 
-export type AcceptEnrollmentFieldError = "org" | "surname" | "group";
+export type AcceptEnrollmentFieldError = "surname" | "group";
 
 export type AcceptEnrollmentDraftValidation =
   | { ok: true; body: AcceptEnrollmentChildBody }
@@ -111,17 +111,15 @@ export type AcceptEnrollmentDraftValidation =
 export const acceptEnrollmentDraft = (
   request: Pick<EnrollmentRequestResponse, "parentSurname">,
   child: { groupId: string | null },
-  orgId: string,
-): AcceptEnrollmentDraft => ({ orgId, surname: request.parentSurname ?? "", groupId: child.groupId ?? "" });
+): AcceptEnrollmentDraft => ({ surname: request.parentSurname ?? "", groupId: child.groupId ?? "" });
 
 const acceptFieldErrors: Record<keyof AcceptEnrollmentDraft, AcceptEnrollmentFieldError> = {
-  orgId: "org",
   surname: "surname",
   groupId: "group",
 };
 
 const isAcceptField = (field: PropertyKey | undefined): field is keyof AcceptEnrollmentDraft =>
-  field === "orgId" || field === "surname" || field === "groupId";
+  field === "surname" || field === "groupId";
 
 export const validateAcceptEnrollmentDraft = (draft: AcceptEnrollmentDraft): AcceptEnrollmentDraftValidation => {
   const result = acceptEnrollmentChildBody.safeParse(draft);

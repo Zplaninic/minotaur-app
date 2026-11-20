@@ -7,8 +7,3 @@ export const orgResponse = z.object({
   name: z.string(),
 });
 export type OrgResponse = z.infer<typeof orgResponse>;
-
-export const listOrgsResponse = z.object({
-  items: z.array(orgResponse),
-});
-export type ListOrgsResponse = z.infer<typeof listOrgsResponse>;

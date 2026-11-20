@@ -4,11 +4,10 @@ import { defineAbilityFor, emptyAbility } from "./abilities.js";
 import { isLoginRole, LOGIN_ROLES } from "./roles.js";
 
 describe("defineAbilityFor", () => {
-  it.each(["admin", "trainer"] as const)("lets %s manage members, guardians and orgs", (role) => {
+  it.each(["admin", "trainer"] as const)("lets %s manage members and guardians", (role) => {
     const ability = defineAbilityFor({ memberId: "1", role });
     expect(ability.can("create", "Member")).toBe(true);
     expect(ability.can("read", "Guardian")).toBe(true);
-    expect(ability.can("delete", "Org")).toBe(true);
   });
 
   it("lets an admin create groups", () => {

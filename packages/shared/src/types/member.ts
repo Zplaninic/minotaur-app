@@ -31,8 +31,8 @@ export const memberGuardianInput = z.discriminatedUnion("kind", [
 ]);
 export type MemberGuardianInput = z.infer<typeof memberGuardianInput>;
 
+// The new member joins the org of whoever is logged in.
 export const createMemberBody = z.object({
-  orgId: id,
   name: personName,
   surname: personName,
   birthday: birthday.optional(),
@@ -54,9 +54,9 @@ export type CreateMemberBody = z.infer<typeof createMemberBody>;
 export type CreateMemberInput = z.input<typeof createMemberBody>;
 
 // Replaces a member's editable fields: a missing birthday, OIB, email or phone is
-// cleared, and the guardian list becomes exactly this one. The org and the
-// role are not editable.
-export const updateMemberBody = createMemberBody.omit({ orgId: true });
+// cleared, and the guardian list becomes exactly this one. The role is not
+// editable.
+export const updateMemberBody = createMemberBody;
 export type UpdateMemberBody = z.infer<typeof updateMemberBody>;
 
 export const memberParams = z.object({ id });

@@ -10,7 +10,7 @@ afterEach(() => {
 
 describe("fetchMe", () => {
   it("returns the logged-in member", async () => {
-    const me = { memberId: "1", name: "Ana", surname: "Horvat", email: "ana@example.com", role: "admin" };
+    const me = { memberId: "1", name: "Ana", surname: "Horvat", email: "ana@example.com", role: "admin", org: { id: "1", name: "Club" } };
     vi.stubGlobal("fetch", vi.fn(async () => Response.json(me)));
     await expect(fetchMe(api)).resolves.toEqual(me);
   });

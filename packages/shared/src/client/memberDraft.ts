@@ -4,7 +4,6 @@ import {
   type CreateMemberBody,
   type CreateMemberInput,
   type MemberResponse,
-  type UpdateMemberBody,
 } from "../types/member.js";
 import { ageOn, toIsoDate } from "./age.js";
 
@@ -20,7 +19,6 @@ export type GuardianDraft = {
 };
 
 export type MemberDraft = {
-  orgId: string;
   name: string;
   surname: string;
   birthday: string;
@@ -32,7 +30,6 @@ export type MemberDraft = {
 
 // Apps turn these codes into their own messages.
 export type MemberFieldError =
-  | "org"
   | "name"
   | "surname"
   | "birthday"
@@ -50,7 +47,6 @@ export type MemberFieldErrors = Partial<Record<string, MemberFieldError>>;
 export type MemberDraftValidation = { ok: true; body: CreateMemberBody } | { ok: false; errors: MemberFieldErrors };
 
 export const emptyMemberDraft: MemberDraft = {
-  orgId: "",
   name: "",
   surname: "",
   birthday: "",
@@ -73,7 +69,6 @@ export const newGuardianDraft = (key: string): GuardianDraft => ({
 const optional = (value: string): string | undefined => (value.trim() === "" ? undefined : value);
 
 export const toCreateMemberInput = (draft: MemberDraft): CreateMemberInput => ({
-  orgId: draft.orgId,
   name: draft.name,
   surname: draft.surname,
   birthday: optional(draft.birthday),
@@ -94,7 +89,6 @@ export const toCreateMemberInput = (draft: MemberDraft): CreateMemberInput => ({
 });
 
 const fieldErrors: Partial<Record<string, MemberFieldError>> = {
-  orgId: "org",
   name: "name",
   surname: "surname",
   birthday: "birthday",
@@ -148,7 +142,6 @@ export const validateMemberDraft = (
 
 // The edit form starts from the member as it is; its guardians are existing ones.
 export const memberDraftFrom = (member: MemberResponse): MemberDraft => ({
-  orgId: member.orgId,
   name: member.name,
   surname: member.surname,
   birthday: member.birthday ?? "",
@@ -161,6 +154,3 @@ export const memberDraftFrom = (member: MemberResponse): MemberDraft => ({
     guardianId: guardian.id,
   })),
 });
-
-// The org is not editable, so the update body leaves it out.
-export const toUpdateMemberBody = ({ orgId: _orgId, ...body }: CreateMemberBody): UpdateMemberBody => body;
