@@ -37,6 +37,7 @@ beforeEach(async () => {
       to: "19:00",
       ageFrom: null,
       ageTo: null,
+      maxMembers: null,
     })
   ).id;
   childId = String((await createLoginMember(prisma, orgId, "child")).memberId);
@@ -153,6 +154,7 @@ describe("deleteTrainingSession", () => {
       to: "18:00",
       ageFrom: null,
       ageTo: null,
+      maxMembers: null,
     });
     await expect(
       deleteTrainingSession(prisma, SYSTEM_ACTOR, other.id, sessionId),
@@ -482,6 +484,7 @@ describe("one subscription and payment per member per month", () => {
         to: "18:00",
         ageFrom: null,
         ageTo: null,
+        maxMembers: null,
       })
     ).id;
     await addGroupMember(prisma, SYSTEM_ACTOR, otherGroupId, childId, TODAY);

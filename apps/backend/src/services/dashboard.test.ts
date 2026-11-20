@@ -40,6 +40,7 @@ const groupWith = async (days: ("monday" | "wednesday")[], memberIds: string[]):
     to: "18:00",
     ageFrom: null,
     ageTo: null,
+    maxMembers: null,
   });
   for (const memberId of memberIds) {
     await addGroupMember(prisma, SYSTEM_ACTOR, id, memberId, TODAY);

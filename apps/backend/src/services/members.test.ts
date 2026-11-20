@@ -277,6 +277,7 @@ describe("archiveMember", () => {
         to: "19:00",
         ageFrom: null,
         ageTo: null,
+        maxMembers: null,
       })
     ).id;
     const childId = String((await createLoginMember(prisma, orgId, "child")).memberId);

@@ -171,6 +171,7 @@ const seedGroup = async (db: Db, orgId: string, ownerId: string, demo: DemoGroup
     to: demo.to,
     ageFrom: demo.ageFrom,
     ageTo: demo.ageTo,
+    maxMembers: null,
   });
   const currentMonth = SEASON.indexOf(today.slice(0, 7));
 

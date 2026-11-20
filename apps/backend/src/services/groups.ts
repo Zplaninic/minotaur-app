@@ -25,6 +25,7 @@ const groupSelect = {
   to: true,
   ageFrom: true,
   ageTo: true,
+  maxMembers: true,
   createdAt: true,
   updatedAt: true,
   owner: { select: { id: true, name: true, surname: true } },
@@ -46,6 +47,7 @@ const toGroupResponse = (group: GroupRow): GroupResponse => ({
   to: toTimeOfDay(group.to),
   ageFrom: group.ageFrom,
   ageTo: group.ageTo,
+  maxMembers: group.maxMembers,
   memberCount: group._count.members,
   createdAt: group.createdAt.toISOString(),
   updatedAt: group.updatedAt.toISOString(),
@@ -85,6 +87,7 @@ const toGroupData = (body: CreateGroupBody, ownerId: number) => ({
   to: toDbTime(body.to),
   ageFrom: body.ageFrom,
   ageTo: body.ageTo,
+  maxMembers: body.maxMembers,
 });
 
 // What the log keeps of a group. The owner is a member id, resolved to a name when read.
@@ -95,6 +98,7 @@ const auditFieldsOf = (group: {
   to: Date;
   ageFrom: number | null;
   ageTo: number | null;
+  maxMembers: number | null;
 }) => ({
   owner: group.ownerId,
   days: inWeekOrder(group.days),
@@ -102,6 +106,7 @@ const auditFieldsOf = (group: {
   to: toTimeOfDay(group.to),
   ageFrom: group.ageFrom,
   ageTo: group.ageTo,
+  maxMembers: group.maxMembers,
 });
 
 const auditSelect = {
@@ -111,6 +116,7 @@ const auditSelect = {
   to: true,
   ageFrom: true,
   ageTo: true,
+  maxMembers: true,
 } satisfies Prisma.GroupSelect;
 
 export const createGroup = async (db: Db, actor: Actor, body: CreateGroupBody): Promise<GroupResponse> =>

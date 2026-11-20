@@ -50,6 +50,7 @@ describe("POST /groups", () => {
       to: "18:30",
       ageFrom: null,
       ageTo: null,
+      maxMembers: null,
     });
   });
 
@@ -57,6 +58,12 @@ describe("POST /groups", () => {
     const response = await post({ ...body(), ageFrom: 7, ageTo: 10 });
     expect(response.statusCode).toBe(201);
     expect(groupResponse.parse(response.json())).toMatchObject({ ageFrom: 7, ageTo: 10 });
+  });
+
+  it("saves a member limit", async () => {
+    const response = await post({ ...body(), maxMembers: 12 });
+    expect(response.statusCode).toBe(201);
+    expect(groupResponse.parse(response.json())).toMatchObject({ maxMembers: 12 });
   });
 
   it("answers FORBIDDEN for a trainer", async () => {
@@ -71,6 +78,7 @@ describe("POST /groups", () => {
     ["a time that is not HH:mm", { from: "5pm" }],
     ["an upper age below the lower age", { ageFrom: 10, ageTo: 7 }],
     ["an age that is not a whole number", { ageFrom: "seven" }],
+    ["a member limit of zero", { maxMembers: 0 }],
   ])("rejects %s", async (_label, override) => {
     const response = await post({ ...body(), ...override });
     expect(response.statusCode).toBe(400);
@@ -153,6 +161,7 @@ describe("PUT /groups/:id", () => {
       to: "09:00",
       ageFrom: 12,
       ageTo: null,
+      maxMembers: null,
     });
   });
 
@@ -166,6 +175,7 @@ describe("PUT /groups/:id", () => {
   it.each([
     ["no days", { days: [] }],
     ["an upper age below the lower age", { ageFrom: 10, ageTo: 7 }],
+    ["a member limit past 999", { maxMembers: 1000 }],
   ])("rejects %s", async (_label, override) => {
     const groupId = await createdGroupId();
     const response = await put(groupId, { ...body(), ...override });

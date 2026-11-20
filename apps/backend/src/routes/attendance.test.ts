@@ -48,6 +48,7 @@ beforeEach(async () => {
       to: "19:00",
       ageFrom: null,
       ageTo: null,
+      maxMembers: null,
     })
   ).id;
   childId = String((await createLoginMember(app.db, orgId, "child")).memberId);

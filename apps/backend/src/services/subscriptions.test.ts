@@ -90,6 +90,7 @@ describe("payments", () => {
         to: "18:00",
         ageFrom: null,
         ageTo: null,
+        maxMembers: null,
       })
     ).id;
     const child = async (surname: string) => {

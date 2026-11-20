@@ -42,6 +42,7 @@ const group = {
   to: "19:00",
   ageFrom: null,
   ageTo: null,
+  maxMembers: null,
 };
 
 describe("diff", () => {
@@ -92,7 +93,7 @@ describe("recording", () => {
   it("resolves the group owner to a name", async () => {
     const otherTrainer = String((await createLoginMember(prisma, orgId, "trainer", "other@example.com")).memberId);
     const created = await createGroup(prisma, admin, { ...group, ownerId: trainerId });
-    await updateGroup(prisma, admin, created.id, { ...group, ownerId: otherTrainer, to: "19:30" });
+    await updateGroup(prisma, admin, created.id, { ...group, ownerId: otherTrainer, to: "19:30", maxMembers: 12 });
 
     const [updated] = (await list({ action: "group_updated" })).items;
     expect(updated?.group?.id).toBe(created.id);
@@ -102,6 +103,7 @@ describe("recording", () => {
         to: { kind: "member", id: otherTrainer, name: "Test", surname: "trainer" },
       },
       to: { from: "19:00", to: "19:30" },
+      maxMembers: { from: null, to: 12 },
     });
   });
 

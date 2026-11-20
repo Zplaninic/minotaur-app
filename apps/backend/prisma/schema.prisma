@@ -168,6 +168,8 @@ model Group {
   // Age range in whole years; either end may be open (null).
   ageFrom      Int?               @db.SmallInt
   ageTo        Int?               @db.SmallInt
+  // Soft limit on the number of members; null means no limit.
+  maxMembers   Int?               @db.SmallInt
   createdAt    DateTime           @default(now()) @db.Timestamptz
   updatedAt    DateTime           @updatedAt @db.Timestamptz
   // Set when the group is archived. Archived groups are hidden but kept for history.

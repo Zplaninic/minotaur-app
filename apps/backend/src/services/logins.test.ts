@@ -95,6 +95,7 @@ describe("setMemberRole", () => {
       to: "19:00",
       ageFrom: null,
       ageTo: null,
+      maxMembers: null,
     });
     const { memberId } = await createLoginMember(prisma, orgId, "child");
     await addGroupMember(prisma, SYSTEM_ACTOR, group.id, String(memberId), TODAY);

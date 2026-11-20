@@ -36,6 +36,7 @@ const group = (overrides: Partial<Parameters<typeof createGroup>[2]> = {}) => ({
   to: "18:30",
   ageFrom: null,
   ageTo: null,
+  maxMembers: null,
   ...overrides,
 });
 
@@ -49,6 +50,7 @@ describe("createGroup", () => {
       to: "18:30",
       ageFrom: null,
       ageTo: null,
+      maxMembers: null,
       memberCount: 0,
     });
   });
@@ -57,6 +59,12 @@ describe("createGroup", () => {
     const created = await createGroup(prisma, SYSTEM_ACTOR, group({ ageFrom: 7 }));
     expect(created).toMatchObject({ ageFrom: 7, ageTo: null });
     expect(await getGroup(prisma, created.id)).toMatchObject({ ageFrom: 7, ageTo: null });
+  });
+
+  it("saves a member limit", async () => {
+    const created = await createGroup(prisma, SYSTEM_ACTOR, group({ maxMembers: 12 }));
+    expect(created.maxMembers).toBe(12);
+    expect((await getGroup(prisma, created.id)).maxMembers).toBe(12);
   });
 
   it("returns the days in week order", async () => {
@@ -108,6 +116,16 @@ describe("updateGroup", () => {
     const created = await createGroup(prisma, SYSTEM_ACTOR, group());
     await addGroupMember(prisma, SYSTEM_ACTOR, created.id, await addedMember("child", "Ana", "Horvat"), TODAY);
     expect((await updateGroup(prisma, SYSTEM_ACTOR, created.id, group({ ageFrom: 7 }))).memberCount).toBe(1);
+  });
+
+  it("allows a member limit below the current member count", async () => {
+    const created = await createGroup(prisma, SYSTEM_ACTOR, group());
+    await addGroupMember(prisma, SYSTEM_ACTOR, created.id, await addedMember("child", "Ana", "Horvat"), TODAY);
+    await addGroupMember(prisma, SYSTEM_ACTOR, created.id, await addedMember("child", "Iva", "Juric"), TODAY);
+    const updated = await updateGroup(prisma, SYSTEM_ACTOR, created.id, group({ maxMembers: 1 }));
+    expect(updated).toMatchObject({ maxMembers: 1, memberCount: 2 });
+    await addGroupMember(prisma, SYSTEM_ACTOR, created.id, await addedMember("member", "Marko", "Babic"), TODAY);
+    expect((await getGroup(prisma, created.id)).memberCount).toBe(3);
   });
 
   it("rejects an owner who is not a trainer", async () => {
