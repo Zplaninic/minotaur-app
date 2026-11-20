@@ -37,9 +37,11 @@ const yearsAgo = (today: Date, years: number) => new Date(today.getFullYear() - 
 type MemberFormScreenProps = {
   // Set to edit this member; without it the screen adds a new one.
   member?: MemberResponse;
+  // Where a new member goes once saved; by default the screen closes.
+  onCreated?: (created: MemberResponse) => void;
 };
 
-export const MemberFormScreen = ({ member }: MemberFormScreenProps) => {
+export const MemberFormScreen = ({ member, onCreated }: MemberFormScreenProps) => {
   const { errorMessage, t } = useMessages();
   const router = useRouter();
   const orgs = useOrgs();
@@ -99,7 +101,7 @@ export const MemberFormScreen = ({ member }: MemberFormScreenProps) => {
     if (member) {
       updateMember.mutate(toUpdateMemberBody(validation.body), { onSuccess: () => router.back() });
     } else {
-      createMember.mutate(validation.body, { onSuccess: () => router.back() });
+      createMember.mutate(validation.body, { onSuccess: (created) => (onCreated ? onCreated(created) : router.back()) });
     }
   };
 

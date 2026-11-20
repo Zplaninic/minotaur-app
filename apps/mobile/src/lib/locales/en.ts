@@ -203,6 +203,8 @@ export const en = {
   "monthMemberForm.groupMembers": "In this group",
   "monthMemberForm.otherMembers": "Other members",
   "monthMemberForm.joinGroup": "Also add them to the group",
+  "monthMemberForm.newMember": "New member",
+  "monthMemberForm.newMemberSection": "Just created",
   "monthMemberForm.offlineTitle": "No connection",
   "monthMemberForm.addLabel": "Add {name} to {month}",
 

@@ -17,11 +17,14 @@ import { JoinGroupToggle } from "./JoinGroupToggle";
 type AddMonthMemberScreenProps = {
   groupId: string;
   month: Month;
+  // A member just created from this screen, listed on top.
+  newMemberId?: string | undefined;
 };
 
 // The members who are not on the month's roster, the group's members first;
-// a tap adds one. Members from outside the group can also join it.
-export const AddMonthMemberScreen = ({ groupId, month }: AddMonthMemberScreenProps) => {
+// a tap adds one. Members from outside the group can also join it, and a new
+// member can be created from here.
+export const AddMonthMemberScreen = ({ groupId, month, newMemberId }: AddMonthMemberScreenProps) => {
   const { errorMessage, t } = useMessages();
   const router = useRouter();
   const everyone = useAllMembers();
@@ -62,10 +65,14 @@ export const AddMonthMemberScreen = ({ groupId, month }: AddMonthMemberScreenPro
   }
 
   const candidates = monthRosterCandidates(everyone.data, groupMembers.data.items, attendance.data.members);
+  const isNew = (id: string) => id === newMemberId;
+  const listed = candidates.filter(({ member }) => !isNew(member.id));
   const sections = [
-    { key: "group", title: t("monthMemberForm.groupMembers"), data: candidates.filter(({ inGroup }) => inGroup) },
-    { key: "others", title: t("monthMemberForm.otherMembers"), data: candidates.filter(({ inGroup }) => !inGroup) },
+    { title: t("monthMemberForm.newMemberSection"), data: candidates.filter(({ member }) => isNew(member.id)) },
+    { title: t("monthMemberForm.groupMembers"), data: listed.filter(({ inGroup }) => inGroup) },
+    { title: t("monthMemberForm.otherMembers"), data: listed.filter(({ inGroup }) => !inGroup) },
   ].filter((section) => section.data.length > 0);
+  const anyOutsideGroup = candidates.some(({ inGroup }) => !inGroup);
 
   return (
     <SafeAreaView style={styles.safeArea} edges={["right", "bottom", "left"]}>
@@ -78,13 +85,6 @@ export const AddMonthMemberScreen = ({ groupId, month }: AddMonthMemberScreenPro
             <Text accessibilityRole="header" style={styles.sectionTitle}>
               {section.title}
             </Text>
-            {section.key === "others" ? (
-              <JoinGroupToggle
-                label={t("monthMemberForm.joinGroup")}
-                checked={joinGroup}
-                onToggle={() => setJoinGroup((checked) => !checked)}
-              />
-            ) : null}
           </View>
         )}
         renderItem={({ item: { member, inGroup } }) => (
@@ -104,16 +104,30 @@ export const AddMonthMemberScreen = ({ groupId, month }: AddMonthMemberScreenPro
           />
         )}
         ListHeaderComponent={
-          candidates.length > 0 ? (
-            <View style={styles.header}>
+          <View style={styles.header}>
+            <Button
+              label={t("monthMemberForm.newMember")}
+              variant="secondary"
+              onPress={() =>
+                router.push({ pathname: "/groups/[id]/new-month-member", params: { id: groupId, month } })
+              }
+            />
+            {candidates.length > 0 ? (
               <Text style={styles.text}>{t("monthMemberForm.hint", { month: formatMonth(month) })}</Text>
-              {addMember.error ? (
-                <Text style={styles.error} accessibilityLiveRegion="polite">
-                  {errorMessage(toErrorCode(addMember.error))}
-                </Text>
-              ) : null}
-            </View>
-          ) : undefined
+            ) : null}
+            {anyOutsideGroup ? (
+              <JoinGroupToggle
+                label={t("monthMemberForm.joinGroup")}
+                checked={joinGroup}
+                onToggle={() => setJoinGroup((checked) => !checked)}
+              />
+            ) : null}
+            {addMember.error ? (
+              <Text style={styles.error} accessibilityLiveRegion="polite">
+                {errorMessage(toErrorCode(addMember.error))}
+              </Text>
+            ) : null}
+          </View>
         }
         ListEmptyComponent={
           <View style={styles.state}>

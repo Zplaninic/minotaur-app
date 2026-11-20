@@ -10,7 +10,8 @@ jest.mock("../../api/client", () => ({ api: { fetch: jest.fn() } }));
 jest.mock("../../lib/sessionToken", () => ({ clearSessionToken: jest.fn(), saveSessionToken: jest.fn() }));
 
 const mockBack = jest.fn();
-jest.mock("expo-router", () => ({ useRouter: () => ({ push: jest.fn(), back: mockBack }) }));
+const mockPush = jest.fn();
+jest.mock("expo-router", () => ({ useRouter: () => ({ push: mockPush, back: mockBack }) }));
 
 const fetchMock = jest.mocked(api.fetch);
 
@@ -47,6 +48,7 @@ const attendance: GroupAttendanceResponse = {
 
 beforeEach(() => {
   mockBack.mockReset();
+  mockPush.mockReset();
   fetchMock.mockReset();
   fetchMock.mockImplementation(async (path, _schema, init) => {
     if (path === "/me") {
@@ -110,5 +112,21 @@ describe("AddMonthMemberScreen", () => {
       expect.anything(),
       expect.objectContaining({ method: "PUT", body: JSON.stringify({ joinGroup: true }) }),
     );
+  });
+
+  it("opens the new member form and lists a member just created on top", async () => {
+    await render(
+      <Providers>
+        <AddMonthMemberScreen groupId="1" month="2026-11" newMemberId="7" />
+      </Providers>,
+    );
+    expect(await screen.findByText(t("monthMemberForm.newMemberSection"))).toBeOnTheScreen();
+    expect(screen.queryByText(t("monthMemberForm.otherMembers"))).not.toBeOnTheScreen();
+
+    await fireEvent.press(screen.getByRole("button", { name: t("monthMemberForm.newMember") }));
+    expect(mockPush).toHaveBeenCalledWith({
+      pathname: "/groups/[id]/new-month-member",
+      params: { id: "1", month: "2026-11" },
+    });
   });
 });

@@ -207,6 +207,8 @@ export const hr: Record<keyof typeof en, string> = {
   "monthMemberForm.groupMembers": "U ovoj grupi",
   "monthMemberForm.otherMembers": "Ostali članovi",
   "monthMemberForm.joinGroup": "Dodaj ih i u grupu",
+  "monthMemberForm.newMember": "Novi član",
+  "monthMemberForm.newMemberSection": "Upravo dodan",
   "monthMemberForm.offlineTitle": "Nema veze",
   "monthMemberForm.addLabel": "Dodaj u {month}: {name}",
 
