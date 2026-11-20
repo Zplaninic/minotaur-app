@@ -1,6 +1,6 @@
 import { toErrorCode } from "@repo/shared/client";
 import { useRouter } from "expo-router";
-import { ActivityIndicator, FlatList, StyleSheet, Text, View } from "react-native";
+import { FlatList, StyleSheet, Text, View } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
 import { useAbility } from "../../api/auth";
 import { useArchiveGroup, useGroup, useGroupMembers, useRemoveGroupMember } from "../../api/groups";
@@ -12,6 +12,7 @@ import { useManualRefresh } from "../../lib/useManualRefresh";
 import { bodyLineHeight, colors, fonts, fontSizes, headingLineHeight, radii, spacing } from "../../theme/tokens";
 import { GroupMemberRow } from "./GroupMemberRow";
 import { groupName } from "./groupName";
+import { SkeletonList } from "../../components/SkeletonList";
 
 type GroupScreenProps = {
   groupId: string;
@@ -34,9 +35,8 @@ export const GroupScreen = ({ groupId }: GroupScreenProps) => {
   if (group.isPending || members.isPending) {
     return (
       <SafeAreaView style={styles.safeArea} edges={["right", "bottom", "left"]}>
-        <View style={styles.state} accessibilityLiveRegion="polite">
-          <ActivityIndicator color={colors.greenDark} />
-          <Text style={styles.text}>{t("group.loading")}</Text>
+        <View style={styles.skeleton}>
+          <SkeletonList label={t("group.loading")} />
         </View>
       </SafeAreaView>
     );
@@ -94,7 +94,7 @@ export const GroupScreen = ({ groupId }: GroupScreenProps) => {
               <Button
                 label={archiveGroup.isPending ? t("common.deleting") : t("group.delete")}
                 variant="secondary"
-                disabled={archiveGroup.isPending}
+                pending={archiveGroup.isPending}
                 onPress={() =>
                   confirmRemove({
                     title: t("group.deleteConfirmTitle"),
@@ -143,6 +143,9 @@ const styles = StyleSheet.create({
     flexGrow: 1,
     paddingTop: spacing[4],
     paddingBottom: spacing[6],
+  },
+  skeleton: {
+    paddingTop: spacing[4],
   },
   header: {
     gap: spacing[3],

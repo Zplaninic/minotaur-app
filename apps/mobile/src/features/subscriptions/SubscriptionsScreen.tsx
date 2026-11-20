@@ -1,6 +1,6 @@
 import { toErrorCode } from "@repo/shared/client";
 import { useRouter } from "expo-router";
-import { ActivityIndicator, FlatList, StyleSheet, Text, View } from "react-native";
+import { FlatList, StyleSheet, Text, View } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
 import { useAbility } from "../../api/auth";
 import { useSubscriptions } from "../../api/subscriptions";
@@ -9,18 +9,14 @@ import { useMessages } from "../../lib/messages";
 import { useManualRefresh } from "../../lib/useManualRefresh";
 import { bodyLineHeight, colors, fonts, fontSizes, headingLineHeight, spacing } from "../../theme/tokens";
 import { SubscriptionRow } from "./SubscriptionRow";
+import { SkeletonList } from "../../components/SkeletonList";
 
 const ListState = () => {
   const { errorMessage, t } = useMessages();
   const subscriptions = useSubscriptions();
 
   if (subscriptions.isPending) {
-    return (
-      <View style={styles.state} accessibilityLiveRegion="polite">
-        <ActivityIndicator color={colors.greenDark} />
-        <Text style={styles.stateText}>{t("subscriptions.loading")}</Text>
-      </View>
-    );
+    return <SkeletonList label={t("subscriptions.loading")} />;
   }
   if (subscriptions.isError) {
     const code = toErrorCode(subscriptions.error);

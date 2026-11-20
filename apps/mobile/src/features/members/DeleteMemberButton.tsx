@@ -40,7 +40,7 @@ export const DeleteMemberButton = ({ member }: DeleteMemberButtonProps) => {
       <Button
         label={archiveMember.isPending ? t("common.deleting") : t("memberForm.delete")}
         variant="secondary"
-        disabled={archiveMember.isPending}
+        pending={archiveMember.isPending}
         onPress={() =>
           confirmRemove({
             title: t("memberForm.deleteConfirmTitle", { name: formatPersonName(member) }),

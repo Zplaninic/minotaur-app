@@ -140,7 +140,7 @@ export const AddGroupScreen = () => {
       <Button
         label={createGroup.isPending ? t("groupForm.submitting") : t("groupForm.submit")}
         onPress={save}
-        disabled={createGroup.isPending}
+        pending={createGroup.isPending}
       />
     </Screen>
   );

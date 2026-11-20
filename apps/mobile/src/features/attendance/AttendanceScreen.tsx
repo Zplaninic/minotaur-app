@@ -11,7 +11,7 @@ import {
 import { useMutationState } from "@tanstack/react-query";
 import { useRouter } from "expo-router";
 import { useState } from "react";
-import { ActivityIndicator, FlatList, Pressable, StyleSheet, Text, View } from "react-native";
+import { FlatList, Pressable, StyleSheet, Text, View } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
 import { attendanceMutationKey, useCreateMonthSessions, useGroupAttendance } from "../../api/attendance";
 import { useAbility } from "../../api/auth";
@@ -34,6 +34,7 @@ import {
   spacing,
 } from "../../theme/tokens";
 import { AttendanceRow } from "./AttendanceRow";
+import { SkeletonList } from "../../components/SkeletonList";
 
 type AttendanceScreenProps = {
   groupId: string;
@@ -124,12 +125,7 @@ export const AttendanceScreen = ({ groupId, now: fixedNow }: AttendanceScreenPro
       );
     }
     if (group.isPending || attendance.isPending) {
-      return (
-        <View style={styles.state} accessibilityLiveRegion="polite">
-          <ActivityIndicator color={colors.greenDark} />
-          <Text style={styles.text}>{t("attendance.loading")}</Text>
-        </View>
-      );
+      return <SkeletonList label={t("attendance.loading")} />;
     }
     if (!session) {
       return (
@@ -153,7 +149,7 @@ export const AttendanceScreen = ({ groupId, now: fixedNow }: AttendanceScreenPro
                     })
               }
               onPress={() => createSessions.mutate(month)}
-              disabled={createSessions.isPending}
+              pending={createSessions.isPending}
             />
           ) : null}
         </View>

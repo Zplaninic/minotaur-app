@@ -94,7 +94,7 @@ export const SubscriptionFormScreen = ({ subscription }: SubscriptionFormScreenP
       <Button
         label={save.isPending ? t("subscriptionForm.submitting") : t("subscriptionForm.submit")}
         onPress={onSave}
-        disabled={save.isPending}
+        pending={save.isPending}
       />
     </Screen>
   );

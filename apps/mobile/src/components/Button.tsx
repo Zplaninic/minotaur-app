@@ -1,4 +1,4 @@
-import { Pressable, StyleSheet, Text } from "react-native";
+import { ActivityIndicator, Pressable, StyleSheet, Text, View } from "react-native";
 import {
   bodyLineHeight,
   borders,
@@ -16,24 +16,37 @@ type ButtonProps = {
   onPress: () => void;
   variant?: "primary" | "secondary";
   disabled?: boolean;
+  // While the action runs: disabled, with a spinner before the label.
+  pending?: boolean;
   accessibilityLabel?: string;
 };
 
-export const Button = ({ label, onPress, variant = "primary", disabled = false, accessibilityLabel }: ButtonProps) => (
+export const Button = ({
+  label,
+  onPress,
+  variant = "primary",
+  disabled = false,
+  pending = false,
+  accessibilityLabel,
+}: ButtonProps) => (
   <Pressable
     onPress={onPress}
-    disabled={disabled}
+    disabled={disabled || pending}
     accessibilityRole="button"
     accessibilityLabel={accessibilityLabel ?? label}
-    accessibilityState={{ disabled }}
+    accessibilityState={{ disabled: disabled || pending, busy: pending }}
     style={({ pressed }) => [
       styles.button,
       variant === "primary" ? styles.primary : styles.secondary,
       pressed && (variant === "primary" ? styles.primaryPressed : styles.secondaryPressed),
-      disabled && styles.disabled,
+      // A running action is not unavailable, so it keeps full contrast.
+      disabled && !pending && styles.disabled,
     ]}
   >
-    <Text style={[styles.label, variant === "primary" ? styles.primaryLabel : styles.secondaryLabel]}>{label}</Text>
+    <View style={styles.content}>
+      {pending ? <ActivityIndicator size="small" color={variant === "primary" ? colors.beige10 : colors.greenDark} /> : null}
+      <Text style={[styles.label, variant === "primary" ? styles.primaryLabel : styles.secondaryLabel]}>{label}</Text>
+    </View>
   </Pressable>
 );
 
@@ -47,6 +60,13 @@ const styles = StyleSheet.create({
     borderWidth: borders.width,
     borderColor: colors.greenDark,
     borderRadius: radii.pill,
+  },
+  content: {
+    flexDirection: "row",
+    flexWrap: "wrap",
+    alignItems: "center",
+    justifyContent: "center",
+    gap: spacing[2],
   },
   primary: {
     backgroundColor: colors.greenDark,

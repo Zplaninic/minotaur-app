@@ -99,6 +99,14 @@ export const shadows = {
 
 export const opacity = {
   disabled: 0.6,
+  // The low point of a loading placeholder's pulse.
+  pulse: 0.4,
+} as const;
+
+// Milliseconds. Loaders wait for `loaderDelay` so quick requests do not flash.
+export const durations = {
+  loaderDelay: 200,
+  pulse: 700,
 } as const;
 
 // Smallest size of anything tappable.

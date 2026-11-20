@@ -14,6 +14,7 @@ import { useDebouncedValue } from "../../lib/useDebouncedValue";
 import { useManualRefresh } from "../../lib/useManualRefresh";
 import { bodyLineHeight, colors, fonts, fontSizes, headingLineHeight, spacing } from "../../theme/tokens";
 import { MemberRow } from "./MemberRow";
+import { SkeletonList } from "../../components/SkeletonList";
 
 type ListStateProps = {
   unpaidOnly: boolean;
@@ -25,12 +26,7 @@ const ListState = ({ unpaidOnly, search }: ListStateProps) => {
   const members = useMemberPages(DEFAULT_PAGE_SIZE, unpaidOnly, search);
 
   if (members.isPending) {
-    return (
-      <View style={styles.state} accessibilityLiveRegion="polite">
-        <ActivityIndicator color={colors.greenDark} />
-        <Text style={styles.stateText}>{t("members.loading")}</Text>
-      </View>
-    );
+    return <SkeletonList label={t("members.loading")} />;
   }
   if (members.isError) {
     const code = toErrorCode(members.error);
@@ -100,6 +96,14 @@ export const MembersScreen = () => {
                 options={[{ value: "unpaid", label: t("members.unpaidOnly") }]}
                 selected={unpaidOnly ? ["unpaid"] : []}
                 onToggle={() => setUnpaidOnly(!unpaidOnly)}
+              />
+            ) : null}
+            {/* The previous results stay listed while a new search loads. */}
+            {members.isPlaceholderData ? (
+              <ActivityIndicator
+                color={colors.greenDark}
+                accessibilityLabel={t("members.loading")}
+                accessibilityLiveRegion="polite"
               />
             ) : null}
           </View>

@@ -111,7 +111,7 @@ export const LoginScreen = () => {
         <Button
           label={login.isPending ? t("login.submitting") : t("login.submit")}
           onPress={submit}
-          disabled={login.isPending}
+          pending={login.isPending}
         />
         <LanguageSwitcher />
       </View>

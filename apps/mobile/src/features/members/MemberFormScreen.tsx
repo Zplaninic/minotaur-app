@@ -245,7 +245,7 @@ export const MemberFormScreen = ({ member, onCreated }: MemberFormScreenProps) =
           saving.isPending ? t("memberForm.submitting") : t(member ? "memberForm.saveChanges" : "memberForm.submit")
         }
         onPress={save}
-        disabled={saving.isPending}
+        pending={saving.isPending}
       />
       {member ? <DeleteMemberButton member={member} /> : null}
     </Screen>

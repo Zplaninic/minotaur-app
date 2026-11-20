@@ -48,7 +48,7 @@ export const HomeScreen = () => {
           label={t("home.logout")}
           variant="secondary"
           onPress={() => logout.mutate()}
-          disabled={logout.isPending}
+          pending={logout.isPending}
         />
       </View>
     </Screen>
