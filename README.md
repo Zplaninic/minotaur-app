@@ -20,7 +20,21 @@ docker compose up -d
 cp apps/backend/.env.example apps/backend/.env
 cp apps/mobile/.env.example apps/mobile/.env
 pnpm --filter @repo/shared build
+pnpm --filter @repo/backend prisma migrate deploy
+pnpm --filter @repo/backend db:seed
+pnpm --filter @repo/backend login:create --org-id 1 --name <name> --surname <surname> --email <email> --role admin
 ```
+
+- `docker compose up -d` starts PostgreSQL on port 5433 with two databases:
+  `minotaur_dev` for the app and `minotaur_test` for the backend tests.
+- `migrate deploy` creates the tables.
+- `db:seed` fills the dev database with invented demo data: the org (id 1),
+  two trainers, groups, children and attendance. The trainers' password is
+  `DEMO_TRAINER_PASSWORD` in `apps/backend/src/cli/seed.ts`.
+- `login:create` adds your own admin to that org. It asks for a password of at
+  least 12 characters.
+
+Then run `pnpm dev` (below) and log in on http://localhost:5173.
 
 The apps use the shared package through its build output, so rebuild it
 after every change to `packages/shared`.
@@ -43,6 +57,28 @@ pnpm --filter @repo/frontend dev    # web app on http://localhost:5173
 pnpm --filter @repo/mobile dev      # Expo dev server
 ```
 
+### Another database
+
+The backend uses `DATABASE_URL` from `apps/backend/.env`. A `DATABASE_URL`
+set in the shell wins, and `pnpm dev` hands it to every pane. To keep real
+data apart from the demo data, create a second database in the same container
+and start with its URL:
+
+```sh
+docker compose exec postgres psql -U minotaur -d minotaur_dev -c "CREATE DATABASE minotaur_prod;"
+export PROD_DB=postgresql://minotaur:minotaur@localhost:5433/minotaur_prod
+DATABASE_URL=$PROD_DB pnpm --filter @repo/backend prisma migrate deploy
+# The first org (id 1); the next ones are added in the app
+docker compose exec postgres psql -U minotaur -d minotaur_prod -c \
+  "INSERT INTO org (name, \"contactName\", email, \"updatedAt\") VALUES ('<club>', '<contact>', '<email>', now());"
+DATABASE_URL=$PROD_DB pnpm --filter @repo/backend login:create --org-id 1 --name <name> --surname <surname> --email <email> --role admin
+DATABASE_URL=$PROD_DB pnpm dev
+```
+
+The same prefix works for every backend command. After
+pulling new migrations, run `migrate deploy` with it again. Its tmux session is
+`minotaur-prod`.
+
 ## Logins
 
 Only trainers and admins log in, with their member email. There is no
@@ -51,7 +87,7 @@ which ask for the password without showing it:
 
 ```sh
 # First admin: creates the member and the login
-pnpm --filter @repo/backend login:create --org-id 1 --name <name> --surname <surname> --birthday <YYYY-MM-DD> --email <email> --role admin
+pnpm --filter @repo/backend login:create --org-id 1 --name <name> --surname <surname> [--birthday <YYYY-MM-DD>] --email <email> --role admin
 # Existing member becomes trainer or admin (uses the member's email)
 pnpm --filter @repo/backend login:create --member-id <id> --role trainer
 pnpm --filter @repo/backend login:set-password --member-id <id>

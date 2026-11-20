@@ -10,6 +10,14 @@ set -euo pipefail
 SESSION=minotaur
 ROOT="$(cd "$(dirname "$0")/.." && pwd)"
 
+# A DATABASE_URL set by the caller (e.g. `mprod pnpm dev`) is handed to every
+# pane, because each pane is a fresh shell that would otherwise read .env.
+ENV_PREFIX=""
+if [ -n "${DATABASE_URL:-}" ]; then
+  ENV_PREFIX="DATABASE_URL=$(printf '%q' "$DATABASE_URL") "
+  SESSION=minotaur-prod
+fi
+
 # Runs inside one iTerm pane: titles the pane, then starts its service.
 # The title is set after the shell's own auto-title (oh-my-zsh) has run.
 if [ "${1:-}" = "--pane" ]; then
@@ -22,18 +30,19 @@ fi
 docker compose -f "$ROOT/docker-compose.yml" up -d --wait
 
 if [ "${TERM_PROGRAM:-}" = "iTerm.app" ]; then
-  osascript - "$ROOT" <<'APPLESCRIPT'
-on start(paneSession, root, service)
+  osascript - "$ROOT" "$ENV_PREFIX" <<'APPLESCRIPT'
+on start(paneSession, root, envPrefix, service)
   tell application "iTerm"
     tell paneSession
       set name to service
-      write text quoted form of (root & "/scripts/dev.sh") & " --pane " & service
+      write text envPrefix & quoted form of (root & "/scripts/dev.sh") & " --pane " & service
     end tell
   end tell
 end start
 
 on run argv
   set root to item 1 of argv
+  set envPrefix to item 2 of argv
   tell application "iTerm"
     tell current window
       set newTab to (create tab with default profile)
@@ -43,10 +52,10 @@ on run argv
       tell topRight to set bottomRight to (split horizontally with default profile)
     end tell
   end tell
-  my start(topLeft, root, "shared")
-  my start(topRight, root, "backend")
-  my start(bottomLeft, root, "frontend")
-  my start(bottomRight, root, "mobile")
+  my start(topLeft, root, envPrefix, "shared")
+  my start(topRight, root, envPrefix, "backend")
+  my start(bottomLeft, root, envPrefix, "frontend")
+  my start(bottomRight, root, envPrefix, "mobile")
 end run
 APPLESCRIPT
   exit 0
@@ -67,7 +76,7 @@ if ! tmux has-session -t "$SESSION" 2>/dev/null; then
   pane=0
   for service in shared backend frontend mobile; do
     tmux select-pane -t "$SESSION:0.$pane" -T "$service"
-    tmux send-keys -t "$SESSION:0.$pane" "pnpm --filter @repo/$service dev" C-m
+    tmux send-keys -t "$SESSION:0.$pane" "${ENV_PREFIX}pnpm --filter @repo/$service dev" C-m
     pane=$((pane + 1))
   done
 fi
