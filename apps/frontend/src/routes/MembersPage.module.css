@@ -15,6 +15,18 @@
   font-size: var(--text-3xl);
 }
 
+.filters {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: end;
+  gap: var(--space-4) var(--space-6);
+}
+
+.search {
+  flex: 1 1 auto;
+  max-width: var(--width-dialog);
+}
+
 .filter {
   display: flex;
   align-items: center;

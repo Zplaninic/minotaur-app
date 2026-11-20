@@ -3,7 +3,7 @@ import { useAuditActors } from "../../api/auditEvents";
 import { Button } from "../../components/Button";
 import { SelectField } from "../../components/SelectField";
 import { TextField } from "../../components/TextField";
-import { formatSortedName } from "../../lib/format";
+import { formatPersonName } from "../../lib/format";
 import { auditActionKey, useMessages } from "../../lib/messages";
 import styles from "./ActivityFilters.module.css";
 
@@ -33,7 +33,7 @@ export const ActivityFilters = ({ values, onChange }: ActivityFiltersProps) => {
         value={values.actorId}
         onChange={set("actorId")}
         placeholder={t("activity.filters.anyActor")}
-        options={(actors.data ?? []).map((actor) => ({ value: actor.id, label: formatSortedName(actor) }))}
+        options={(actors.data ?? []).map((actor) => ({ value: actor.id, label: formatPersonName(actor) }))}
       />
       <SelectField
         label={t("activity.filters.action")}

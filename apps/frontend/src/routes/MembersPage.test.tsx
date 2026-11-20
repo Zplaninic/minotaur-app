@@ -62,7 +62,11 @@ beforeEach(() => {
       const params = new URLSearchParams(path.split("?")[1]);
       const page = Number(params.get("page"));
       // Ana is the only one with an unpaid past month.
-      const listed = params.get("unpaid") === "true" ? members.filter((member) => member.id === ana.id) : members;
+      const unpaid = params.get("unpaid") === "true" ? members.filter((member) => member.id === ana.id) : members;
+      const search = params.get("search")?.toLowerCase();
+      const listed = search
+        ? unpaid.filter((member) => `${member.name} ${member.surname} ${member.email ?? ""}`.toLowerCase().includes(search))
+        : unpaid;
       return { items: listed.slice((page - 1) * 20, page * 20), page, pageSize: 20, total: listed.length };
     }
     throw new ApiError("NOT_FOUND", 404);
@@ -89,7 +93,7 @@ const fill = (dialog: HTMLElement, label: string, value: string) =>
 describe("MembersPage", () => {
   it("lists members with their guardians", async () => {
     renderPage();
-    const row = (await screen.findByRole("rowheader", { name: "Horvat Ana" })).closest("tr");
+    const row = (await screen.findByRole("rowheader", { name: "Ana Horvat" })).closest("tr");
     expect(row).not.toBeNull();
     expect(within(row as HTMLElement).getByText("Iva Horvat")).toBeInTheDocument();
     expect(within(row as HTMLElement).queryByText(t("members.trainerLabel"))).not.toBeInTheDocument();
@@ -105,7 +109,7 @@ describe("MembersPage", () => {
     fireEvent.change(name, { target: { value: "Anamarija" } });
     fireEvent.click(within(dialog).getByRole("button", { name: t("memberForm.saveChanges") }));
 
-    expect(await screen.findByRole("rowheader", { name: "Horvat Anamarija" })).toBeInTheDocument();
+    expect(await screen.findByRole("rowheader", { name: "Anamarija Horvat" })).toBeInTheDocument();
     const [, , init] = fetchMock.mock.calls.find(([path, , call]) => path === "/members/1" && call?.method === "PUT") ?? [];
     expect(JSON.parse(String(init?.body))).toEqual({
       name: "Anamarija",
@@ -143,13 +147,37 @@ describe("MembersPage", () => {
   it("filters to members with unpaid past months", async () => {
     members = [marko, ana];
     renderPage();
-    expect(await screen.findByRole("rowheader", { name: "Babić Marko" })).toBeInTheDocument();
+    expect(await screen.findByRole("rowheader", { name: "Marko Babić" })).toBeInTheDocument();
 
     fireEvent.click(screen.getByRole("checkbox", { name: t("members.unpaidOnly") }));
 
-    expect(await screen.findByRole("rowheader", { name: "Horvat Ana" })).toBeInTheDocument();
-    expect(screen.queryByRole("rowheader", { name: "Babić Marko" })).not.toBeInTheDocument();
+    await waitFor(() => expect(screen.queryByRole("rowheader", { name: "Marko Babić" })).not.toBeInTheDocument());
+    expect(screen.getByRole("rowheader", { name: "Ana Horvat" })).toBeInTheDocument();
     expect(fetchMock).toHaveBeenCalledWith("/members?page=1&pageSize=20&unpaid=true", expect.anything());
+  });
+
+  it("searches by name, surname or email and starts again from the first page", async () => {
+    const others = Array.from({ length: 20 }, (_, index) => ({ ...marko, id: `m${index}`, name: `Marko${index}` }));
+    members = [...others, ana];
+    renderPage();
+    fireEvent.click(await screen.findByRole("button", { name: t("members.pagination.next") }));
+    expect(await screen.findByRole("rowheader", { name: "Ana Horvat" })).toBeInTheDocument();
+
+    fireEvent.change(screen.getByLabelText(t("members.search")), { target: { value: "  horvat " } });
+
+    await waitFor(() =>
+      expect(fetchMock).toHaveBeenCalledWith("/members?page=1&pageSize=20&search=horvat", expect.anything()),
+    );
+    await waitFor(() => expect(screen.queryByRole("rowheader", { name: "Marko0 Babić" })).not.toBeInTheDocument());
+    expect(screen.getByRole("rowheader", { name: "Ana Horvat" })).toBeInTheDocument();
+    expect(screen.queryByRole("navigation", { name: t("members.pagination.label") })).not.toBeInTheDocument();
+  });
+
+  it("says when no member matches the search", async () => {
+    renderPage();
+    await screen.findByRole("rowheader", { name: "Ana Horvat" });
+    fireEvent.change(screen.getByLabelText(t("members.search")), { target: { value: "nobody" } });
+    expect(await screen.findByText(t("members.searchEmpty"))).toBeInTheDocument();
   });
 
   it("says when nobody has an unpaid past month", async () => {
@@ -162,7 +190,7 @@ describe("MembersPage", () => {
   it("labels trainers", async () => {
     members = [{ ...marko, role: "trainer" }];
     renderPage();
-    const row = (await screen.findByRole("rowheader", { name: /Babić Marko/ })).closest("tr");
+    const row = (await screen.findByRole("rowheader", { name: /Marko Babić/ })).closest("tr");
     expect(within(row as HTMLElement).getByText(t("members.trainerLabel"))).toBeInTheDocument();
   });
 
@@ -195,7 +223,7 @@ describe("MembersPage", () => {
 
   it("saves a member, closes the popup and shows the new row", async () => {
     renderPage();
-    await screen.findByRole("rowheader", { name: "Horvat Ana" });
+    await screen.findByRole("rowheader", { name: "Ana Horvat" });
     const dialog = await openDialog();
     fill(dialog, t("memberForm.name"), "Marko");
     fill(dialog, t("memberForm.surname"), "Babić");
@@ -211,7 +239,7 @@ describe("MembersPage", () => {
         body: JSON.stringify({ orgId: "1", name: "Marko", surname: "Babić", birthday: "1990-05-01", guardians: [] }),
       }),
     );
-    expect(await screen.findByRole("rowheader", { name: "Babić Marko" })).toBeInTheDocument();
+    expect(await screen.findByRole("rowheader", { name: "Marko Babić" })).toBeInTheDocument();
   });
 
   it("saves a member without a birthday", async () => {
@@ -252,7 +280,7 @@ describe("MembersPage", () => {
     const confirm = screen.getByRole("dialog", { name: t("members.deleteConfirmTitle", { name: "Ana Horvat" }) });
     fireEvent.click(within(confirm).getByRole("button", { name: t("common.delete") }));
 
-    expect(await screen.findByRole("rowheader", { name: "Babić Marko0" })).toBeInTheDocument();
+    expect(await screen.findByRole("rowheader", { name: "Marko0 Babić" })).toBeInTheDocument();
   });
 
   it("offers no delete button for the logged-in member's own row", async () => {
@@ -270,6 +298,6 @@ describe("MembersPage", () => {
     fireEvent.click(within(confirm).getByRole("button", { name: t("common.delete") }));
 
     expect(await within(confirm).findByRole("alert")).toHaveTextContent(t("members.deleteOwnerConflict"));
-    expect(screen.getByRole("rowheader", { name: "Babić Marko" })).toBeInTheDocument();
+    expect(screen.getByRole("rowheader", { name: "Marko Babić" })).toBeInTheDocument();
   });
 });

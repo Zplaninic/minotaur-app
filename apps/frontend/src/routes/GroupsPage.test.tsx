@@ -90,7 +90,7 @@ describe("GroupsPage", () => {
     renderPage();
     const row = (await screen.findByRole("rowheader", { name: "Petra Kovač - Monday, Wednesday - 5:00 PM - 6:30 PM" })).closest("tr");
     expect(row).not.toBeNull();
-    expect(within(row as HTMLElement).getByText("Kovač Petra")).toBeInTheDocument();
+    expect(within(row as HTMLElement).getByText("Petra Kovač")).toBeInTheDocument();
     expect(within(row as HTMLElement).getByText("Monday, Wednesday")).toBeInTheDocument();
     expect(within(row as HTMLElement).getByText("5:00 PM – 6:30 PM")).toBeInTheDocument();
     expect(within(row as HTMLElement).getByRole("cell", { name: "3" })).toBeInTheDocument();

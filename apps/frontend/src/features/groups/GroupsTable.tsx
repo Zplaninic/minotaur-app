@@ -2,7 +2,7 @@ import { toErrorCode } from "@repo/shared/client";
 import { Link } from "@tanstack/react-router";
 import { useGroups } from "../../api/groups";
 import { Button } from "../../components/Button";
-import { formatNumber, formatSortedName, formatTimeOfDay } from "../../lib/format";
+import { formatNumber, formatPersonName, formatTimeOfDay } from "../../lib/format";
 import { useMessages, weekdayKey } from "../../lib/messages";
 import { groupName } from "./groupName";
 import styles from "./GroupsTable.module.css";
@@ -51,7 +51,7 @@ export const GroupsTable = () => {
                   {groupName(group, t)}
                 </Link>
               </th>
-              <td className={styles.nowrap}>{formatSortedName(group.owner)}</td>
+              <td className={styles.nowrap}>{formatPersonName(group.owner)}</td>
               <td>{group.days.map((day) => t(weekdayKey(day))).join(", ")}</td>
               <td className={styles.nowrap}>
                 {t("groups.timeRange", { from: formatTimeOfDay(group.from), to: formatTimeOfDay(group.to) })}

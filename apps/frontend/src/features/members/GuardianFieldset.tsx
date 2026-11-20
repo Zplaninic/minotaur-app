@@ -3,7 +3,7 @@ import type { GuardianDraft } from "@repo/shared/client";
 import { Button } from "../../components/Button";
 import { SelectField } from "../../components/SelectField";
 import { TextField } from "../../components/TextField";
-import { formatSortedName } from "../../lib/format";
+import { formatPersonName } from "../../lib/format";
 import { useMessages } from "../../lib/messages";
 import styles from "./MemberForm.module.css";
 
@@ -60,7 +60,7 @@ export const GuardianFieldset = ({
             placeholder={t("memberForm.guardianPlaceholder")}
             value={guardian.guardianId}
             onChange={(guardianId) => update({ guardianId })}
-            options={existingGuardians.map((existing) => ({ value: existing.id, label: formatSortedName(existing) }))}
+            options={existingGuardians.map((existing) => ({ value: existing.id, label: formatPersonName(existing) }))}
             error={errorFor("guardianId")}
             required
           />

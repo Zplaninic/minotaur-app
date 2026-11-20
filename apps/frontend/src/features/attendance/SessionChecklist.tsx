@@ -1,7 +1,7 @@
 import type { AttendanceMemberResponse, Month, TrainingSessionResponse } from "@repo/shared";
 import { isFutureDate } from "@repo/shared/client";
 import { useAbility } from "../../api/auth";
-import { formatNumber, formatPersonName, formatSessionDate, formatSortedName } from "../../lib/format";
+import { formatNumber, formatPersonName, formatSessionDate } from "../../lib/format";
 import { useMessages } from "../../lib/messages";
 import { AttendanceCheckbox } from "./AttendanceCheckbox";
 import { MonthCommentInput } from "./MonthCommentInput";
@@ -47,7 +47,7 @@ export const SessionChecklist = ({ groupId, month, session, members, today }: Se
                 date: formatSessionDate(session.date),
               })}
             >
-              {formatSortedName(member)}
+              {formatPersonName(member)}
             </AttendanceCheckbox>
             <div className={styles.subscription}>
               <MonthSubscriptionSelect groupId={groupId} month={month} member={member} disabled={!canTick} />

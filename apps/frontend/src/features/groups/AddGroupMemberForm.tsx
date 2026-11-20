@@ -4,7 +4,7 @@ import { useAddGroupMember, useGroupMembers } from "../../api/groups";
 import { useAllMembers } from "../../api/members";
 import { Button } from "../../components/Button";
 import { SelectField } from "../../components/SelectField";
-import { formatSortedName } from "../../lib/format";
+import { formatPersonName } from "../../lib/format";
 import { useMessages } from "../../lib/messages";
 import styles from "./GroupForm.module.css";
 
@@ -60,7 +60,7 @@ export const AddGroupMemberForm = ({ groupId, onCancel, onSaved }: AddGroupMembe
         placeholder={t("groupMemberForm.memberPlaceholder")}
         value={memberId}
         onChange={setMemberId}
-        options={candidates.map((member) => ({ value: member.id, label: formatSortedName(member) }))}
+        options={candidates.map((member) => ({ value: member.id, label: formatPersonName(member) }))}
         error={submitted && memberId === "" ? t("groupMemberForm.error.member") : undefined}
         required
       />

@@ -5,7 +5,7 @@ import { useAbility } from "../../api/auth";
 import { useGroupMembers, useRemoveGroupMember } from "../../api/groups";
 import { Button } from "../../components/Button";
 import { ConfirmDialog } from "../../components/ConfirmDialog";
-import { formatCalendarDate, formatPersonName, formatSortedName } from "../../lib/format";
+import { formatCalendarDate, formatPersonName } from "../../lib/format";
 import { useMessages } from "../../lib/messages";
 import styles from "./GroupMembersTable.module.css";
 
@@ -62,7 +62,7 @@ export const GroupMembersTable = ({ groupId }: GroupMembersTableProps) => {
           <tbody>
             {members.data.items.map((member) => (
               <tr key={member.id}>
-                <th scope="row">{formatSortedName(member)}</th>
+                <th scope="row">{formatPersonName(member)}</th>
                 <td className={styles.nowrap}>{member.birthday ? formatCalendarDate(member.birthday) : t("common.empty")}</td>
                 <td>{member.email ?? t("common.empty")}</td>
                 <td className={styles.nowrap}>{member.phone ?? t("common.empty")}</td>

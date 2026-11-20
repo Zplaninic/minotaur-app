@@ -6,7 +6,7 @@ import { useGroupMembers } from "../../api/groups";
 import { useAllMembers } from "../../api/members";
 import { Button } from "../../components/Button";
 import { SelectField } from "../../components/SelectField";
-import { formatSortedName } from "../../lib/format";
+import { formatPersonName } from "../../lib/format";
 import { useMessages } from "../../lib/messages";
 import styles from "../groups/GroupForm.module.css";
 
@@ -96,7 +96,7 @@ export const AddMonthMemberForm = ({
         onChange={setMemberId}
         options={candidates.map(({ member, inGroup }) => ({
           value: member.id,
-          label: formatSortedName(member),
+          label: formatPersonName(member),
           group: t(inGroup ? "monthMemberForm.groupMembers" : "monthMemberForm.otherMembers"),
         }))}
         error={submitted && memberId === "" ? t("monthMemberForm.error.member") : undefined}

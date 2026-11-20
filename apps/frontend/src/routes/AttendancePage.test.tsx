@@ -404,15 +404,15 @@ describe("AttendancePage, wide screens", () => {
   it("marks members who have not paid a past month", async () => {
     me = admin;
     renderAt("/groups/1/attendance?month=2026-11");
-    const leo = (await screen.findByRole("rowheader", { name: /Perić Leo/ })) as HTMLElement;
+    const leo = (await screen.findByRole("rowheader", { name: /Leo Perić/ })) as HTMLElement;
     expect(await within(leo).findByText(t("overdue.badge", { months: "Oct 2026" }))).toBeInTheDocument();
-    const nora = screen.getByRole("rowheader", { name: /Jurić Nora/ });
+    const nora = screen.getByRole("rowheader", { name: /Nora Jurić/ });
     expect(within(nora).queryByText(/Unpaid/)).not.toBeInTheDocument();
   });
 
   it("does not show a trainer who has not paid", async () => {
     renderAt("/groups/1/attendance?month=2026-11");
-    const leo = (await screen.findByRole("rowheader", { name: /Perić Leo/ })) as HTMLElement;
+    const leo = (await screen.findByRole("rowheader", { name: /Leo Perić/ })) as HTMLElement;
     expect(within(leo).queryByText(/Unpaid/)).not.toBeInTheDocument();
   });
 
@@ -449,8 +449,8 @@ describe("AttendancePage, wide screens", () => {
     const select = await within(dialog).findByLabelText(t("monthMemberForm.member"));
     expect(within(select).getAllByRole("option").map((option) => option.textContent)).toEqual([
       t("monthMemberForm.memberPlaceholder"),
-      "Novak Mia",
-      "Babić Ivo",
+      "Mia Novak",
+      "Ivo Babić",
     ]);
     fireEvent.change(select, { target: { value: "6" } });
     expect(within(dialog).queryByRole("checkbox", { name: t("monthMemberForm.joinGroup") })).not.toBeInTheDocument();
@@ -594,7 +594,7 @@ describe("AttendancePage, phones", () => {
     const nav = await screen.findByRole("navigation", { name: t("attendance.sessionNav") });
     expect(await within(nav).findByText("Mon, Nov 16")).toBeInTheDocument();
 
-    const row = await screen.findByRole("checkbox", { name: "Jurić Nora" });
+    const row = await screen.findByRole("checkbox", { name: "Nora Jurić" });
     fireEvent.click(row);
     await waitFor(() => expect(row).toBeChecked());
     expect(fetchMock).toHaveBeenCalledWith(
@@ -605,6 +605,6 @@ describe("AttendancePage, phones", () => {
 
     fireEvent.click(within(nav).getByRole("button", { name: t("attendance.previousSession") }));
     expect(within(nav).getByText("Wed, Nov 11")).toBeInTheDocument();
-    expect(screen.getByRole("checkbox", { name: "Perić Leo" })).toBeChecked();
+    expect(screen.getByRole("checkbox", { name: "Leo Perić" })).toBeChecked();
   });
 });

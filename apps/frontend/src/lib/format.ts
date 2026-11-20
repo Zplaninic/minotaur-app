@@ -9,7 +9,7 @@ import {
 } from "@repo/shared/client";
 import { currentLanguage } from "./i18n";
 
-export { formatPersonName, formatSortedName } from "@repo/shared/client";
+export { formatPersonName } from "@repo/shared/client";
 
 export const formatCalendarDate = (isoDate: string): string => formatCalendarDateIn(isoDate, currentLanguage());
 

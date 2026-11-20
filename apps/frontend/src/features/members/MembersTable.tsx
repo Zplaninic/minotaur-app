@@ -5,7 +5,7 @@ import { useAbility, useMe } from "../../api/auth";
 import { useArchiveMember, useMembers } from "../../api/members";
 import { Button } from "../../components/Button";
 import { ConfirmDialog } from "../../components/ConfirmDialog";
-import { formatCalendarDate, formatPersonName, formatSortedName } from "../../lib/format";
+import { formatCalendarDate, formatPersonName } from "../../lib/format";
 import { useMessages } from "../../lib/messages";
 import styles from "./MembersTable.module.css";
 
@@ -13,9 +13,11 @@ type MembersTableProps = {
   onEdit: (member: MemberResponse) => void;
   // Only members with a past month that has a subscription and is not paid.
   unpaidOnly: boolean;
+  // Words to find in the name, surname or email; blank shows everyone.
+  search: string;
 };
 
-export const MembersTable = ({ onEdit, unpaidOnly }: MembersTableProps) => {
+export const MembersTable = ({ onEdit, unpaidOnly, search }: MembersTableProps) => {
   const { errorMessage, t } = useMessages();
   const orEmpty = (value: string | null) => value ?? t("common.empty");
   // The only CONFLICT here is a trainer who still leads groups.
@@ -25,8 +27,13 @@ export const MembersTable = ({ onEdit, unpaidOnly }: MembersTableProps) => {
   const me = useMe();
   const canEdit = ability.can("update", "Member");
   const canDelete = ability.can("delete", "Member");
-  const [page, setPage] = useState(1);
-  const members = useMembers({ page, pageSize: DEFAULT_PAGE_SIZE, unpaid: unpaidOnly });
+  // A new filter starts again from the first page. The table stays mounted, so
+  // the previous rows remain visible while the filtered ones load.
+  const filters = `${String(unpaidOnly)}|${search}`;
+  const [paging, setPaging] = useState({ filters, page: 1 });
+  const page = paging.filters === filters ? paging.page : 1;
+  const setPage = (next: number) => setPaging({ filters, page: next });
+  const members = useMembers({ page, pageSize: DEFAULT_PAGE_SIZE, unpaid: unpaidOnly, search });
   const archiveMember = useArchiveMember();
   const [deleting, setDeleting] = useState<MemberResponse | undefined>();
   const closeConfirm = () => {
@@ -52,7 +59,8 @@ export const MembersTable = ({ onEdit, unpaidOnly }: MembersTableProps) => {
 
   const { items, total, pageSize } = members.data;
   if (total === 0) {
-    return <p className={styles.state}>{unpaidOnly ? t("members.unpaidEmpty") : t("members.empty")}</p>;
+    const empty = search ? t("members.searchEmpty") : unpaidOnly ? t("members.unpaidEmpty") : t("members.empty");
+    return <p className={styles.state}>{empty}</p>;
   }
   const pages = Math.max(1, Math.ceil(total / pageSize));
   // The last page can empty out, e.g. after its only member is deleted.
@@ -79,7 +87,7 @@ export const MembersTable = ({ onEdit, unpaidOnly }: MembersTableProps) => {
             {items.map((member) => (
               <tr key={member.id}>
                 <th scope="row">
-                  {formatSortedName(member)}
+                  {formatPersonName(member)}
                   {member.role === "trainer" ? <span className={styles.label}>{t("members.trainerLabel")}</span> : null}
                 </th>
                 <td className={styles.nowrap}>{member.birthday ? formatCalendarDate(member.birthday) : t("common.empty")}</td>

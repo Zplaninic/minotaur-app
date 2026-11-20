@@ -130,7 +130,7 @@ describe("ActivityPage", () => {
 
     // Every filter is marked optional after its label.
     const actor = screen.getByRole("combobox", { name: new RegExp(`^${t("activity.filters.actor")}`) });
-    await within(actor).findByRole("option", { name: "Trainer Ana" });
+    await within(actor).findByRole("option", { name: "Ana Trainer" });
     fireEvent.change(actor, { target: { value: "3" } });
 
     await waitFor(() => expect(requested).toContain("/audit-events?actorId=3"));

@@ -251,7 +251,7 @@ describe("SubscriptionsPage, payments", () => {
       total: 9000,
     };
     renderPage();
-    const row = (await screen.findByRole("rowheader", { name: "Perić Leo" })).closest("tr") as HTMLElement;
+    const row = (await screen.findByRole("rowheader", { name: "Leo Perić" })).closest("tr") as HTMLElement;
     expect(within(row).getByText("September 2026: Kids 2x, €45.00")).toBeInTheDocument();
     expect(within(row).getByText("October 2026: Kids 2x, €45.00")).toBeInTheDocument();
     expect(within(row).getByText("€90.00")).toBeInTheDocument();

@@ -14,7 +14,7 @@ import { Button } from "../../components/Button";
 import { CheckboxGroup } from "../../components/CheckboxGroup";
 import { SelectField } from "../../components/SelectField";
 import { TextField } from "../../components/TextField";
-import { formatSortedName } from "../../lib/format";
+import { formatPersonName } from "../../lib/format";
 import { groupFieldErrorKey, useMessages, weekdayKey } from "../../lib/messages";
 import styles from "./GroupForm.module.css";
 
@@ -77,7 +77,7 @@ export const GroupForm = ({ group, onCancel, onSaved }: GroupFormProps) => {
         placeholder={t("groupForm.ownerPlaceholder")}
         value={draft.ownerId}
         onChange={(ownerId) => update({ ownerId })}
-        options={trainers.data.items.map((trainer) => ({ value: trainer.id, label: formatSortedName(trainer) }))}
+        options={trainers.data.items.map((trainer) => ({ value: trainer.id, label: formatPersonName(trainer) }))}
         error={fieldError("ownerId")}
         required
       />

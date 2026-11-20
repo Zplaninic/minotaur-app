@@ -10,7 +10,7 @@ import { AddGroupMemberForm } from "../features/groups/AddGroupMemberForm";
 import { GroupForm } from "../features/groups/GroupForm";
 import { GroupMembersTable } from "../features/groups/GroupMembersTable";
 import { groupAgeRange, groupName } from "../features/groups/groupName";
-import { formatSortedName, formatTimeOfDay } from "../lib/format";
+import { formatPersonName, formatTimeOfDay } from "../lib/format";
 import { useMessages, weekdayKey } from "../lib/messages";
 import styles from "./GroupPage.module.css";
 
@@ -77,7 +77,7 @@ export const GroupPage = () => {
           <dl className={styles.facts}>
             <div>
               <dt>{t("group.owner")}</dt>
-              <dd>{formatSortedName(group.data.owner)}</dd>
+              <dd>{formatPersonName(group.data.owner)}</dd>
             </div>
             <div>
               <dt>{t("group.days")}</dt>

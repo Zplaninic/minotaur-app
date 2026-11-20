@@ -4,7 +4,7 @@ import { useState } from "react";
 import { useAbility } from "../../api/auth";
 import { useDeleteTrainingSession, useRemoveMonthMember } from "../../api/attendance";
 import { ConfirmDialog } from "../../components/ConfirmDialog";
-import { formatMonth, formatPersonName, formatSessionDate, formatSortedName } from "../../lib/format";
+import { formatMonth, formatPersonName, formatSessionDate } from "../../lib/format";
 import { useMessages } from "../../lib/messages";
 import { AttendanceCheckbox } from "./AttendanceCheckbox";
 import { MonthCommentInput } from "./MonthCommentInput";
@@ -81,7 +81,7 @@ export const AttendanceGrid = ({ groupId, month, data, today }: AttendanceGridPr
                 <th scope="row" className={styles.name}>
                   <span className={styles.memberName}>
                     <span className={styles.nameAndBadge}>
-                      {formatSortedName(member)}
+                      {formatPersonName(member)}
                       <UnpaidBadge memberId={member.id} />
                     </span>
                     {canTick && !memberHasAttendance(member) ? (

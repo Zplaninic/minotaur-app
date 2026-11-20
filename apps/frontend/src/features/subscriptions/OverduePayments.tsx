@@ -1,7 +1,7 @@
 import { toErrorCode } from "@repo/shared/client";
 import { useOverduePayments } from "../../api/subscriptions";
 import { Button } from "../../components/Button";
-import { formatMoney, formatMonth, formatSortedName } from "../../lib/format";
+import { formatMoney, formatMonth, formatPersonName } from "../../lib/format";
 import { useMessages } from "../../lib/messages";
 import styles from "./PaymentSummary.module.css";
 
@@ -47,7 +47,7 @@ export const OverduePayments = () => {
             <tbody>
               {overdue.data.items.map((member) => (
                 <tr key={member.id}>
-                  <th scope="row">{formatSortedName(member)}</th>
+                  <th scope="row">{formatPersonName(member)}</th>
                   <td>
                     <ul className={styles.months}>
                       {member.months.map((entry) => (
