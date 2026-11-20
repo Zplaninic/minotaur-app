@@ -7,6 +7,10 @@ export const formatCalendarDate = (isoDate: string, locale: string): string =>
     new Date(`${isoDate}T00:00:00.000Z`),
   );
 
+// A moment in time (ISO datetime) in the viewer's time zone, e.g. "Nov 20, 2026, 11:34".
+export const formatDateTime = (isoDateTime: string, locale: string): string =>
+  new Intl.DateTimeFormat(locale, { dateStyle: "medium", timeStyle: "short" }).format(new Date(isoDateTime));
+
 export const formatPersonName = (person: Person): string => `${person.name} ${person.surname}`;
 
 export const formatSortedName = (person: Person): string => `${person.surname} ${person.name}`;

@@ -4,6 +4,7 @@ import { afterAll, beforeAll, beforeEach, describe, expect, it } from "vitest";
 import { authHeaders, createLoginMember, createOrg, resetDb, TEST_PASSWORD } from "../../test/db.js";
 import { config } from "../config.js";
 import { buildServer } from "../server.js";
+import { SYSTEM_ACTOR } from "../services/audit.js";
 import { setMemberRole } from "../services/logins.js";
 
 // The login route allows 5 attempts per minute per IP, so each test builds
@@ -119,7 +120,7 @@ describe("sessions", () => {
     const headers = await authHeaders(app.db, memberId);
     expect((await app.inject({ method: "GET", url: "/members", headers })).statusCode).toBe(200);
 
-    await setMemberRole(app.db, memberId, "member", "2026-11-16");
+    await setMemberRole(app.db, SYSTEM_ACTOR, memberId, "member", "2026-11-16");
     expect((await app.inject({ method: "GET", url: "/members", headers })).statusCode).toBe(401);
   });
 

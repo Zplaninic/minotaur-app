@@ -31,6 +31,7 @@ import {
   unmarkAttendance,
 } from "../services/attendance.js";
 import { isoDateIn } from "../services/dates.js";
+import { actorOf } from "./actor.js";
 import { guardedErrorResponses } from "./responses.js";
 
 // Registered under /groups, next to the group routes.
@@ -63,6 +64,7 @@ export const attendanceRoutes: FastifyPluginAsync = async (app) => {
     async (request, reply) => {
       await createMonthSessions(
         app.db,
+        actorOf(request),
         request.params.id,
         request.body.month,
         isoDateIn(new Date(), config.GYM_TIME_ZONE),
@@ -87,6 +89,7 @@ export const attendanceRoutes: FastifyPluginAsync = async (app) => {
         .send(
           await addTrainingSession(
             app.db,
+            actorOf(request),
             request.params.id,
             request.body.date,
             isoDateIn(new Date(), config.GYM_TIME_ZONE),
@@ -104,7 +107,7 @@ export const attendanceRoutes: FastifyPluginAsync = async (app) => {
       },
     },
     async (request, reply) => {
-      await deleteTrainingSession(app.db, request.params.id, request.params.sessionId);
+      await deleteTrainingSession(app.db, actorOf(request), request.params.id, request.params.sessionId);
       return reply.status(204).send();
     },
   );
@@ -120,7 +123,12 @@ export const attendanceRoutes: FastifyPluginAsync = async (app) => {
     },
     async (request, reply) => {
       const { id, sessionId, memberId } = request.params;
-      await markAttendance(app.db, { groupId: id, sessionId, memberId }, isoDateIn(new Date(), config.GYM_TIME_ZONE));
+      await markAttendance(
+        app.db,
+        actorOf(request),
+        { groupId: id, sessionId, memberId },
+        isoDateIn(new Date(), config.GYM_TIME_ZONE),
+      );
       return reply.status(204).send();
     },
   );
@@ -136,7 +144,7 @@ export const attendanceRoutes: FastifyPluginAsync = async (app) => {
     },
     async (request, reply) => {
       const { id, sessionId, memberId } = request.params;
-      await unmarkAttendance(app.db, { groupId: id, sessionId, memberId });
+      await unmarkAttendance(app.db, actorOf(request), { groupId: id, sessionId, memberId });
       return reply.status(204).send();
     },
   );
@@ -155,6 +163,7 @@ export const attendanceRoutes: FastifyPluginAsync = async (app) => {
       const { id, month, memberId } = request.params;
       await addMonthMember(
         app.db,
+        actorOf(request),
         { groupId: id, month, memberId },
         { joinGroup: request.body.joinGroup, today: isoDateIn(new Date(), config.GYM_TIME_ZONE) },
       );
@@ -174,7 +183,12 @@ export const attendanceRoutes: FastifyPluginAsync = async (app) => {
     },
     async (request, reply) => {
       const { id, month, memberId } = request.params;
-      await setMonthSubscription(app.db, { groupId: id, month, memberId }, request.body.subscriptionId);
+      await setMonthSubscription(
+        app.db,
+        actorOf(request),
+        { groupId: id, month, memberId },
+        request.body.subscriptionId,
+      );
       return reply.status(204).send();
     },
   );
@@ -191,7 +205,7 @@ export const attendanceRoutes: FastifyPluginAsync = async (app) => {
     },
     async (request, reply) => {
       const { id, month, memberId } = request.params;
-      await setMonthPaid(app.db, { groupId: id, month, memberId }, request.body.paid);
+      await setMonthPaid(app.db, actorOf(request), { groupId: id, month, memberId }, request.body.paid);
       return reply.status(204).send();
     },
   );
@@ -208,7 +222,7 @@ export const attendanceRoutes: FastifyPluginAsync = async (app) => {
     },
     async (request, reply) => {
       const { id, month, memberId } = request.params;
-      await setMonthComment(app.db, { groupId: id, month, memberId }, request.body.comment);
+      await setMonthComment(app.db, actorOf(request), { groupId: id, month, memberId }, request.body.comment);
       return reply.status(204).send();
     },
   );
@@ -224,7 +238,7 @@ export const attendanceRoutes: FastifyPluginAsync = async (app) => {
     },
     async (request, reply) => {
       const { id, month, memberId } = request.params;
-      await removeMonthMember(app.db, { groupId: id, month, memberId });
+      await removeMonthMember(app.db, actorOf(request), { groupId: id, month, memberId });
       return reply.status(204).send();
     },
   );

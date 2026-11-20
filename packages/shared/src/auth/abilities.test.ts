@@ -37,6 +37,14 @@ describe("defineAbilityFor", () => {
     expect(ability.can("delete", "Subscription")).toBe(false);
   });
 
+  it("lets an admin read the activity log", () => {
+    expect(defineAbilityFor({ memberId: "1", role: "admin" }).can("read", "AuditEvent")).toBe(true);
+  });
+
+  it("gives a trainer no access to the activity log", () => {
+    expect(defineAbilityFor({ memberId: "1", role: "trainer" }).can("read", "AuditEvent")).toBe(false);
+  });
+
   it.each(["admin", "trainer"] as const)("lets %s keep attendance in every group", (role) => {
     const ability = defineAbilityFor({ memberId: "1", role });
     for (const action of ["read", "create", "update", "delete"] as const) {

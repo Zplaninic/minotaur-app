@@ -14,10 +14,11 @@ import type { Db } from "../db/client.js";
 import { deleteMemberSessions } from "../auth/sessions.js";
 import { AppError } from "../errors.js";
 import type { Prisma } from "../generated/prisma/client.js";
+import { diff, hasChanges, recordEvent, type Actor } from "./audit.js";
 import { monthOf, monthStart, toDbDate, toIsoDate } from "./dates.js";
 import { leaveGroups } from "./groups.js";
 import { guardianSelect, toGuardianResponse } from "./guardians.js";
-import { requireDbId, toApiId, toDbId } from "./ids.js";
+import { requireDbId, toApiId } from "./ids.js";
 
 const memberSelect = {
   id: true,
@@ -136,7 +137,12 @@ const linkGuardians = async (db: DbClient, memberId: number, guardians: readonly
   }
 };
 
-export const createMember = async (db: Db, body: CreateMemberBody, today: string): Promise<MemberResponse> => {
+export const createMember = async (
+  db: Db,
+  actor: Actor,
+  body: CreateMemberBody,
+  today: string,
+): Promise<MemberResponse> => {
   requireValidBirthday(body, today);
   const orgId = requireDbId(body.orgId, "Org not found");
   const guardians = resolveGuardians(body.guardians);
@@ -162,6 +168,7 @@ export const createMember = async (db: Db, body: CreateMemberBody, today: string
       select: { id: true },
     });
     await linkGuardians(tx, member.id, guardians);
+    await recordEvent(tx, actor, { action: "member_created", memberId: member.id });
 
     return toMemberResponse(await tx.member.findUniqueOrThrow({ where: { id: member.id }, select: memberSelect }));
   });
@@ -181,8 +188,32 @@ export const getMember = async (db: Db, memberId: string): Promise<MemberRespons
 // Replaces the editable fields. A taken OIB or login email is a unique
 // constraint error, answered as CONFLICT. Unlinked guardians are kept. A
 // member who logs in keeps an email: it is their login name.
+const editableSelect = {
+  name: true,
+  surname: true,
+  birthday: true,
+  taxNumber: true,
+  email: true,
+  phone: true,
+  guardians: { select: { guardianId: true } },
+} satisfies Prisma.MemberSelect;
+
+// Every editable field is personal, so the log only marks which ones changed.
+const EDITABLE_FIELDS = ["name", "surname", "birthday", "taxNumber", "email", "phone", "guardians"] as const;
+
+const editableFieldsOf = (member: Prisma.MemberGetPayload<{ select: typeof editableSelect }>) => ({
+  name: member.name,
+  surname: member.surname,
+  birthday: toIsoDate(member.birthday),
+  taxNumber: member.taxNumber,
+  email: member.email,
+  phone: member.phone,
+  guardians: member.guardians.map((link) => String(link.guardianId)).toSorted(),
+});
+
 export const updateMember = async (
   db: Db,
+  actor: Actor,
   memberId: string,
   body: UpdateMemberBody,
   today: string,
@@ -192,7 +223,10 @@ export const updateMember = async (
   const guardians = resolveGuardians(body.guardians);
 
   return db.$transaction(async (tx) => {
-    const member = await tx.member.findUnique({ where: { id: memberDbId, deletedAt: null }, select: { role: true } });
+    const member = await tx.member.findUnique({
+      where: { id: memberDbId, deletedAt: null },
+      select: { role: true, ...editableSelect },
+    });
     if (!member) {
       throw new AppError("NOT_FOUND", 404, "Member not found");
     }
@@ -215,6 +249,12 @@ export const updateMember = async (
     await tx.memberGuardian.deleteMany({ where: { memberId: memberDbId } });
     await linkGuardians(tx, memberDbId, guardians);
 
+    const after = await tx.member.findUniqueOrThrow({ where: { id: memberDbId }, select: editableSelect });
+    const changes = diff(editableFieldsOf(member), editableFieldsOf(after), EDITABLE_FIELDS);
+    if (hasChanges(changes)) {
+      await recordEvent(tx, actor, { action: "member_updated", memberId: memberDbId, changes });
+    }
+
     return toMemberResponse(await tx.member.findUniqueOrThrow({ where: { id: memberDbId }, select: memberSelect }));
   });
 };
@@ -227,13 +267,13 @@ export const updateMember = async (
 // at the gym.
 export const archiveMember = async (
   db: Db,
+  actor: Actor,
   memberId: string,
-  actingMemberId: string,
   now: Date,
   today: string,
 ): Promise<void> => {
   const memberDbId = requireDbId(memberId, "Member not found");
-  if (memberDbId === toDbId(actingMemberId)) {
+  if (memberDbId === actor?.memberId) {
     throw new AppError("FORBIDDEN", 403, "You cannot delete yourself");
   }
 
@@ -251,5 +291,6 @@ export const archiveMember = async (
     await leaveGroups(tx, memberDbId, today);
     await tx.login.deleteMany({ where: { memberId: memberDbId } });
     await deleteMemberSessions(tx, memberDbId);
+    await recordEvent(tx, actor, { action: "member_archived", memberId: memberDbId });
   });
 };

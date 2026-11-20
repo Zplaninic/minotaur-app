@@ -1,6 +1,7 @@
 import { createRootRoute, createRoute, createRouter, Outlet, type RouterHistory } from "@tanstack/react-router";
 import { month } from "@repo/shared";
 import { z } from "zod";
+import { ActivityPage } from "./ActivityPage";
 import { AppLayout } from "./AppLayout";
 import { AttendancePage } from "./AttendancePage";
 import { GroupPage } from "./GroupPage";
@@ -60,6 +61,12 @@ const subscriptionsRoute = createRoute({
   component: SubscriptionsPage,
 });
 
+const activityRoute = createRoute({
+  getParentRoute: () => appRoute,
+  path: "/activity",
+  component: ActivityPage,
+});
+
 // A missing or malformed month means the current one.
 const attendanceRoute = createRoute({
   getParentRoute: () => appRoute,
@@ -70,7 +77,7 @@ const attendanceRoute = createRoute({
 
 const routeTree = rootRoute.addChildren([
   loginRoute,
-  appRoute.addChildren([homeRoute, membersRoute, groupsRoute, groupRoute, attendanceRoute, subscriptionsRoute]),
+  appRoute.addChildren([homeRoute, membersRoute, groupsRoute, groupRoute, attendanceRoute, subscriptionsRoute, activityRoute]),
 ]);
 
 export const createAppRouter = (history?: RouterHistory) =>

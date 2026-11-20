@@ -18,6 +18,7 @@ import {
   listSubscriptions,
   updateSubscription,
 } from "../services/subscriptions.js";
+import { actorOf } from "./actor.js";
 import { guardedErrorResponses } from "./responses.js";
 
 export const subscriptionRoutes: FastifyPluginAsync = async (app) => {
@@ -67,7 +68,7 @@ export const subscriptionRoutes: FastifyPluginAsync = async (app) => {
         response: { 201: subscriptionResponse, ...guardedErrorResponses(400, 409) },
       },
     },
-    async (request, reply) => reply.status(201).send(await createSubscription(app.db, request.body)),
+    async (request, reply) => reply.status(201).send(await createSubscription(app.db, actorOf(request), request.body)),
   );
 
   routes.put(
@@ -80,6 +81,6 @@ export const subscriptionRoutes: FastifyPluginAsync = async (app) => {
         response: { 200: subscriptionResponse, ...guardedErrorResponses(400, 404, 409) },
       },
     },
-    async (request) => updateSubscription(app.db, request.params.id, request.body),
+    async (request) => updateSubscription(app.db, actorOf(request), request.params.id, request.body),
   );
 };

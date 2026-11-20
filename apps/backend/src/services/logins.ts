@@ -11,6 +11,7 @@ import { hashPassword } from "../auth/password.js";
 import { deleteMemberSessions } from "../auth/sessions.js";
 import type { Db } from "../db/client.js";
 import { AppError } from "../errors.js";
+import { recordEvent, type Actor } from "./audit.js";
 import { toDbDate } from "./dates.js";
 import { leaveGroups } from "./groups.js";
 
@@ -37,6 +38,7 @@ const validPassword = (password: string): string => {
 // YYYY-MM-DD at the gym.
 export const createLoginForMember = async (
   db: Db,
+  actor: Actor,
   memberId: number,
   role: LoginRole,
   password: string,
@@ -44,7 +46,10 @@ export const createLoginForMember = async (
 ): Promise<void> => {
   const passwordHash = await hashPassword(validPassword(password));
   await db.$transaction(async (tx) => {
-    const member = await tx.member.findUnique({ where: { id: memberId, deletedAt: null }, select: { email: true } });
+    const member = await tx.member.findUnique({
+      where: { id: memberId, deletedAt: null },
+      select: { email: true, role: true },
+    });
     if (!member) {
       throw new AppError("NOT_FOUND", 404, "Member not found");
     }
@@ -54,38 +59,53 @@ export const createLoginForMember = async (
     await tx.member.update({ where: { id: memberId }, data: { role } });
     await leaveGroups(tx, memberId, today);
     await tx.login.upsert({ where: { memberId }, create: { memberId, passwordHash }, update: { passwordHash } });
+    await recordEvent(tx, actor, {
+      action: "login_created",
+      memberId,
+      changes: { role: { from: member.role, to: role }, password: { changed: true } },
+    });
   });
 };
 
 // Creates the member and their login in one go; used for the first admin.
 export const createMemberWithLogin = async (
   db: Db,
+  actor: Actor,
   input: NewLoginMember,
   role: LoginRole,
   password: string,
 ): Promise<number> => {
   const passwordHash = await hashPassword(validPassword(password));
-  const member = await db.member.create({
-    data: {
-      orgId: input.orgId,
-      name: personName.parse(input.name),
-      surname: personName.parse(input.surname),
-      birthday: toDbDate(input.birthday),
-      email: emailSchema.parse(input.email),
-      role,
-      login: { create: { passwordHash } },
-    },
-    select: { id: true },
+  return db.$transaction(async (tx) => {
+    const member = await tx.member.create({
+      data: {
+        orgId: input.orgId,
+        name: personName.parse(input.name),
+        surname: personName.parse(input.surname),
+        birthday: toDbDate(input.birthday),
+        email: emailSchema.parse(input.email),
+        role,
+        login: { create: { passwordHash } },
+      },
+      select: { id: true },
+    });
+    await recordEvent(tx, actor, { action: "member_created", memberId: member.id });
+    await recordEvent(tx, actor, {
+      action: "login_created",
+      memberId: member.id,
+      changes: { role: { from: null, to: role }, password: { changed: true } },
+    });
+    return member.id;
   });
-  return member.id;
 };
 
 // A new password ends every session, so a leaked password stops working everywhere.
-export const setLoginPassword = async (db: Db, memberId: number, password: string): Promise<void> => {
+export const setLoginPassword = async (db: Db, actor: Actor, memberId: number, password: string): Promise<void> => {
   const passwordHash = await hashPassword(validPassword(password));
   await db.$transaction(async (tx) => {
     await tx.login.update({ where: { memberId }, data: { passwordHash } });
     await deleteMemberSessions(tx, memberId);
+    await recordEvent(tx, actor, { action: "login_password_set", memberId, changes: { password: { changed: true } } });
   });
 };
 
@@ -93,9 +113,16 @@ export const setLoginPassword = async (db: Db, memberId: number, password: strin
 // A group's owner must stay a trainer, so a trainer who owns groups keeps the role.
 // Only children and members train in groups, so anyone else leaves theirs.
 // today is YYYY-MM-DD at the gym.
-export const setMemberRole = async (db: Db, memberId: number, role: MemberRole, today: string): Promise<void> => {
+export const setMemberRole = async (
+  db: Db,
+  actor: Actor,
+  memberId: number,
+  role: MemberRole,
+  today: string,
+): Promise<void> => {
   await db.$transaction(async (tx) => {
-    if (!(await tx.member.findUnique({ where: { id: memberId, deletedAt: null }, select: { id: true } }))) {
+    const member = await tx.member.findUnique({ where: { id: memberId, deletedAt: null }, select: { role: true } });
+    if (!member) {
       throw new AppError("NOT_FOUND", 404, "Member not found");
     }
     if (role !== GROUP_OWNER_ROLE && (await tx.group.count({ where: { ownerId: memberId, deletedAt: null } })) > 0) {
@@ -107,6 +134,13 @@ export const setMemberRole = async (db: Db, memberId: number, role: MemberRole, 
     }
     if (!isLoginRole(role)) {
       await deleteMemberSessions(tx, memberId);
+    }
+    if (member.role !== role) {
+      await recordEvent(
+        tx,
+        actor,
+        { action: "member_role_changed", memberId, changes: { role: { from: member.role, to: role } } },
+      );
     }
   });
 };

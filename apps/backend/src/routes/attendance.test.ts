@@ -10,6 +10,7 @@ import { afterAll, beforeAll, beforeEach, describe, expect, it } from "vitest";
 import { authHeaders, createLoginMember, createOrg, resetDb } from "../../test/db.js";
 import { config } from "../config.js";
 import { buildServer } from "../server.js";
+import { SYSTEM_ACTOR } from "../services/audit.js";
 import { isoDateIn, monthOf, trainingDates } from "../services/dates.js";
 import { addGroupMember, createGroup } from "../services/groups.js";
 import { createSubscription } from "../services/subscriptions.js";
@@ -40,7 +41,7 @@ beforeEach(async () => {
   const trainerMember = await createLoginMember(app.db, orgId, "trainer");
   trainer = await authHeaders(app.db, trainerMember.memberId);
   groupId = (
-    await createGroup(app.db, {
+    await createGroup(app.db, SYSTEM_ACTOR, {
       ownerId: String(trainerMember.memberId),
       days: ["monday", "wednesday"],
       from: "18:00",
@@ -50,7 +51,7 @@ beforeEach(async () => {
     })
   ).id;
   childId = String((await createLoginMember(app.db, orgId, "child")).memberId);
-  await addGroupMember(app.db, groupId, childId, today);
+  await addGroupMember(app.db, SYSTEM_ACTOR, groupId, childId, today);
 });
 
 afterAll(async () => {
@@ -220,7 +221,11 @@ describe("PUT /groups/:id/months/:month/members/:memberId/subscription", () => {
 
   it("lets a trainer set and clear a member's subscription", async () => {
     await addSession(firstOfThisMonth);
-    const subscription = await createSubscription(app.db, { name: "Kids 2x", sessionsPerWeek: 2, price: 4500 });
+    const subscription = await createSubscription(
+      app.db,
+      SYSTEM_ACTOR,
+      { name: "Kids 2x", sessionsPerWeek: 2, price: 4500 },
+    );
 
     expect((await put({ subscriptionId: subscription.id })).statusCode).toBe(204);
     expect(groupAttendanceResponse.parse((await getMonth(thisMonth)).json()).members[0]?.subscription).toEqual({
@@ -267,7 +272,11 @@ describe("PUT /groups/:id/months/:month/members/:memberId/paid", () => {
 
   it("marks a member's month paid", async () => {
     await addSession(firstOfThisMonth);
-    const subscription = await createSubscription(app.db, { name: "Kids 2x", sessionsPerWeek: 2, price: 4500 });
+    const subscription = await createSubscription(
+      app.db,
+      SYSTEM_ACTOR,
+      { name: "Kids 2x", sessionsPerWeek: 2, price: 4500 },
+    );
     await app.inject({
       method: "PUT",
       url: `/groups/${groupId}/months/${thisMonth}/members/${childId}/subscription`,

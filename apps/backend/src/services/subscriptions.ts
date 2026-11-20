@@ -9,6 +9,7 @@ import type {
 import type { Db } from "../db/client.js";
 import { AppError } from "../errors.js";
 import type { Prisma } from "../generated/prisma/client.js";
+import { diff, hasChanges, initial, recordEvent, type Actor } from "./audit.js";
 import { monthOf, monthStart, toIsoDate } from "./dates.js";
 import { toApiId, toDbId } from "./ids.js";
 
@@ -42,15 +43,33 @@ export const listSubscriptions = async (db: Db): Promise<ListSubscriptionsRespon
   return { items: subscriptions.map(toSubscriptionResponse) };
 };
 
+const auditFieldsOf = (subscription: SubscriptionBody) => ({
+  name: subscription.name,
+  sessionsPerWeek: subscription.sessionsPerWeek,
+  price: subscription.price,
+});
+
 // A name that is already taken fails with a unique constraint error, which
 // the error handler answers with CONFLICT.
-export const createSubscription = async (db: Db, body: SubscriptionBody): Promise<SubscriptionResponse> =>
-  toSubscriptionResponse(await db.subscription.create({ data: body, select: subscriptionSelect }));
+export const createSubscription = async (
+  db: Db,
+  actor: Actor,
+  body: SubscriptionBody,
+): Promise<SubscriptionResponse> =>
+  db.$transaction(async (tx) => {
+    const subscription = await tx.subscription.create({ data: body, select: subscriptionSelect });
+    await recordEvent(tx, actor, {
+      action: "subscription_created",
+      subscriptionId: subscription.id,
+      changes: initial(auditFieldsOf(body)),
+    });
+    return toSubscriptionResponse(subscription);
+  });
 
-// Replaces every field. An unknown id fails with record not found (NOT_FOUND),
-// a taken name with CONFLICT.
+// Replaces every field. A taken name fails with CONFLICT.
 export const updateSubscription = async (
   db: Db,
+  actor: Actor,
   subscriptionId: string,
   body: SubscriptionBody,
 ): Promise<SubscriptionResponse> => {
@@ -58,7 +77,18 @@ export const updateSubscription = async (
   if (id === undefined) {
     throw subscriptionNotFound();
   }
-  return toSubscriptionResponse(await db.subscription.update({ where: { id }, data: body, select: subscriptionSelect }));
+  return db.$transaction(async (tx) => {
+    const before = await tx.subscription.findUnique({ where: { id }, select: subscriptionSelect });
+    if (!before) {
+      throw subscriptionNotFound();
+    }
+    const subscription = await tx.subscription.update({ where: { id }, data: body, select: subscriptionSelect });
+    const changes = diff(auditFieldsOf(before), auditFieldsOf(body));
+    if (hasChanges(changes)) {
+      await recordEvent(tx, actor, { action: "subscription_updated", subscriptionId: id, changes });
+    }
+    return toSubscriptionResponse(subscription);
+  });
 };
 
 const sum = (values: readonly number[]): number => values.reduce((total, value) => total + value, 0);

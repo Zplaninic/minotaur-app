@@ -1,5 +1,6 @@
 import { memberRole } from "@repo/shared";
 import { config } from "../config.js";
+import { SYSTEM_ACTOR } from "../services/audit.js";
 import { isoDateIn } from "../services/dates.js";
 import { setMemberRole } from "../services/logins.js";
 import { required, requiredId, runCommand } from "./run.js";
@@ -13,7 +14,7 @@ await runCommand(
     if (!parsed.success) {
       throw new Error(`--role must be one of: ${memberRole.options.join(", ")}`);
     }
-    await setMemberRole(db, memberId, parsed.data, isoDateIn(new Date(), config.GYM_TIME_ZONE));
+    await setMemberRole(db, SYSTEM_ACTOR, memberId, parsed.data, isoDateIn(new Date(), config.GYM_TIME_ZONE));
     return `Member ${memberId} is now ${parsed.data}.`;
   },
 );
