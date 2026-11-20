@@ -1,8 +1,10 @@
-import type { AuditAction, MemberRole, Weekday } from "@repo/shared";
+import type { AuditAction, ImportRowProblem, ImportRowStatus, MemberRole, Weekday } from "@repo/shared";
 import type {
   ClientErrorCode,
   GroupAgeRangeKind,
   GroupFieldError,
+  ImportField,
+  ImportFileError,
   MemberFieldError,
   MonthCommentError,
   SubscriptionFieldError,
@@ -32,6 +34,16 @@ export const useMessages = () => {
 };
 
 export const memberFieldErrorKey = (code: MemberFieldError): MessageKey => `memberForm.error.${code}` as const;
+
+export const importColumnKey = (field: ImportField): MessageKey => `membersImport.column.${field}` as const;
+
+export const importFieldErrorKey = (field: ImportField): MessageKey => `membersImport.fieldError.${field}` as const;
+
+export const importFileErrorKey = (error: ImportFileError): MessageKey => `membersImport.fileError.${error}` as const;
+
+export const importProblemKey = (problem: ImportRowProblem): MessageKey => `membersImport.problem.${problem}` as const;
+
+export const importStatusKey = (status: ImportRowStatus): MessageKey => `membersImport.status.${status}` as const;
 
 export const groupFieldErrorKey = (code: GroupFieldError): MessageKey => `groupForm.error.${code}` as const;
 

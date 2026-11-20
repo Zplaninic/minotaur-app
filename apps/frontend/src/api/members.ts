@@ -1,9 +1,11 @@
-import type { CreateMemberBody, UpdateMemberBody } from "@repo/shared";
+import type { CreateMemberBody, ImportMembersBody, UpdateMemberBody } from "@repo/shared";
 import {
   archiveMember,
   createMember,
+  importMembers,
   keysToInvalidateAfterArchiveMember,
   keysToInvalidateAfterCreateMember,
+  keysToInvalidateAfterImportMembers,
   keysToInvalidateAfterUpdateMember,
   memberQueries,
   updateMember,
@@ -52,6 +54,22 @@ export const useArchiveMember = () => {
     onSuccess: async () => {
       await Promise.all(
         keysToInvalidateAfterArchiveMember.map((queryKey) => queryClient.invalidateQueries({ queryKey })),
+      );
+    },
+  });
+};
+
+// A dry run only checks the rows, so nothing goes stale.
+export const useImportMembers = () => {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: (body: ImportMembersBody) => importMembers(api, body),
+    onSuccess: async (result) => {
+      if (!result.imported) {
+        return;
+      }
+      await Promise.all(
+        keysToInvalidateAfterImportMembers.map((queryKey) => queryClient.invalidateQueries({ queryKey })),
       );
     },
   });

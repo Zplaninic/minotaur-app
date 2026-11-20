@@ -82,7 +82,7 @@ export const GuardianFieldset = ({
             onChange={(surname) => update({ surname })}
             error={errorFor("surname")}
             autoComplete="off"
-            required
+            optional
           />
           <TextField
             label={t("memberForm.email")}
